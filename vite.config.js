@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
-        name: 'SchoolCric.Live',
-        short_name: 'SchoolCric',
+        name: 'ZBSMCric',
+        short_name: 'ZBSMCric',
         description: 'Live Cricket Scoring & Tournaments',
         theme_color: '#111827',
         background_color: '#ffffff',
