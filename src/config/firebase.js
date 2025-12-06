@@ -1,5 +1,11 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { 
+  getAuth, 
+  signInAnonymously, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signOut 
+} from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -14,16 +20,19 @@ const firebaseConfig = {
 
 // --- CRITICAL DEBUG CHECK ---
 if (!firebaseConfig.apiKey) {
-  const msg = "🚨 MISSING API KEY: Check .env file in root folder!";
-  console.error(msg);
-  alert(msg);
+  console.error("🚨 MISSING API KEY: Check .env file in root folder!");
 }
 
-// Initialize Firebase (NO ANALYTICS to prevent AdBlock crashes)
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const APP_ID = 'zbsm-crick-live-v1'; 
 
-// Unique ID for your database path
-export const APP_ID = 'zbsm-crick-live-v1';
+// Export Auth Helpers
+export { 
+  signInAnonymously, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signOut 
+};

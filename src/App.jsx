@@ -13,38 +13,50 @@ const AdminDashboard = React.lazy(() => import('./views/admin/AdminDashboard'));
 const MatchDetails = React.lazy(() => import('./views/admin/MatchDetails'));
 const ScoringView = React.lazy(() => import('./views/viewer/ScoringView'));
 const TournamentDetails = React.lazy(() => import('./views/viewer/TournamentDetails'));
+const LoginView = React.lazy(() => import('./views/auth/Login')); 
+const PlayerCareer = React.lazy(() => import('./views/viewer/PlayerCareer'));
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [view, setView] = useState('home'); 
+  
+  // Data State
   const [matches, setMatches] = useState([]);
   const [teams, setTeams] = useState([]);
   const [tournaments, setTournaments] = useState([]);
+  
+  // Selection State
   const [currentMatch, setCurrentMatch] = useState(null);
   const [selectedTournament, setSelectedTournament] = useState(null);
+  const [selectedPlayer, setSelectedPlayer] = useState(null); 
+  
   const [loading, setLoading] = useState(true);
-  const [adminPin, setAdminPin] = useState('');
 
-  // --- AUTH & LIVE DATA SYNC ---
+  // --- 1. AUTH INITIALIZATION ---
   useEffect(() => {
     const initAuth = async () => {
-       try { await signInAnonymously(auth); } catch(e) { console.error("Auth Failed:", e); }
+       try { 
+           if (!auth.currentUser) await signInAnonymously(auth); 
+       } catch(e) { 
+           console.error("Auth Init Failed:", e); 
+       }
     };
     initAuth();
-    onAuthStateChanged(auth, (u) => {
+    
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
         setUser(u);
-        setTimeout(() => setLoading(false), 2000);
+        setTimeout(() => setLoading(false), 1500);
     });
+    return () => unsubscribe();
   }, []);
 
+  // --- 2. DATA SYNCING ---
   useEffect(() => {
     if (!user) return;
 
     const unsubMatches = onSnapshot(query(collection(db, 'artifacts', APP_ID, 'public', 'data', 'matches'), orderBy('timestamp', 'desc')), (snap) => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       setMatches(data);
-      
-      // Auto-update the open match if it changes live
       if (currentMatch) {
         const updated = data.find(m => m.id === currentMatch.id);
         if (updated) setCurrentMatch(updated);
@@ -63,16 +75,14 @@ export default function App() {
     return () => { unsubMatches(); unsubTeams(); unsubTournaments(); };
   }, [user, currentMatch?.id]);
 
-  // --- ROUTING LOGIC (Handle Shared Links) ---
+  // --- 3. ROUTING LOGIC ---
   useEffect(() => {
-      // Wait for data to load before routing
       if (matches.length === 0 && tournaments.length === 0) return;
 
       const params = new URLSearchParams(window.location.search);
       const sharedMatchId = params.get('matchId');
       const sharedTournamentId = params.get('tournamentId');
 
-      // Handle Match Link
       if (sharedMatchId && !currentMatch && view !== 'match') {
           const foundMatch = matches.find(m => m.id === sharedMatchId);
           if (foundMatch) {
@@ -81,7 +91,6 @@ export default function App() {
           }
       }
       
-      // Handle Tournament Link
       if (sharedTournamentId && !selectedTournament && view !== 'tournament-details') {
            const foundTournament = tournaments.find(t => t.id === sharedTournamentId);
            if (foundTournament) {
@@ -91,18 +100,21 @@ export default function App() {
       }
   }, [matches, tournaments, currentMatch, selectedTournament, view]);
 
-  const handleAdminLogin = () => {
-    if (adminPin === '657585') { setView('admin-dash'); setAdminPin(''); } 
-    else { alert('Incorrect PASS'); }
-  };
-  
-  // Helper to go home and clean URL
+  // --- HANDLERS ---
   const goHome = () => {
       setView('home');
       setCurrentMatch(null);
       setSelectedTournament(null);
-      // Remove IDs from URL without reloading
+      setSelectedPlayer(null);
       window.history.pushState({}, '', window.location.pathname);
+  };
+
+  const handleLoginClick = () => {
+      if (user && !user.isAnonymous) {
+          setView('admin-dash');
+      } else {
+          setView('login');
+      }
   };
 
   if (loading) return <div className="h-screen flex items-center justify-center"><LoadingSpinner /></div>;
@@ -114,17 +126,22 @@ export default function App() {
           <div onClick={goHome} className="flex items-center space-x-2 cursor-pointer font-bold text-xl tracking-tight">
              <Activity className="text-green-400" /> <span>ZBSMCric<span className="text-green-400">.Live</span></span>
           </div>
-          <div className="flex space-x-4">
-             {(view === 'admin-dash' || view.startsWith('admin-')) && <button onClick={() => setView('admin-dash')} className="text-xs font-bold bg-green-600 px-3 py-1.5 rounded-full">ADMIN DASH</button>}
-             <button onClick={() => view === 'admin-login' ? setView('home') : setView('admin-login')}>
-                {view.startsWith('admin') ? <Shield className="w-5 h-5 text-green-400" /> : <Lock className="w-5 h-5" />}
+          <div className="flex space-x-4 items-center">
+             {(user && !user.isAnonymous) && (
+                 <button onClick={() => setView('admin-dash')} className="text-xs font-bold bg-green-600 px-3 py-1.5 rounded-full hover:bg-green-700 transition">
+                     ADMIN DASH
+                 </button>
+             )}
+             <button onClick={handleLoginClick} className="p-1 rounded-full hover:bg-gray-800 transition">
+                {user && !user.isAnonymous ? <Shield className="w-5 h-5 text-green-400" /> : <Lock className="w-5 h-5 text-gray-400" />}
              </button>
           </div>
         </div>
       </nav>
 
       <div className="max-w-5xl mx-auto p-4">
-        <Suspense fallback={<div className="p-4 text-center">Loading Component...</div>}>
+        <Suspense fallback={<div className="p-10 text-center text-gray-500">Loading...</div>}>
+            
             {view === 'home' && (
                 <HomeView 
                     matches={matches} 
@@ -135,15 +152,11 @@ export default function App() {
                 />
             )}
 
-            {view === 'admin-login' && (
-            <div className="flex flex-col items-center justify-center pt-20">
-                <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">
-                    <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"><Lock className="w-8 h-8 text-green-600" /></div>
-                    <h2 className="text-xl font-bold mb-4">Scorer Login</h2>
-                    <input type="password" value={adminPin} onChange={e => setAdminPin(e.target.value)} placeholder="Type Your Pass" className="w-full p-3 border rounded-lg text-center text-xl tracking-widest mb-4" />
-                    <button onClick={handleAdminLogin} className="w-full bg-black text-white py-3 rounded-lg font-bold">Access Dashboard</button>
-                </div>
-            </div>
+            {view === 'login' && (
+                <LoginView 
+                    onLoginSuccess={() => setView('admin-dash')} 
+                    onCancel={() => setView('home')} 
+                />
             )}
 
             {view === 'admin-dash' && (
@@ -156,7 +169,7 @@ export default function App() {
                     setSelectedTournament={setSelectedTournament} 
                 />
             )}
-
+            
             {view === 'admin-score' && currentMatch && (
                 <ScoringView currentMatch={currentMatch} teams={teams} setView={setView} />
             )}
@@ -172,11 +185,20 @@ export default function App() {
                     teams={teams} 
                     setView={setView} 
                     setCurrentMatch={setCurrentMatch}
+                    setSelectedPlayer={setSelectedPlayer} // <--- THIS IS THE KEY FIX
                 />
             )}
+            
+            {view === 'player-career' && selectedPlayer && (
+                <PlayerCareer 
+                    player={selectedPlayer} 
+                    matches={matches} 
+                    setView={setView} 
+                />
+            )}
+
         </Suspense>
       </div>
-
       <Watermark />
     </div>
   );
