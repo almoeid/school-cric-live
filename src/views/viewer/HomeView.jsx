@@ -142,7 +142,7 @@ export default function HomeView({ matches, tournaments, setCurrentMatch, setSel
       {/* --- FOOTER --- */}
       <div className="mt-12 pt-8 border-t border-gray-200 text-center pb-8">
           <div className="flex items-center justify-center gap-2 mb-4 text-gray-400 font-bold text-xl">
-             <Activity className="w-6 h-6 text-green-500" /> SchoolCric.Live
+             <Activity className="w-6 h-6 text-green-500" /> ZBSMCric.Live
           </div>
           
           <div className="flex flex-wrap justify-center gap-6 mb-6">
