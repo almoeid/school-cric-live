@@ -4,6 +4,7 @@ import { Play, Trophy, Medal, RotateCcw, ArrowRight, ArrowLeftRight, UserCheck, 
 import { formatOvers, calculateRunRate, calculateMOM } from '../../utils/helpers';
 import { db, APP_ID } from '../../config/firebase';
 import Modal from '../../components/Modal';
+import LiveBadge from '../../components/LiveBadge'; // Ensure LiveBadge is imported
 
 export default function ScoringView({ currentMatch, teams, setView }) {
   const [modalState, setModalState] = useState({ type: null, data: null });
@@ -391,17 +392,42 @@ export default function ScoringView({ currentMatch, teams, setView }) {
 
   const confirmWide = async (extraRuns) => { try { await processScoreUpdate(extraRuns, 'wide', false, null); setModalState({ type: null }); } catch (err) { alert(err.message); } };
   const confirmNB = async (batRuns) => { try { await processScoreUpdate(batRuns, 'nb', false, null); setModalState({ type: null }); } catch (err) { alert(err.message); } };
-  const confirmBye = async (runs) => { try { await processScoreUpdate(runs, 'bye', false, null); setModalState({ type: null }); } catch (err) { alert(err.message); } };
-  const confirmLegBye = async (runs) => { try { await processScoreUpdate(runs, 'legbye', false, null); setModalState({ type: null }); } catch (err) { alert(err.message); } };
   
+  // FIX: SMART CHECK FOR BYES - Only close modal if over isn't finished
+  const confirmBye = async (runs) => { 
+      try { 
+          // Check if adding this legal ball finishes the over
+          const nextLegalBalls = Number(currentMatch.legalBalls || 0) + 1;
+          const isOverFinishing = nextLegalBalls > 0 && nextLegalBalls % 6 === 0;
+          
+          await processScoreUpdate(runs, 'bye', false, null); 
+          // Only close modal if the over is NOT finishing (so nextBowler modal can show)
+          if (!isOverFinishing) setModalState({ type: null }); 
+      } catch (err) { alert(err.message); } 
+  };
+  
+  // FIX: SMART CHECK FOR LEGBYES
+  const confirmLegBye = async (runs) => { 
+      try { 
+          const nextLegalBalls = Number(currentMatch.legalBalls || 0) + 1;
+          const isOverFinishing = nextLegalBalls > 0 && nextLegalBalls % 6 === 0;
+          
+          await processScoreUpdate(runs, 'legbye', false, null); 
+          if (!isOverFinishing) setModalState({ type: null }); 
+      } catch (err) { alert(err.message); } 
+  };
+  
+  // FIX: REMOVED setModalState(null) HERE so newBatsman modal can open
   const confirmCatcher = async (fielderName) => {
       await processScoreUpdate(0, 'legal', true, { type: 'Caught', who: 'striker', fielder: fielderName });
+      // IMPORTANT: DO NOT setModalState({type: null}) here, let processScoreUpdate transition state
   };
 
   const handleWicketClick = (type) => {
       if (type === 'Caught') {
           setModalState({ type: 'selectFielder', data: { dismissalType: type } });
       } else { 
+          // Do NOT close modal immediately, wait for processScoreUpdate to trigger newBatsman
           processScoreUpdate(0, 'legal', true, { type: type, who: 'striker' });
       }
   };
@@ -430,18 +456,29 @@ export default function ScoringView({ currentMatch, teams, setView }) {
   return (
     <div className="pb-20">
        <div className="bg-gray-900 text-white p-4 rounded-xl shadow-lg mb-4 sticky top-20 z-30 relative">
+         {/* SHARE BUTTON MOVED TO TOP RIGHT (ABSOLUTE) to fix overlap */}
          <div className="flex justify-between items-start mb-2">
+
              <div className="text-xs font-bold bg-red-600 px-2 py-1 rounded animate-pulse">LIVE</div>
-             {/* FIXED: Share Button now in header top row to avoid overlap */}
-             <button onClick={shareMatch} className="p-1 bg-white/10 rounded-full hover:bg-white/20 transition-colors" title="Share Match Link"><Share2 className="w-4 h-4 text-white" /></button>
+             {/* ADDED LIVE BADGE BACK */}
+             <button 
+               onClick={shareMatch}
+               className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors"
+               title="Share Match"
+             >
+                 {copied ? <Check className="w-5 h-5 text-green-400" /> : <Share2 className="w-5 h-5 text-white" />}
+             </button>
          </div>
 
-         <div className="flex justify-between items-end">
+         <div className="flex justify-between items-end pr-10"> {/* Added Padding Right to prevent text touching button */}
             <div><div className="text-4xl font-bold">{currentMatch.score}/{currentMatch.wickets}</div><div className="text-gray-400 text-sm mt-1">Overs: {formatOvers(currentMatch.legalBalls)} / {currentMatch.totalOvers}</div></div>
-            <div className="text-right">
-               <div className="text-yellow-400 font-bold text-lg leading-tight">{currentMatch.battingTeam}</div>
-               <div className="text-xs text-gray-500">CRR: {calculateRunRate(currentMatch.score, currentMatch.legalBalls)}</div>
-               {currentMatch.currentInnings === 2 && (<div className="text-sm font-bold text-green-400 mt-1">Need {currentMatch.target - currentMatch.score} off {(currentMatch.totalOvers * 6) - currentMatch.legalBalls} balls</div>)}
+            <div className="text-right"><div className="text-yellow-400 font-bold text-lg leading-tight">{currentMatch.battingTeam}</div><div className="text-xs text-gray-500">CRR: {calculateRunRate(currentMatch.score, currentMatch.legalBalls)}</div>
+               {/* RESTORED: Need X runs off Y balls */}
+               {currentMatch.currentInnings === 2 && (
+                 <div className="text-sm font-bold text-green-400 mt-1">
+                   Need {currentMatch.target - currentMatch.score} off {(currentMatch.totalOvers * 6) - currentMatch.legalBalls} balls
+                 </div>
+               )}
             </div>
          </div>
          {copied && <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded shadow">Link Copied!</div>}
@@ -467,12 +504,15 @@ export default function ScoringView({ currentMatch, teams, setView }) {
            <button onClick={undoLastAction} className="flex flex-col items-center justify-center p-2 bg-red-50 text-red-600 rounded-lg border border-red-200 font-bold text-xs"><Undo2 className="w-4 h-4 mb-1" /> Undo Ball</button>
        </div>
 
+       {/* UPDATED GRID WITH BYE & LEG BYE */}
        <div className="grid grid-cols-4 gap-3">
-          {[0, 1, 2, 3, 4, 6].map(run => (<button key={run} onClick={() => handleBallEvent(run, 'legal')} disabled={isProcessing} className={`h-16 text-2xl font-bold rounded-xl shadow-sm border-b-4 ${run === 4 ? 'bg-blue-500 text-white border-blue-700' : run === 6 ? 'bg-purple-600 text-white border-purple-800' : 'bg-white text-gray-800 border-gray-200'}`}>{run}</button>))}
+          {[0, 1, 2, 3, 4, 6].map(run => (<button key={run} onClick={() => handleBallEvent(run, 'legal')} disabled={isProcessing} className={`h-16 text-2xl font-bold rounded-xl shadow-sm border-b-4 ${run === 4 ? 'bg-blue-500 text-white border-blue-700' : run === 6 ? 'bg-purple-600 text-white border-purple-800' : 'bg-white text-gray-800 border-gray-200'} ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}>{run}</button>))}
           <button onClick={() => handleBallEvent(0, 'wide')} disabled={isProcessing} className="h-16 bg-orange-100 text-orange-800 font-bold rounded-xl border-b-4 border-orange-200">WD</button>
           <button onClick={() => handleBallEvent(0, 'nb')} disabled={isProcessing} className="h-16 bg-orange-100 text-orange-800 font-bold rounded-xl border-b-4 border-orange-200">NB</button>
+          {/* NEW BUTTONS */}
           <button onClick={() => handleBallEvent(0, 'bye')} disabled={isProcessing} className="h-16 bg-gray-200 text-gray-700 font-bold rounded-xl border-b-4 border-gray-300">B</button>
           <button onClick={() => handleBallEvent(0, 'legbye')} disabled={isProcessing} className="h-16 bg-gray-200 text-gray-700 font-bold rounded-xl border-b-4 border-gray-300">LB</button>
+          {/* WICKET SPANS 2 COLUMNS NOW */}
           <button onClick={() => handleBallEvent(0, 'legal', true)} disabled={isProcessing} className="col-span-2 h-16 bg-red-600 text-white font-bold rounded-xl text-xl shadow-lg">OUT / WICKET</button>
        </div>
        

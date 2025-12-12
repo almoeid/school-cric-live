@@ -15,17 +15,19 @@ const ScoringView = React.lazy(() => import('./views/viewer/ScoringView'));
 const TournamentDetails = React.lazy(() => import('./views/viewer/TournamentDetails'));
 const LoginView = React.lazy(() => import('./views/auth/Login')); 
 const PlayerCareer = React.lazy(() => import('./views/viewer/PlayerCareer'));
+const RulesView = React.lazy(() => import('./views/viewer/RulesView'));
+const AboutView = React.lazy(() => import('./views/viewer/AboutView'));
+// NEW: Import Gallery View
+const GalleryView = React.lazy(() => import('./views/viewer/GalleryView'));
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [view, setView] = useState('home'); 
   
-  // Data State
   const [matches, setMatches] = useState([]);
   const [teams, setTeams] = useState([]);
   const [tournaments, setTournaments] = useState([]);
   
-  // Selection State
   const [currentMatch, setCurrentMatch] = useState(null);
   const [selectedTournament, setSelectedTournament] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null); 
@@ -77,6 +79,27 @@ export default function App() {
 
   // --- 3. ROUTING LOGIC ---
   useEffect(() => {
+      // 1. Check Pathname for static pages (/rules, /aboutus, /login)
+      const path = window.location.pathname;
+      if (path === '/rules') {
+          setView('rules');
+          return;
+      }
+      if (path === '/aboutus' || path === '/about') { // Updated to handle both /aboutus and /about
+          setView('about');
+          return;
+      }
+      // NEW: Gallery Route
+      if (path === '/gallery') {
+          setView('gallery');
+          return;
+      }
+      if (path === '/login') {
+          setView('login');
+          return;
+      }
+
+      // 2. Check Query Params for dynamic content
       if (matches.length === 0 && tournaments.length === 0) return;
 
       const params = new URLSearchParams(window.location.search);
@@ -106,7 +129,7 @@ export default function App() {
       setCurrentMatch(null);
       setSelectedTournament(null);
       setSelectedPlayer(null);
-      window.history.pushState({}, '', window.location.pathname);
+      window.history.pushState({}, '', '/');
   };
 
   const handleLoginClick = () => {
@@ -152,6 +175,12 @@ export default function App() {
                 />
             )}
 
+            {/* INFO PAGES */}
+            {view === 'rules' && <RulesView setView={setView} />}
+            {view === 'about' && <AboutView setView={setView} />}
+            {/* NEW VIEW */}
+            {view === 'gallery' && <GalleryView setView={setView} />}
+
             {view === 'login' && (
                 <LoginView 
                     onLoginSuccess={() => setView('admin-dash')} 
@@ -185,7 +214,7 @@ export default function App() {
                     teams={teams} 
                     setView={setView} 
                     setCurrentMatch={setCurrentMatch}
-                    setSelectedPlayer={setSelectedPlayer} // <--- THIS IS THE KEY FIX
+                    setSelectedPlayer={setSelectedPlayer} 
                 />
             )}
             

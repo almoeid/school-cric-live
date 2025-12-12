@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Clock, Trophy, ChevronRight, Activity } from 'lucide-react'; // Changed ChevronDown to ChevronRight
+import { Calendar, Clock, Trophy, ChevronRight, Activity, BookOpen, Info, Heart, Image as ImageIcon } from 'lucide-react';
 import LiveBadge from '../../components/LiveBadge';
 import TeamLogo from '../../components/TeamLogo';
 import { formatOvers } from '../../utils/helpers';
@@ -8,7 +8,6 @@ export default function HomeView({ matches, tournaments, setCurrentMatch, setSel
   
   const liveMatches = matches.filter(m => m.status === 'Live');
   const scheduledMatches = matches.filter(m => m.status === 'Scheduled');
-  // Sort completed matches by newest first
   const completedMatches = matches
     .filter(m => m.status === 'Completed' || m.status === 'Concluding')
     .sort((a, b) => {
@@ -17,7 +16,6 @@ export default function HomeView({ matches, tournaments, setCurrentMatch, setSel
         return dateB - dateA;
     });
 
-  // Helper to get date string safely
   const getDateString = (timestamp) => {
       if (!timestamp) return '';
       const date = timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp);
@@ -26,6 +24,7 @@ export default function HomeView({ matches, tournaments, setCurrentMatch, setSel
 
   return (
     <div className="space-y-8">
+      
       {/* LIVE MATCHES */}
       {liveMatches.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -95,7 +94,7 @@ export default function HomeView({ matches, tournaments, setCurrentMatch, setSel
        </div>
       </div>
 
-      {/* RECENT RESULTS (UPDATED) */}
+      {/* RECENT RESULTS */}
       <div>
         <h3 className="font-bold text-gray-800 mb-3">Recent Results</h3>
         <div className="space-y-2">
@@ -108,30 +107,19 @@ export default function HomeView({ matches, tournaments, setCurrentMatch, setSel
                         onClick={() => { setCurrentMatch(m); setView('match'); }} 
                         className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-2 cursor-pointer hover:border-blue-300 transition-all group"
                     >
-                        {/* Context Header (Tournament or Friendly) */}
                         <div className="flex justify-between items-center border-b border-gray-50 pb-2 mb-1">
                             <div className="flex items-center gap-2">
                                 {tourney ? (
                                     <>
-                                        {tourney.logo ? (
-                                            <img src={tourney.logo} alt="T" className="w-4 h-4 rounded-full object-cover" />
-                                        ) : (
-                                            <Trophy className="w-3 h-3 text-blue-500" />
-                                        )}
-                                        <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-                                            {tourney.name}
-                                        </span>
+                                        {tourney.logo ? <img src={tourney.logo} alt="T" className="w-4 h-4 rounded-full object-cover" /> : <Trophy className="w-3 h-3 text-blue-500" />}
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{tourney.name}</span>
                                     </>
                                 ) : (
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-                                        Friendly Match
-                                    </span>
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Friendly Match</span>
                                 )}
                             </div>
                             <span className="text-[10px] text-gray-400">{getDateString(m.timestamp)}</span>
                         </div>
-
-                        {/* Match Info */}
                         <div className="flex justify-between items-center">
                             <div>
                                 <div className="font-bold text-gray-800 text-sm flex items-center gap-2">
@@ -139,9 +127,7 @@ export default function HomeView({ matches, tournaments, setCurrentMatch, setSel
                                     <span className="text-xs text-gray-300">vs</span>
                                     <span className={m.score <= m.target ? "text-black" : "text-gray-600"}>{m.teamB}</span>
                                 </div>
-                                <div className="text-xs font-medium text-green-600 mt-1">
-                                    {m.result || 'Match Ended'}
-                                </div>
+                                <div className="text-xs font-medium text-green-600 mt-1">{m.result || 'Match Ended'}</div>
                             </div>
                             <div className="bg-gray-50 p-1.5 rounded-full group-hover:bg-blue-50 transition-colors">
                                 <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500" />
@@ -152,6 +138,31 @@ export default function HomeView({ matches, tournaments, setCurrentMatch, setSel
             })}
         </div>
       </div>
+
+      {/* --- FOOTER --- */}
+      <div className="mt-12 pt-8 border-t border-gray-200 text-center pb-8">
+          <div className="flex items-center justify-center gap-2 mb-4 text-gray-400 font-bold text-xl">
+             <Activity className="w-6 h-6 text-green-500" /> SchoolCric.Live
+          </div>
+          
+          <div className="flex flex-wrap justify-center gap-6 mb-6">
+              <button onClick={() => setView('rules')} className="text-sm text-gray-600 hover:text-blue-600 font-medium flex items-center gap-1">
+                  <BookOpen className="w-4 h-4" /> Rules
+              </button>
+              {/* NEW: GALLERY BUTTON */}
+              <button onClick={() => setView('gallery')} className="text-sm text-gray-600 hover:text-purple-600 font-medium flex items-center gap-1">
+                  <ImageIcon className="w-4 h-4" /> Gallery
+              </button>
+              <button onClick={() => setView('about')} className="text-sm text-gray-600 hover:text-blue-600 font-medium flex items-center gap-1">
+                  <Info className="w-4 h-4" /> About Us
+              </button>
+          </div>
+
+          <p className="text-xs text-gray-400">
+              © 2025 ZBSM Cricket. Made with <Heart className="w-3 h-3 inline text-red-400 mx-0.5" /> for the game.
+          </p>
+      </div>
+
     </div>
   );
 }

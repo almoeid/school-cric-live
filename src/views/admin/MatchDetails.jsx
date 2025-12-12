@@ -1,8 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 // Imports necessary icons
-import { Mic, Activity, Circle, Share2, Check, TrendingUp, User, Crown, Award } from 'lucide-react'; 
+import { Mic, Activity, Circle, Share2, Check, TrendingUp, User, Crown, Award, Eye } from 'lucide-react'; 
 // --- RECHARTS IMPORTS ---
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+
+// --- FIREBASE IMPORTS ---
+import { getFirestore, doc, updateDoc, onSnapshot } from "firebase/firestore";
+
+// --- CUSTOM HOOK ---
+// Ensure this path matches where you saved the hook file
+import useLiveViewers from '../../hooks/useLiveViewers'; 
 
 import LiveBadge from '../../components/LiveBadge';
 import TeamLogo from '../../components/TeamLogo';
@@ -12,10 +19,65 @@ import { formatOvers, calculateRunRate } from '../../utils/helpers';
 export default function MatchDetails({ currentMatch, setView }) {
   const [activeTab, setActiveTab] = useState('scorecard');
   const [copied, setCopied] = useState(false);
+  const [storedViews, setStoredViews] = useState(currentMatch?.views || 0);
+
+  // --- USE THE LIVE HOOK ---
+  const liveCount = useLiveViewers(currentMatch?.id);
+
+  // --- SYNC & PERSIST VIEWS ---
+  useEffect(() => {
+    if (!currentMatch?.id) return;
+
+    // 1. Listen to the document in real-time to get the latest 'views' from Firestore
+    // This ensures we always have the true "Total Views" even if this client refreshes.
+    const db = getFirestore();
+    const matchRef = doc(db, "matches", currentMatch.id);
+    
+    const unsubscribe = onSnapshot(matchRef, (docSnap) => {
+        if (docSnap.exists()) {
+            setStoredViews(docSnap.data().views || 0);
+        }
+    });
+
+    return () => unsubscribe();
+  }, [currentMatch?.id]);
+
+  useEffect(() => {
+    if (!currentMatch?.id || !liveCount) return;
+
+    // 2. If the current LIVE count is higher than what Firestore has, update Firestore immediately.
+    // This captures the "Peak" viewership.
+    if (liveCount > storedViews) {
+      const db = getFirestore();
+      const matchRef = doc(db, "matches", currentMatch.id);
+      
+      // We update the local state immediately for UI responsiveness...
+      setStoredViews(liveCount);
+      
+      // ...and persist to DB
+      updateDoc(matchRef, { 
+        views: liveCount 
+      }).catch(err => console.error("Error syncing peak views:", err));
+    }
+  }, [liveCount, storedViews, currentMatch?.id]);
+
 
   if (!currentMatch) return null;
 
+  // --- VIEW COUNT DISPLAY LOGIC ---
+  // If Live: Show the higher of (Realtime Count vs Stored Peak) to avoid flickering down
+  // If Completed: Show the Stored Peak from Firestore
+  const displayViews = currentMatch.status === 'Live' ? Math.max(liveCount, storedViews) : storedViews;
+  const viewLabel = currentMatch.status === 'Live' ? 'watching now' : 'total views';
+  
   // --- CALCULATIONS & HELPERS ---
+
+  const formatViewCount = (num) => {
+    if (!num) return '0';
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+    return num.toString();
+  };
 
   // 1. Partnership 
   const getPartnership = () => {
@@ -98,10 +160,12 @@ export default function MatchDetails({ currentMatch, setView }) {
           }
       });
 
+      // Add any remaining partial over
       if (legalBallsInOver > 0 || runsInOver > 0 || wicketsInOver > 0) {
            oversData.push({ over: currentOver, runs: runsInOver, wickets: wicketsInOver, partial: true });
       }
     
+      // Fill remaining overs up to totalOvers
       const totalOvers = parseInt(currentMatch.totalOvers || 20);
       const playedOvers = oversData.length;
       
@@ -234,30 +298,46 @@ export default function MatchDetails({ currentMatch, setView }) {
     <div className="space-y-6 pb-20">
       <div id="printable-area" className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
         <div className="bg-gray-900 text-white p-4 md:p-6 relative">
+           
+           {/* Share Button (Mobile) */}
            <button onClick={shareMatch} className="md:hidden absolute top-4 right-4 p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors z-10">
                {copied ? <Check className="w-4 h-4 text-green-400" /> : <Share2 className="w-4 h-4 text-white" />}
            </button>
            
-           <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 pt-2 md:pt-0">
+           {/* Header Content */}
+           <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-2 pt-4 md:pt-0 relative">
               <div className="flex items-center gap-3 w-full md:w-auto justify-center md:justify-start">
                  <TeamLogo name={currentMatch.teamA} color={currentMatch.teamAColor} logo={currentMatch.teamALogo} size="sm" />
                  <span className="font-bold opacity-90 text-lg md:text-xl tracking-wide truncate">{currentMatch.teamA}</span>
               </div>
-              <div className="order-first md:order-none scale-100">
-                  {currentMatch.status === 'Live' ? <LiveBadge /> : <div className="text-xs font-bold bg-white/20 px-3 py-1 rounded-full uppercase tracking-wider">COMPLETED</div>}
-              </div>
-              <div className="flex items-center justify-center md:justify-end w-full md:w-auto gap-4">
+              
+              <div className="flex items-center justify-center md:justify-end w-full md:w-auto gap-4 pt-4 md:pt-0">
                   <div className="flex items-center gap-3 flex-row-reverse md:flex-row">
                      <span className="font-bold opacity-90 text-lg md:text-xl tracking-wide truncate">{currentMatch.teamB}</span>
                      <TeamLogo name={currentMatch.teamB} color={currentMatch.teamBColor} logo={currentMatch.teamBLogo} size="sm" />
                   </div>
+                  {/* Desktop Share Button */}
                   <button onClick={shareMatch} className="hidden md:flex items-center justify-center p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors ml-2">
                     {copied ? <Check className="w-5 h-5 text-green-400" /> : <Share2 className="w-5 h-5 text-white" />}
                   </button>
               </div>
            </div>
            
-           <div className="text-center mb-6">
+           {/* Score & Stats & Badges (All Centered Together) */}
+           <div className="text-center mb-6 pt-4 md:pt-8"> 
+              
+              <div className="flex flex-col items-center justify-center gap-2 mb-3">
+                  {/* Views Badge */}
+                  <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium backdrop-blur-sm border transition-colors ${currentMatch.status === 'Live' ? 'bg-red-500/20 border-red-500/30 text-red-100' : 'bg-white/10 border-white/10 text-gray-200'}`}>
+                      <Eye className={`w-3 h-3 ${currentMatch.status === 'Live' ? 'text-red-400 animate-pulse' : 'text-blue-400'}`} />
+                      <span>{formatViewCount(displayViews)} {viewLabel}</span>
+                  </div>
+                  {/* Status Badge */}
+                  <div className="transform scale-90 md:scale-100">
+                      {currentMatch.status === 'Live' ? <LiveBadge /> : <div className="text-xs font-bold bg-white/20 px-3 py-1 rounded-full uppercase tracking-wider">COMPLETED</div>}
+                  </div>
+              </div>
+
               <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-2">{currentMatch.score}/{currentMatch.wickets}</h1>
               
               {(currentMatch.status === 'Live') && (
@@ -289,7 +369,6 @@ export default function MatchDetails({ currentMatch, setView }) {
                  currentMatch.currentInnings === 2 && (
                     <div className="mt-6 flex flex-col items-center">
                         <div className="text-white-500 font-bold text-sm uppercase tracking-widest mb-1">Target: {currentMatch.target}</div>
-                        {/* UPDATED: Added Team Name to Requirement Equation */}
                         <div className="text-green-400 font-bold animate-pulse text-lg md:text-xl">
                             {currentMatch.battingTeam} Need {currentMatch.target - currentMatch.score} off {(currentMatch.totalOvers * 6) - currentMatch.legalBalls} balls
                         </div>
@@ -298,10 +377,10 @@ export default function MatchDetails({ currentMatch, setView }) {
               )}
            </div>
 
+           {/* Mini-Scorecard */}
            {(currentMatch.status === 'Live' || currentMatch.status === 'Concluding') && (
                <div className="border-t border-gray-800 pt-4 mt-4 space-y-4">
                    <div>
-                       {/* UPDATED: Added Team Name to Batting Header */}
                        <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">{currentMatch.battingTeam} Batting</h4>
                        <div className="grid grid-cols-12 gap-1 md:gap-2 text-xs md:text-sm font-medium text-gray-300 border-b border-gray-800 pb-2 mb-2">
                             <div className="col-span-5">Batter</div><div className="col-span-2 text-right">R</div><div className="col-span-2 text-right">B</div><div className="col-span-1 text-right">4s</div><div className="col-span-1 text-right">6s</div><div className="col-span-1 text-right">SR</div>
@@ -314,7 +393,7 @@ export default function MatchDetails({ currentMatch, setView }) {
                        )}
                        {currentMatch.nonStriker && (
                            <div className="grid grid-cols-12 gap-1 md:gap-2 text-xs md:text-sm items-center">
-                               <div className="col-span-5 text-gray-300 truncate">{currentMatch.nonStriker}</div>
+                               <div className="col-span-5 text-gray-300 truncate">{nonStrikerStats.name || currentMatch.nonStriker}</div>
                                <div className="col-span-2 text-right font-bold">{nonStrikerStats.runs}</div><div className="col-span-2 text-right">{nonStrikerStats.balls}</div><div className="col-span-1 text-right text-gray-500">{nonStrikerStats.fours}</div><div className="col-span-1 text-right text-gray-500">{nonStrikerStats.sixes}</div><div className="col-span-1 text-right text-gray-500">{nonStrikerStats.sr}</div>
                            </div>
                        )}
