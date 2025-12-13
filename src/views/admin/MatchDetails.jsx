@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 // Imports
 import { Mic, Activity, Circle, Share2, Check, TrendingUp, User, Crown, Award, Eye, Flame, Heart, HandMetal, ThumbsUp, Trophy, Sparkles, Target } from 'lucide-react'; 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-// ADDED 'increment' to imports for accurate view counting
-import { getFirestore, doc, updateDoc, onSnapshot, increment } from "firebase/firestore";
+// FIX: Added 'setDoc' to imports to fix the "No document" crash
+import { getFirestore, doc, onSnapshot, increment, setDoc } from "firebase/firestore";
 
 // --- CUSTOM HOOKS & COMPONENTS ---
 import useLiveViewers from '../../hooks/useLiveViewers'; 
@@ -27,42 +27,36 @@ export default function MatchDetails({ currentMatch, setView }) {
   // Ref to ensure we only count the view once per session
   const viewCounted = useRef(false);
 
-  // --- SYNC VIEWS (ACCURATE HIT COUNTER) ---
-// --- SYNC VIEWS (HYBRID: HITS + PEAK) ---
-// --- SYNC VIEWS (SAFE MODE: HITS + PEAK) ---
+  // --- SYNC VIEWS (FORCE FIX: Uses setDoc to create missing counters) ---
   useEffect(() => {
     if (!currentMatch?.id) return;
     
     const db = getFirestore();
     const matchRef = doc(db, "matches", currentMatch.id);
 
-    // 1. Listen for real-time updates (Read Only)
+    // 1. Listen for updates
     const unsubscribe = onSnapshot(matchRef, (docSnap) => {
         if (docSnap.exists()) {
             setStoredViews(docSnap.data().views || 0);
         }
-    }, (error) => {
-        console.log("View listener warning:", error.message);
     });
 
-    // 2. Safely Update View Count (Write)
+    // 2. Safely Update Views (Using setDoc + merge)
     const updateViews = async () => {
         try {
-            // Hit Counter: Only runs once per session
+            // Hit Counter: Runs once per session
             if (!viewCounted.current) {
                 viewCounted.current = true;
-                // Use increment(1) for accurate counting
-                await updateDoc(matchRef, { views: increment(1) });
+                // 'merge: true' creates the doc if it's missing, preventing the crash!
+                await setDoc(matchRef, { views: increment(1) }, { merge: true });
             }
 
-            // Peak Sync: If Live > Total, force update
+            // Peak Sync: If Live > Total, force update so Total is never less than Live
             if (liveCount > storedViews) {
-                await updateDoc(matchRef, { views: liveCount });
+                await setDoc(matchRef, { views: liveCount }, { merge: true });
             }
         } catch (err) {
-            // If the document doesn't exist (e.g. deleted match), this catches the error
-            // so the app doesn't crash.
-            console.warn("Could not update view count (Match may be deleted):", err.message);
+            console.error("View count failed:", err);
         }
     };
 
@@ -619,7 +613,7 @@ export default function MatchDetails({ currentMatch, setView }) {
                         battingStats={currentMatch.innings1.battingStats || {}} 
                         bowlingStats={currentMatch.innings1.bowlingStats || {}} 
                     />
-                    {/* FOW SECTION REMOVED */}
+                    {/* FOW REMOVED */}
                  </>
              )}
              <InningsScorecard 
@@ -633,7 +627,7 @@ export default function MatchDetails({ currentMatch, setView }) {
                 matchResult={currentMatch.result} 
                 mom={currentMatch.mom} 
              />
-             {/* FOW SECTION REMOVED */}
+             {/* FOW REMOVED */}
            </div>
         )}
 
