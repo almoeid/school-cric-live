@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-// Imports (Trophy & Sparkles are BACK!)
-import { Mic, Activity, Circle, Share2, Check, TrendingUp, User, Crown, Award, Eye, Flame, Heart, HandMetal, ThumbsUp, Trophy, Sparkles } from 'lucide-react'; 
+// Imports
+import { Mic, Activity, Circle, Share2, Check, TrendingUp, User, Crown, Award, Eye, Flame, Heart, HandMetal, ThumbsUp, Trophy, Sparkles, Target } from 'lucide-react'; 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { getFirestore, doc, updateDoc, onSnapshot } from "firebase/firestore";
 
@@ -113,10 +113,18 @@ export default function MatchDetails({ currentMatch, setView }) {
       return { totalRuns, totalBalls, p1Runs: Math.floor(p1Runs), p2Runs: Math.ceil(p2Runs), p1Percent, p2Percent, strikerName, nonStrikerName };
   };
 
+  // --- CALCULATION HELPERS ---
   const getProjectedScore = () => {
       if (currentMatch.legalBalls === 0) return 0;
       const crr = parseFloat(calculateRunRate(currentMatch.score, currentMatch.legalBalls)); 
       return Math.floor(crr * currentMatch.totalOvers);
+  };
+
+  const getEquation = () => {
+      if(!currentMatch.target) return null;
+      const runsNeeded = currentMatch.target - currentMatch.score;
+      const ballsRemaining = (parseInt(currentMatch.totalOvers) * 6) - parseInt(currentMatch.legalBalls);
+      return { runsNeeded, ballsRemaining };
   };
 
   const getFOW = () => {
@@ -273,6 +281,7 @@ export default function MatchDetails({ currentMatch, setView }) {
 
   const partnershipData = getPartnershipData(); 
   const projected = getProjectedScore();
+  const equation = getEquation(); // Get Equation Data
   const currentFowList = getFOW(); 
   const manhattanData = getManhattanData();
   const recentBalls = getRecentBalls();
@@ -303,7 +312,7 @@ export default function MatchDetails({ currentMatch, setView }) {
                          <TeamLogo name={currentMatch.teamB} color={currentMatch.teamBColor} logo={currentMatch.teamBLogo} size="sm" />
                       </div>
                       
-                      {/* DESKTOP SHARE BUTTON (Inline Flex) */}
+                      {/* DESKTOP SHARE BUTTON */}
                       <button onClick={shareMatch} className="hidden md:flex items-center justify-center p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors ml-2">
                         {copied ? <Check className="w-5 h-5 text-green-400" /> : <Share2 className="w-5 h-5 text-white" />}
                       </button>
@@ -369,27 +378,44 @@ export default function MatchDetails({ currentMatch, setView }) {
                       </div>
                       
                       {/* MOBILE FULL TEAM NAMES (WHO IS BATTING?) + VS */}
-                      <div className="md:hidden grid grid-cols-[1fr_auto_1fr] gap-2 items-center justify-center mt-3 px-1">
-                          {/* Batting Team (Bright + Indicator) */}
-                          <div className="text-right flex items-center justify-end gap-1.5">
+                      <div className="md:hidden flex items-center justify-center gap-3 mt-3 px-1 w-full">
+                          {/* Batting Team */}
+                          <div className="flex items-center justify-end gap-1.5 shrink-0">
                               <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)] shrink-0"></div>
-                              <span className="text-[10px] font-bold text-white uppercase tracking-wide leading-tight truncate">{currentMatch.battingTeam}</span>
+                              <span className="text-[10px] font-bold text-white uppercase tracking-wide leading-tight">{currentMatch.battingTeam}</span>
                           </div>
-                          
-                          {/* VS Middle */}
-                          <div className="text-center text-[10px] font-black text-gray-600 italic">VS</div>
-
-                          {/* Bowling Team (Dim) */}
-                          <div className="text-left flex items-center gap-1.5">
-                              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide leading-tight truncate">{currentMatch.bowlingTeam}</span>
+                          {/* VS */}
+                          <div className="text-center text-[10px] font-black text-gray-600 italic shrink-0">VS</div>
+                          {/* Bowling Team */}
+                          <div className="flex items-center justify-start gap-1.5 shrink-0">
+                              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide leading-tight">{currentMatch.bowlingTeam}</span>
                           </div>
                       </div>
                   </div>
               )}
               
               {(currentMatch.status === 'Live') && (
-                <div className="flex justify-center flex-wrap gap-x-6 gap-y-2 text-xs md:text-sm text-gray-300 mb-6 mt-4 font-medium">
-                    <div className="bg-gray-800/80 border border-gray-700 px-3 py-1.5 rounded-full">Projected: <span className="text-white font-bold">{projected}</span></div>
+                <div className="flex flex-col items-center justify-center gap-2 mb-6 mt-4">
+                    
+                    {/* INNINGS 2: TARGET EQUATION (The Missing Feature - RESTORED) */}
+                    {currentMatch.currentInnings === 2 && equation && (
+                        <div className="animate-in slide-in-from-bottom-2 fade-in duration-700">
+                            <div className="bg-gradient-to-r from-blue-900/60 to-blue-800/60 border border-blue-500/30 px-6 py-2.5 rounded-full flex items-center gap-2 shadow-lg backdrop-blur-md">
+                                <Target className="w-4 h-4 text-yellow-400 animate-pulse" />
+                                <span className="text-blue-100 text-xs md:text-sm font-bold tracking-wide">
+                                    {currentMatch.battingTeam} need <span className="text-yellow-400 text-base md:text-lg">{equation.runsNeeded}</span> runs in <span className="text-white text-base md:text-lg">{equation.ballsRemaining}</span> balls
+                                </span>
+                            </div>
+                            <div className="text-[10px] text-white-500 font-bold uppercase tracking-widest mt-1.5 opacity-100">Target: {currentMatch.target}</div>
+                        </div>
+                    )}
+
+                    {/* INNINGS 1: PROJECTED SCORE (Only shown in 1st innings) */}
+                    {currentMatch.currentInnings === 1 && (
+                        <div className="bg-gray-800/80 border border-gray-700 px-3 py-1.5 rounded-full text-xs md:text-sm text-gray-300 font-medium">
+                            Projected: <span className="text-white font-bold">{projected}</span>
+                        </div>
+                    )}
                 </div>
               )}
 
@@ -401,7 +427,7 @@ export default function MatchDetails({ currentMatch, setView }) {
                   </div>
               )}
               
-              {/* --- ULTIMATE PREMIUM WINNER BANNER (GREEN + TROPHY/SPARKLES) --- */}
+              {/* --- ULTIMATE PREMIUM WINNER BANNER --- */}
               {(currentMatch.status === 'Completed' || currentMatch.status === 'Concluding') && (
                  <div className="mt-6 relative overflow-hidden group rounded-xl max-w-lg mx-auto mb-2 shadow-2xl ring-1 ring-emerald-500/30">
                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer transition-transform"></div>
