@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 // Imports
 import { Mic, Activity, Circle, Share2, Check, TrendingUp, User, Crown, Award, Eye, Flame, Heart, HandMetal, ThumbsUp, Trophy, Sparkles, Target } from 'lucide-react'; 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { getFirestore, doc, updateDoc, onSnapshot } from "firebase/firestore";
+// ADDED 'increment' to imports for accurate view counting
+import { getFirestore, doc, updateDoc, onSnapshot, increment } from "firebase/firestore";
 
 // --- CUSTOM HOOKS & COMPONENTS ---
 import useLiveViewers from '../../hooks/useLiveViewers'; 
@@ -22,32 +23,60 @@ export default function MatchDetails({ currentMatch, setView }) {
   // --- HOOKS ---
   const liveCount = useLiveViewers(currentMatch?.id);
   const { reactions, sendReaction } = useMatchReactions(currentMatch?.id); 
+  
+  // Ref to ensure we only count the view once per session
+  const viewCounted = useRef(false);
 
-  // --- SYNC VIEWS ---
+  // --- SYNC VIEWS (ACCURATE HIT COUNTER) ---
+// --- SYNC VIEWS (HYBRID: HITS + PEAK) ---
+// --- SYNC VIEWS (SAFE MODE: HITS + PEAK) ---
   useEffect(() => {
     if (!currentMatch?.id) return;
+    
     const db = getFirestore();
     const matchRef = doc(db, "matches", currentMatch.id);
-    const unsubscribe = onSnapshot(matchRef, (docSnap) => {
-        if (docSnap.exists()) setStoredViews(docSnap.data().views || 0);
-    });
-    return () => unsubscribe();
-  }, [currentMatch?.id]);
 
-  useEffect(() => {
-    if (!currentMatch?.id || !liveCount) return;
-    if (liveCount > storedViews) {
-      const db = getFirestore();
-      const matchRef = doc(db, "matches", currentMatch.id);
-      setStoredViews(liveCount); 
-      updateDoc(matchRef, { views: liveCount }).catch(err => console.error(err));
-    }
-  }, [liveCount, storedViews, currentMatch?.id]);
+    // 1. Listen for real-time updates (Read Only)
+    const unsubscribe = onSnapshot(matchRef, (docSnap) => {
+        if (docSnap.exists()) {
+            setStoredViews(docSnap.data().views || 0);
+        }
+    }, (error) => {
+        console.log("View listener warning:", error.message);
+    });
+
+    // 2. Safely Update View Count (Write)
+    const updateViews = async () => {
+        try {
+            // Hit Counter: Only runs once per session
+            if (!viewCounted.current) {
+                viewCounted.current = true;
+                // Use increment(1) for accurate counting
+                await updateDoc(matchRef, { views: increment(1) });
+            }
+
+            // Peak Sync: If Live > Total, force update
+            if (liveCount > storedViews) {
+                await updateDoc(matchRef, { views: liveCount });
+            }
+        } catch (err) {
+            // If the document doesn't exist (e.g. deleted match), this catches the error
+            // so the app doesn't crash.
+            console.warn("Could not update view count (Match may be deleted):", err.message);
+        }
+    };
+
+    updateViews();
+
+    return () => unsubscribe();
+  }, [currentMatch?.id, liveCount, storedViews]);
 
   if (!currentMatch) return null;
 
   const isCompleted = currentMatch.status === 'Completed' || currentMatch.status === 'Concluding';
-  const displayViews = currentMatch.status === 'Live' ? Math.max(liveCount, storedViews) : storedViews;
+  
+  // FIX: Display Live Count if Live, otherwise display Total Hits from DB
+  const displayViews = currentMatch.status === 'Live' ? liveCount : (storedViews || 0);
   const viewLabel = currentMatch.status === 'Live' ? 'watching now' : 'total views';
   
   // --- HELPERS ---
@@ -127,20 +156,12 @@ export default function MatchDetails({ currentMatch, setView }) {
       return { runsNeeded, ballsRemaining };
   };
 
-  const getFOW = () => {
-      const timeline = [...(currentMatch.timeline || [])].reverse(); 
-      let wickets = []; let score = 0; let balls = 0;
-      timeline.forEach(ball => {
-          let r = ball.runs;
-          if (ball.type === 'wide' || ball.type === 'nb') r++; 
-          score += r;
-          if (ball.type === 'legal' || ball.type === 'bye' || ball.type === 'legbye') balls++;
-          if (ball.isWicket) {
-              const playerOutName = ball.dismissalInfo?.playerOut || (ball.dismissalInfo?.who === 'striker' ? ball.striker : ball.nonStriker);
-              wickets.push({ score: score, wickets: wickets.length + 1, name: playerOutName, over: formatOvers(balls) });
-          }
-      });
-      return wickets.reverse(); 
+  // --- Calculate Required Run Rate (RRR) ---
+  const getRRR = () => {
+      const eq = getEquation();
+      if (!eq || eq.ballsRemaining <= 0) return '0.00';
+      const rrrVal = (eq.runsNeeded / eq.ballsRemaining) * 6;
+      return rrrVal < 0 ? '0.00' : rrrVal.toFixed(2);
   };
 
   const getManhattanData = () => {
@@ -170,22 +191,6 @@ export default function MatchDetails({ currentMatch, setView }) {
   };
 
   // --- RENDERERS ---
-  const renderFOWSection = (list, teamName) => {
-    if (!list || list.length === 0) return null;
-    return (
-        <div className="mt-6 bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
-            <h3 className="font-bold text-gray-700 text-sm mb-3 uppercase tracking-wider">Fall of Wickets ({teamName})</h3>
-            <div className="flex flex-wrap gap-2">
-                {list.map((w, i) => (
-                    <div key={i} className="text-xs bg-gray-50 px-2 py-1.5 rounded border border-gray-100 flex items-center gap-2">
-                        <span className="font-bold text-red-600">{i + 1}-{w.score}</span> 
-                        <span className="text-gray-500">({w.name || w.batter || 'Unknown'}, {w.over} ov)</span>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-  };
     
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -281,8 +286,8 @@ export default function MatchDetails({ currentMatch, setView }) {
 
   const partnershipData = getPartnershipData(); 
   const projected = getProjectedScore();
-  const equation = getEquation(); // Get Equation Data
-  const currentFowList = getFOW(); 
+  const equation = getEquation(); 
+  const rrr = getRRR(); 
   const manhattanData = getManhattanData();
   const recentBalls = getRecentBalls();
 
@@ -397,16 +402,19 @@ export default function MatchDetails({ currentMatch, setView }) {
               {(currentMatch.status === 'Live') && (
                 <div className="flex flex-col items-center justify-center gap-2 mb-6 mt-4">
                     
-                    {/* INNINGS 2: TARGET EQUATION (The Missing Feature - RESTORED) */}
+                    {/* INNINGS 2: TARGET EQUATION (Narrow Screen Fixed) */}
                     {currentMatch.currentInnings === 2 && equation && (
-                        <div className="animate-in slide-in-from-bottom-2 fade-in duration-700">
-                            <div className="bg-gradient-to-r from-blue-900/60 to-blue-800/60 border border-blue-500/30 px-6 py-2.5 rounded-full flex items-center gap-2 shadow-lg backdrop-blur-md">
-                                <Target className="w-4 h-4 text-yellow-400 animate-pulse" />
-                                <span className="text-blue-100 text-xs md:text-sm font-bold tracking-wide">
-                                    {currentMatch.battingTeam} need <span className="text-yellow-400 text-base md:text-lg">{equation.runsNeeded}</span> runs in <span className="text-white text-base md:text-lg">{equation.ballsRemaining}</span> balls
+                        <div className="animate-in slide-in-from-bottom-2 fade-in duration-700 w-full flex flex-col items-center">
+                            {/* UPDATED: Reduced padding, forced single line, centered, responsive font */}
+                            <div className="bg-gradient-to-r from-blue-900/60 to-blue-800/60 border border-blue-500/30 px-3 py-2 md:px-6 md:py-2.5 rounded-full flex items-center justify-center gap-1.5 md:gap-2 shadow-lg backdrop-blur-md whitespace-nowrap max-w-[95%]">
+                                <Target className="w-3 h-3 md:w-4 md:h-4 text-yellow-400 animate-pulse shrink-0" />
+                                <span className="text-blue-100 text-[10px] xs:text-xs md:text-sm font-bold tracking-wide truncate">
+                                    {currentMatch.battingTeam} need <span className="text-yellow-400 text-sm md:text-lg">{equation.runsNeeded}</span> runs in <span className="text-white text-sm md:text-lg">{equation.ballsRemaining}</span> balls
                                 </span>
                             </div>
-                            <div className="text-[10px] text-white-500 font-bold uppercase tracking-widest mt-1.5 opacity-100">Target: {currentMatch.target}</div>
+                            
+                            {/* FIX: Target is now pure white and bold */}
+                            <div className="text-[10px] text-white font-bold uppercase tracking-widest mt-1.5 opacity-100">Target: {currentMatch.target}</div>
                         </div>
                     )}
 
@@ -423,6 +431,16 @@ export default function MatchDetails({ currentMatch, setView }) {
                   <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-sm font-medium text-gray-400">
                      <span className="bg-gray-800 px-2 py-1 rounded">Overs: {formatOvers(currentMatch.legalBalls)} / {currentMatch.totalOvers}</span>
                      <span className="bg-gray-800 px-2 py-1 rounded">CRR: {calculateRunRate(currentMatch.score, currentMatch.legalBalls)}</span>
+                     
+                     {/* --- RRR BADGE (Shows in 2nd Innings) --- */}
+                     {currentMatch.currentInnings === 2 && (
+                        <span className={`bg-gray-800 px-2 py-1 rounded border border-gray-700 
+                           ${parseFloat(rrr) > 12 ? 'text-red-500 font-bold animate-pulse' : 
+                             parseFloat(rrr) > 9 ? 'text-orange-400 font-bold' : 'text-blue-400'}`}>
+                           RRR: {rrr}
+                        </span>
+                     )}
+                     
                      <span className="text-green-400 bg-gray-800 px-2 py-1 rounded">Extras: {currentMatch.extras || 0}</span>
                   </div>
               )}
@@ -455,7 +473,6 @@ export default function MatchDetails({ currentMatch, setView }) {
            {/* Mini-Scorecard */}
            {(currentMatch.status === 'Live' || currentMatch.status === 'Concluding') && (
                <div className="border-t border-gray-800 pt-4 mt-4 space-y-4">
-                   {/* ... (Existing Mini-Scorecard Content - Same as before) ... */}
                    <div>
                        <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">{currentMatch.battingTeam} Batting</h4>
                        <div className="grid grid-cols-12 gap-1 md:gap-2 text-xs md:text-sm font-medium text-gray-300 border-b border-gray-800 pb-2 mb-2">
@@ -602,7 +619,7 @@ export default function MatchDetails({ currentMatch, setView }) {
                         battingStats={currentMatch.innings1.battingStats || {}} 
                         bowlingStats={currentMatch.innings1.bowlingStats || {}} 
                     />
-                    {renderFOWSection(currentMatch.innings1.fow, currentMatch.innings1.teamName)}
+                    {/* FOW SECTION REMOVED */}
                  </>
              )}
              <InningsScorecard 
@@ -616,7 +633,7 @@ export default function MatchDetails({ currentMatch, setView }) {
                 matchResult={currentMatch.result} 
                 mom={currentMatch.mom} 
              />
-             {renderFOWSection(currentFowList, currentMatch.battingTeam)}
+             {/* FOW SECTION REMOVED */}
            </div>
         )}
 
