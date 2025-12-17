@@ -1,6 +1,20 @@
 import React from 'react';
 
-const InningsScorecard = ({ teamName, score, wickets, overs, extras, battingStats, bowlingStats, matchResult, mom }) => {
+const InningsScorecard = ({ 
+  teamName, 
+  score, 
+  wickets, 
+  overs, 
+  extras, 
+  battingStats, 
+  bowlingStats, 
+  matchResult, 
+  mom,
+  // --- NEW PROPS ---
+  players = [],      // The full list of players for this team
+  matchStatus        // To decide between "Yet to Bat" vs "Did Not Bat"
+}) => {
+  
   // FIX: SORT BY ASSIGNED NUMBER
   const sortedBatters = Object.entries(battingStats || {})
     .map(([name, stats]) => ({ name, ...stats }))
@@ -9,6 +23,20 @@ const InningsScorecard = ({ teamName, score, wickets, overs, extras, battingStat
   const sortedBowlers = Object.entries(bowlingStats || {})
     .map(([name, stats]) => ({ name, ...stats }))
     .sort((a, b) => (a.number || 999) - (b.number || 999));
+
+  // --- NEW LOGIC: Calculate who hasn't batted ---
+  const battedPlayerNames = sortedBatters.map(b => b.name);
+  
+  const yetToBatPlayers = players.filter(p => {
+      const pName = typeof p === 'string' ? p : p.name;
+      // Filter out players who are already in the batting stats
+      return !battedPlayerNames.includes(pName);
+  });
+
+  // Determine label based on match status
+  const dnbLabel = (matchStatus === 'Completed' || matchStatus === 'Concluding') 
+      ? "Did Not Bat" 
+      : "Yet to Bat";
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-6">
@@ -47,6 +75,23 @@ const InningsScorecard = ({ teamName, score, wickets, overs, extras, battingStat
 
       {/* Extras */}
       <div className="p-2 bg-gray-50 border-t border-b border-gray-100 text-xs flex justify-between font-bold text-gray-600"><span>Extras</span><span>{extras || 0}</span></div>
+
+      {/* --- NEW SECTION: YET TO BAT / DID NOT BAT --- */}
+      {yetToBatPlayers.length > 0 && (
+          <div className="px-3 py-2 bg-white border-b border-gray-100 text-xs leading-relaxed">
+              <span className="font-bold text-gray-700 uppercase mr-2">{dnbLabel}:</span>
+              <span className="text-gray-500">
+                  {yetToBatPlayers.map((p, i) => {
+                      const name = typeof p === 'string' ? p : p.name;
+                      return (
+                          <span key={i}>
+                              {name}{i < yetToBatPlayers.length - 1 ? ", " : ""}
+                          </span>
+                      );
+                  })}
+              </span>
+          </div>
+      )}
 
       {/* Bowling */}
       <div className="overflow-x-auto">
