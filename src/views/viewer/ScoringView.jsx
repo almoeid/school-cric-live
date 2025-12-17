@@ -440,6 +440,23 @@ export default function ScoringView({ currentMatch, teams, setView }) {
     setModalState({ type: 'startInnings', data: { ...currentMatch, ...newMatchState, id: currentMatch.id } });
   };
 
+  const getStats = (name, type) => {
+    if (type === 'batting') {
+        const stats = currentMatch.battingStats?.[name] || { runs: 0, balls: 0, fours: 0, sixes: 0 };
+        const sr = stats.balls > 0 ? ((stats.runs / stats.balls) * 100).toFixed(1) : '0.0';
+        return { ...stats, sr };
+    } else {
+        const stats = currentMatch.bowlingStats?.[name] || { overs: 0, runs: 0, wickets: 0, balls: 0 };
+        const eco = stats.balls > 0 ? ((stats.runs / stats.balls) * 6).toFixed(1) : '0.0';
+        const overs = `${Math.floor(stats.balls / 6)}.${stats.balls % 6}`;
+        return { ...stats, eco, overs };
+    }
+  };
+
+  const strikerStats = getStats(striker, 'batting');
+  const nonStrikerStats = getStats(nonStriker, 'batting');
+  const bowlerStats = getStats(bowler, 'bowling');
+
   return (
     <div className="pb-20">
        <div className="bg-gray-900 text-white p-4 rounded-xl shadow-lg mb-4 sticky top-20 z-30 relative">
@@ -461,26 +478,70 @@ export default function ScoringView({ currentMatch, teams, setView }) {
        
        <div className="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-200 relative">
           <button onClick={rotateStrike} className="absolute top-2 right-2 p-2 bg-gray-100 rounded-full hover:bg-gray-200" title="Swap Strike"><ArrowLeftRight className="w-4 h-4 text-gray-600" /></button>
+          
           <div className="flex justify-between items-center mb-2 p-2 bg-green-50 rounded border border-green-100">
-             <div><div className="font-bold text-green-900 flex items-center">{striker} <Play className="w-3 h-3 ml-1 fill-current" /></div><div className="text-xs text-gray-500">{(currentMatch.battingStats?.[striker]?.runs || 0)}</div></div>
+             <div>
+                 <div className="font-bold text-green-900 flex items-center gap-1">
+                     {striker} <Play className="w-3 h-3 ml-1 fill-current" />
+                 </div>
+                 <div className="text-xs text-gray-600 flex gap-2 mt-0.5">
+                     <span className="font-semibold">{strikerStats.runs} ({strikerStats.balls})</span>
+                     <span className="text-gray-400">|</span>
+                     <span>4s: {strikerStats.fours}</span>
+                     <span className="text-gray-400">|</span>
+                     <span>6s: {strikerStats.sixes}</span>
+                     <span className="text-gray-400">|</span>
+                     <span>SR: {strikerStats.sr}</span>
+                 </div>
+             </div>
           </div>
+
           <div className="flex justify-between items-center mb-3 px-2">
-             <div><div className="font-bold text-gray-600">{nonStriker}</div><div className="text-xs text-gray-400">{(currentMatch.battingStats?.[nonStriker]?.runs || 0)}</div></div>
+             <div>
+                 <div className="font-bold text-gray-600">{nonStriker}</div>
+                 <div className="text-xs text-gray-400 flex gap-2 mt-0.5">
+                     <span className="font-semibold">{nonStrikerStats.runs} ({nonStrikerStats.balls})</span>
+                     <span>|</span>
+                     <span>4s: {nonStrikerStats.fours}</span>
+                     <span>|</span>
+                     <span>6s: {nonStrikerStats.sixes}</span>
+                     <span>|</span>
+                     <span>SR: {nonStrikerStats.sr}</span>
+                 </div>
+             </div>
           </div>
+
           <div className="border-t pt-3 flex justify-between items-center">
-             <div><span className="text-xs font-bold text-gray-400 uppercase block">Bowler</span><div className="font-bold text-gray-800">{bowler}</div></div>
-             <div className="text-right"><div className="text-lg font-bold text-gray-800">{(currentMatch.bowlingStats?.[bowler]?.wickets || 0)}-{(currentMatch.bowlingStats?.[bowler]?.runs || 0)}</div></div>
+             <div>
+                 <span className="text-xs font-bold text-gray-400 uppercase block mb-1">Bowler</span>
+                 <div className="font-bold text-gray-800">{bowler}</div>
+                 <div className="text-xs text-gray-500 flex gap-2 mt-0.5">
+                     <span>{bowlerStats.overs}-{bowlerStats.runs}-{bowlerStats.wickets}</span>
+                     <span>|</span>
+                     <span>Eco: {bowlerStats.eco}</span>
+                 </div>
+             </div>
           </div>
        </div>
 
-       <div className="grid grid-cols-3 gap-2 mb-4">
-           <button onClick={() => setModalState({type: 'nextBowler', data: {}})} className="flex flex-col items-center justify-center p-2 bg-blue-50 text-blue-600 rounded-lg border border-blue-200 font-bold text-xs hover:bg-blue-100"><UserCheck className="w-4 h-4 mb-1" /> Change Bowler</button>
-           <button onClick={() => setModalState({type: 'changeBatsmen'})} className="flex flex-col items-center justify-center p-2 bg-purple-50 text-purple-600 rounded-lg border border-purple-200 font-bold text-xs hover:bg-purple-100"><UserMinus className="w-4 h-4 mb-1" /> Change Batter</button>
-           <button onClick={undoLastAction} className="flex flex-col items-center justify-center p-2 bg-red-50 text-red-600 rounded-lg border border-red-200 font-bold text-xs hover:bg-red-100"><Undo2 className="w-4 h-4 mb-1" /> Undo Ball</button>
+       <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2 px-1">
+           <span className="text-xs font-bold text-gray-400 shrink-0">THIS OVER:</span>
+           {currentMatch.timeline?.slice(0, 8).reverse().map((b, i) => (
+               <div key={i} className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${b.isWicket ? 'bg-red-500 text-white' : b.runs === 4 ? 'bg-blue-500 text-white' : b.runs === 6 ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700'}`}>
+                   {b.isWicket ? 'W' : (b.type !== 'legal' && b.type !== 'bye' && b.type !== 'legbye') ? b.type.charAt(0).toUpperCase() : b.runs}
+               </div>
+           ))}
+       </div>
+
+       <div className="grid grid-cols-2 gap-2 mb-4">
+           <button onClick={() => setModalState({type: 'nextBowler', data: {}})} className="flex flex-col items-center justify-center p-3 bg-blue-50 text-blue-600 rounded-lg border border-blue-200 font-bold text-xs hover:bg-blue-100"><UserCheck className="w-4 h-4 mb-1" /> Change Bowler</button>
+           <button onClick={() => setModalState({type: 'changeBatsmen'})} className="flex flex-col items-center justify-center p-3 bg-purple-50 text-purple-600 rounded-lg border border-purple-200 font-bold text-xs hover:bg-purple-100"><UserMinus className="w-4 h-4 mb-1" /> Change Batter</button>
+           <button onClick={undoLastAction} className="flex flex-col items-center justify-center p-3 bg-red-50 text-red-600 rounded-lg border border-red-200 font-bold text-xs hover:bg-red-100"><Undo2 className="w-4 h-4 mb-1" /> Undo Ball</button>
+           <button onClick={() => setModalState({type: 'retireBatsman'})} className="flex flex-col items-center justify-center p-3 bg-gray-100 text-gray-600 rounded-lg border border-gray-200 font-bold text-xs hover:bg-gray-200"><UserCheck className="w-4 h-4 mb-1" /> Retire Batter</button>
        </div>
 
        <div className="grid grid-cols-4 gap-3">
-          {[0, 1, 2, 3, 4, 6].map(run => (<button key={run} onClick={() => handleBallEvent(run, 'legal')} disabled={isProcessing} className={`h-16 text-2xl font-bold rounded-xl shadow-sm border-b-4 ${run === 4 ? 'bg-blue-500 text-white border-blue-700' : run === 6 ? 'bg-purple-600 text-white border-purple-800' : 'bg-white text-gray-800 border-gray-200'}`}>{run}</button>))}
+          {[0, 1, 2, 3, 4, 6].map(run => (<button key={run} onClick={() => handleBallEvent(run, 'legal')} disabled={isProcessing} className={`h-16 text-2xl font-bold rounded-xl shadow-sm border-b-4 ${run === 4 ? 'bg-blue-500 text-white border-blue-700' : run === 6 ? 'bg-purple-600 text-white border-purple-800' : 'bg-white text-gray-800 border-gray-200'} ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}>{run}</button>))}
           <button onClick={() => handleBallEvent(0, 'wide')} disabled={isProcessing} className="h-16 bg-orange-100 text-orange-800 font-bold rounded-xl border-b-4 border-orange-200">WD</button>
           <button onClick={() => handleBallEvent(0, 'nb')} disabled={isProcessing} className="h-16 bg-orange-100 text-orange-800 font-bold rounded-xl border-b-4 border-orange-200">NB</button>
           <button onClick={() => handleBallEvent(0, 'bye')} disabled={isProcessing} className="h-16 bg-gray-200 text-gray-700 font-bold rounded-xl border-b-4 border-gray-300">B</button>
@@ -558,6 +619,26 @@ export default function ScoringView({ currentMatch, teams, setView }) {
                    <select id="newP1" className="w-full p-2 border rounded" defaultValue={striker}><option>Select Striker</option>{getBattingRoster().map((p,i)=><option key={i} value={getPlayerName(p)}>{getPlayerName(p)}</option>)}</select>
                    <select id="newP2" className="w-full p-2 border rounded" defaultValue={nonStriker}><option>Select Non-Striker</option>{getBattingRoster().map((p,i)=><option key={i} value={getPlayerName(p)}>{getPlayerName(p)}</option>)}</select>
                    <button onClick={() => confirmChangeBatsmen(document.getElementById('newP1').value, document.getElementById('newP2').value)} className="w-full bg-purple-600 text-white py-3 rounded font-bold">Update</button>
+               </div>
+           </Modal>
+       )}
+       {modalState.type === 'retireBatsman' && (
+           <Modal title="Retire Batsman" onClose={() => setModalState({type: null})}>
+               <div className="space-y-4">
+                   <p className="text-sm text-gray-500">Who is retiring hurt?</p>
+                   <select id="retireP" className="w-full p-2 border rounded">
+                       <option value={striker}>{striker} (Striker)</option>
+                       <option value={nonStriker}>{nonStriker} (Non-Striker)</option>
+                   </select>
+                   <p className="text-sm text-gray-500">Select Replacement:</p>
+                   <select id="newBatP" className="w-full p-2 border rounded">
+                       <option>Select New Batsman</option>
+                       {getBattingRoster().filter(p => {
+                           const name = getPlayerName(p);
+                           return name !== striker && name !== nonStriker && !isAlreadyOut(p);
+                       }).map((p, i) => <option key={i} value={getPlayerName(p)}>{getPlayerName(p)}</option>)}
+                   </select>
+                   <button onClick={() => confirmRetire(document.getElementById('retireP').value, document.getElementById('newBatP').value)} className="w-full bg-red-600 text-white py-3 rounded font-bold">Confirm Retirement</button>
                </div>
            </Modal>
        )}
