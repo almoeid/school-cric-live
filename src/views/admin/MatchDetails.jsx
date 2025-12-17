@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 // Imports
 import { Mic, Activity, Circle, Share2, Check, TrendingUp, User, Crown, Award, Eye, Flame, Heart, HandMetal, ThumbsUp, Trophy, Sparkles, Target } from 'lucide-react'; 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+// FIX: Added 'setDoc' to imports to fix the "No document" crash
 import { getFirestore, doc, onSnapshot, increment, setDoc } from "firebase/firestore";
 
 // --- CUSTOM HOOKS & COMPONENTS ---
@@ -16,7 +17,6 @@ import { formatOvers, calculateRunRate } from '../../utils/helpers';
 
 export default function MatchDetails({ currentMatch, setView }) {
   const [activeTab, setActiveTab] = useState('scorecard');
-  const [timelineInnings, setTimelineInnings] = useState(2); // Toggle for Timeline (1st vs 2nd)
   const [copied, setCopied] = useState(false);
   const [storedViews, setStoredViews] = useState(currentMatch?.views || 0);
 
@@ -27,7 +27,7 @@ export default function MatchDetails({ currentMatch, setView }) {
   // Ref to ensure we only count the view once per session
   const viewCounted = useRef(false);
 
-  // --- SYNC VIEWS (SAFE MODE) ---
+  // --- SYNC VIEWS (FORCE FIX: Uses setDoc to create missing counters) ---
   useEffect(() => {
     if (!currentMatch?.id) return;
     
@@ -41,7 +41,7 @@ export default function MatchDetails({ currentMatch, setView }) {
         }
     });
 
-    // 2. Safely Update Views
+    // 2. Safely Update Views (Using setDoc + merge)
     const updateViews = async () => {
         try {
             // Hit Counter: Runs once per session
@@ -65,13 +65,6 @@ export default function MatchDetails({ currentMatch, setView }) {
     return () => unsubscribe();
   }, [currentMatch?.id, liveCount, storedViews]);
 
-  // Auto-set the timeline tab to the current innings
-  useEffect(() => {
-      if (currentMatch?.currentInnings) {
-          setTimelineInnings(currentMatch.currentInnings);
-      }
-  }, [currentMatch?.currentInnings]);
-
   if (!currentMatch) return null;
 
   const isCompleted = currentMatch.status === 'Completed' || currentMatch.status === 'Concluding';
@@ -89,6 +82,7 @@ export default function MatchDetails({ currentMatch, setView }) {
     return num.toString();
   };
 
+  // Determine Logos for the Completed Split View
   const getInningsLogos = () => {
       if (!currentMatch?.innings1) return { logo1: '', logo2: '', color1: '', color2: '' };
       
@@ -102,6 +96,7 @@ export default function MatchDetails({ currentMatch, setView }) {
   };
   const { logo1, logo2, color1, color2 } = getInningsLogos();
 
+  // Determine Logos for LIVE View
   const getLiveTeamAssets = () => {
       const isBattingTeamA = currentMatch.battingTeam === currentMatch.teamA;
       return {
@@ -116,13 +111,6 @@ export default function MatchDetails({ currentMatch, setView }) {
   const getRecentBalls = () => {
       if (!currentMatch.timeline) return [];
       return [...currentMatch.timeline].slice(0, 8).reverse();
-  };
-
-  // NEW: Get Team Players Helper (For "Yet to Bat")
-  const getTeamPlayers = (teamName) => {
-      if (teamName === currentMatch.teamA) return currentMatch.teamAPlayers || [];
-      if (teamName === currentMatch.teamB) return currentMatch.teamBPlayers || [];
-      return [];
   };
 
   const getPartnershipData = () => {
@@ -162,33 +150,12 @@ export default function MatchDetails({ currentMatch, setView }) {
       return { runsNeeded, ballsRemaining };
   };
 
+  // --- Calculate Required Run Rate (RRR) ---
   const getRRR = () => {
       const eq = getEquation();
       if (!eq || eq.ballsRemaining <= 0) return '0.00';
       const rrrVal = (eq.runsNeeded / eq.ballsRemaining) * 6;
       return rrrVal < 0 ? '0.00' : rrrVal.toFixed(2);
-  };
-
-  // --- FOW LOGIC (RESTORED) ---
-  const getFOW = () => {
-      const chronologicalTimeline = [...(currentMatch.timeline || [])].reverse();
-      let wickets = []; let score = 0; let balls = 0;
-      chronologicalTimeline.forEach(ball => {
-          let r = ball.runs || 0;
-          if (ball.type === 'wide' || ball.type === 'nb') r += 1; 
-          score += r;
-          if (ball.type === 'legal' || ball.type === 'bye' || ball.type === 'legbye') balls++;
-          if (ball.isWicket) {
-              const playerOutName = ball.dismissalInfo?.playerOut || (ball.dismissalInfo?.who === 'striker' ? ball.striker : ball.nonStriker);
-              wickets.push({ 
-                  score: score, 
-                  wickets: wickets.length + 1, 
-                  name: playerOutName, 
-                  over: formatOvers(balls) 
-              });
-          }
-      });
-      return wickets.reverse(); 
   };
 
   const getManhattanData = () => {
@@ -216,177 +183,121 @@ export default function MatchDetails({ currentMatch, setView }) {
       }
       return oversData;
   };
-  
-  const getLastActionText = (match) => { if (!match.timeline || match.timeline.length === 0) return "Match Started"; const lastBall = match.timeline[0]; let action = ""; if (lastBall.isWicket) action = "WICKET"; else if (lastBall.type === 'wide') action = "WIDE"; else if (lastBall.type === 'nb') action = "NO BALL"; else if (lastBall.runs === 4) action = "FOUR"; else if (lastBall.runs === 6) action = "SIX"; else if (lastBall.runs === 0) action = "DOT"; else action = `${lastBall.runs} Run${lastBall.runs !== 1 ? 's' : ''}`; return `${lastBall.striker} to ${lastBall.bowler}, ${action}`; };
-  const getFormattedTime = () => { if (!currentMatch.timestamp) return "Unknown"; const date = currentMatch.timestamp.seconds ? new Date(currentMatch.timestamp.seconds * 1000) : new Date(currentMatch.timestamp); return date.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }); };
-  const getBallNumber = (index) => { let count = parseInt(currentMatch.legalBalls || 0); for(let i = 0; i < index; i++) { if(currentMatch.timeline[i].type === 'legal') count--; } return formatOvers(count); };
-  const getBatterStats = (name) => { const stats = currentMatch.battingStats?.[name] || { runs: 0, balls: 0, fours: 0, sixes: 0 }; const sr = stats.balls > 0 ? ((stats.runs / stats.balls) * 100).toFixed(0) : 0; return { ...stats, sr }; };
-  const getBowlerStats = (name) => { const stats = currentMatch.bowlingStats?.[name] || { overs: 0, runs: 0, wickets: 0, balls: 0 }; const eco = stats.balls > 0 ? ((stats.runs / stats.balls) * 6).toFixed(1) : 0; const oversDisplay = formatOvers(stats.balls); return { ...stats, eco, oversDisplay }; };
-  const renderPlayerCard = (p, i) => { const player = typeof p === 'string' ? { name: p, role: 'Player', photo: '', isCaptain: false, isWk: false } : p; return ( <div key={i} className="flex items-center gap-3 p-2.5 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors"> <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center shadow-sm"> {player.photo ? <img src={player.photo} alt={player.name} className="w-full h-full object-cover" /> : <User className="w-5 h-5 text-gray-400" />} </div> <div className="flex-1 min-w-0"> <div className="flex items-center gap-1.5"> <span className="font-bold text-gray-800 text-sm truncate">{player.name}</span> {player.isCaptain && <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500 shrink-0" />} {player.isWk && <span className="bg-blue-100 text-blue-700 text-[9px] font-bold px-1 rounded shrink-0">WK</span>} </div> <div className="text-xs text-gray-500 truncate">{player.role || 'Player'}</div> </div> </div> ); };
 
-  // --- RENDER FOW (RESTORED) ---
-  const renderFOWSection = (list, teamName) => {
-    if (!list || list.length === 0) return null;
-    return (
-        <div className="mt-6 bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
-            <h3 className="font-bold text-gray-700 text-sm mb-3 uppercase tracking-wider">Fall of Wickets ({teamName})</h3>
-            <div className="flex flex-wrap gap-2">
-                {list.map((w, i) => (
-                    <div key={i} className="text-xs bg-gray-50 px-2 py-1.5 rounded border border-gray-100 flex items-center gap-2">
-                        <span className="font-bold text-red-600">{w.wickets}-{w.score}</span> 
-                        <span className="text-gray-500">({w.name || w.batter || 'Unknown'}, {w.over} ov)</span>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-  };
-
-  // --- NEW: BEAUTIFUL TIMELINE LOGIC ---
-  const processTimelineForDisplay = () => {
-    // 1. Select Timeline Data
-    let rawTimeline = [];
-    if (timelineInnings === 1) {
-        rawTimeline = currentMatch.innings1?.timeline || []; 
-        if (currentMatch.currentInnings === 1 && (!rawTimeline || rawTimeline.length === 0)) {
-            rawTimeline = currentMatch.timeline || [];
-        }
-    } else {
-        rawTimeline = (currentMatch.currentInnings === 2) ? (currentMatch.timeline || []) : (currentMatch.innings2?.timeline || []);
-    }
-
-    if (!rawTimeline || rawTimeline.length === 0) return [];
-
-    // 2. Sort Oldest -> Newest
-    const sorted = [...rawTimeline].sort((a, b) => {
-        const tA = a.timestamp?.seconds || new Date(a.timestamp).getTime();
-        const tB = b.timestamp?.seconds || new Date(b.timestamp).getTime();
-        return tA - tB;
-    });
-
-    const processedEvents = [];
-    let currentOverBalls = [];
-    let score = 0;
-    let wickets = 0;
-    let legalBallsInOver = 0;
-    let overNumber = 1;
-
-    sorted.forEach((ball) => {
-        let r = ball.runs || 0;
-        if (ball.type === 'wide' || ball.type === 'nb') r += 1;
-        score += r;
-        if (ball.isWicket) wickets++;
-
-        const ballData = { ...ball, cumulativeScore: score, cumulativeWickets: wickets };
-        currentOverBalls.push(ballData);
-        processedEvents.push({ type: 'ball', data: ballData });
-
-        if (ball.type === 'legal' || ball.type === 'bye' || ball.type === 'legbye') {
-            legalBallsInOver++;
-        }
-
-        if (legalBallsInOver === 6) {
-            // End of Over Summary
-            processedEvents.push({
-                type: 'over_summary',
-                data: {
-                    over: overNumber,
-                    runs: currentOverBalls.reduce((acc, b) => acc + (b.runs + (b.type === 'wide' || b.type === 'nb' ? 1 : 0)), 0),
-                    score: score,
-                    wickets: wickets,
-                    balls: currentOverBalls.map(b => ({
-                        label: b.isWicket ? 'W' : (b.type === 'wide' ? 'wd' : b.type === 'nb' ? 'nb' : b.runs),
-                        isWicket: b.isWicket,
-                        isBoundary: b.runs === 4 || b.runs === 6
-                    }))
-                }
-            });
-            legalBallsInOver = 0;
-            currentOverBalls = [];
-            overNumber++;
-        }
-    });
-
-    return processedEvents.reverse();
-  };
-
-  const renderTimelineEvent = (event, index) => {
-      // 1. SUMMARY CARD
-      if (event.type === 'over_summary') {
-          const { over, runs, score, wickets, balls } = event.data;
-          return (
-              <div key={`summary-${index}`} className="my-6">
-                  <div className="bg-gray-100 rounded-xl p-4 shadow-sm border border-gray-200">
-                      <div className="flex gap-2 mb-3">
-                          {balls.map((b, i) => (
-                             <div key={i} className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm ${b.isWicket ? 'bg-red-500 text-white' : b.isBoundary ? 'bg-green-600 text-white' : 'bg-white text-gray-700 border border-gray-200'}`}>
-                                 {b.label}
-                             </div>
-                          ))}
-                      </div>
-                      <div className="flex justify-between items-center text-sm text-gray-600 font-medium border-t border-gray-200 pt-3">
-                          <span>Over {over}</span>
-                          <span className="text-green-600 font-bold">{runs} Runs</span>
-                          <span className="bg-white px-2 py-0.5 rounded border border-gray-300 text-gray-800 text-xs">Score {score}-{wickets}</span>
-                      </div>
-                  </div>
-              </div>
-          );
-      }
-
-      // 2. BALL ROW
-      const ball = event.data;
-      const ballLabel = ball.isWicket ? 'W' : (ball.type !== 'legal' ? ball.type.substring(0,2).toUpperCase() : ball.runs);
-      const ballColorClass = ball.isWicket ? 'border-red-500 text-red-600 bg-red-50' : 
-                             (ball.runs === 4 || ball.runs === 6) ? 'border-green-600 bg-green-600 text-white' : 
-                             'border-green-500 text-green-700 bg-green-50';
-
+  // --- RENDERERS ---
+    
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      if (data.placeholder) return null;
       return (
-          <div key={`ball-${index}`} className="flex gap-4 relative pb-6 last:pb-0">
-              <div className="absolute left-4 top-8 bottom-0 w-px bg-gray-200 -z-10"></div>
-              <div className={`w-9 h-9 shrink-0 rounded-full border-2 flex items-center justify-center font-bold shadow-sm z-10 ${ballColorClass}`}>
-                  {ballLabel}
-              </div>
-              <div className="flex-1 pt-1">
-                  <div className="flex justify-between items-start">
-                      <div>
-                          <p className="font-bold text-gray-800 text-sm">{ball.bowler} to {ball.striker}</p>
-                          <p className="text-sm text-gray-600 mt-0.5">
-                              {ball.isWicket ? <span className="text-red-600 font-bold">OUT! {ball.dismissalInfo?.type}</span> : 
-                               ball.runs === 4 ? <span className="text-green-600 font-bold">FOUR Runs!</span> :
-                               ball.runs === 6 ? <span className="text-purple-600 font-bold">SIX Runs!</span> :
-                               ball.runs === 0 ? "No run." :
-                               ball.runs === 1 ? "Single run." :
-                               `${ball.runs} Runs.`}
-                          </p>
-                      </div>
-                  </div>
-              </div>
+        <div className="bg-gray-900 text-white p-3 rounded-lg shadow-lg text-xs relative z-50">
+          <p className="font-bold mb-1">Over {label}</p>
+          <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${data.wickets > 0 ? 'bg-red-500' : 'bg-blue-500'}`}></div>
+              <span>Runs: <span className="font-bold">{data.runs}</span></span>
           </div>
+          {data.wickets > 0 && (
+              <div className="flex items-center gap-2 mt-1">
+                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                  <span>Wickets: <span className="font-bold">{data.wickets}</span></span>
+              </div>
+          )}
+           {data.partial && <p className="text-gray-400 italic mt-1">(In progress)</p>}
+        </div>
       );
+    }
+    return null;
+  };
+
+  const shareMatch = () => {
+    const slug = `${currentMatch.teamA} vs ${currentMatch.teamB}`.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "-");
+    const url = `${window.location.origin}${window.location.pathname}?matchId=${currentMatch.id}&match=${slug}`;
+    navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+  };
+
+  const getLastActionText = (match) => {
+    if (!match.timeline || match.timeline.length === 0) return "Match Started";
+    const lastBall = match.timeline[0];
+    let action = "";
+    if (lastBall.isWicket) action = "WICKET";
+    else if (lastBall.type === 'wide') action = "WIDE";
+    else if (lastBall.type === 'nb') action = "NO BALL";
+    else if (lastBall.runs === 4) action = "FOUR";
+    else if (lastBall.runs === 6) action = "SIX";
+    else if (lastBall.runs === 0) action = "DOT";
+    else action = `${lastBall.runs} Run${lastBall.runs !== 1 ? 's' : ''}`;
+    return `${lastBall.striker} to ${lastBall.bowler}, ${action}`;
+  };
+
+  const getFormattedTime = () => {
+      if (!currentMatch.timestamp) return "Unknown";
+      const date = currentMatch.timestamp.seconds ? new Date(currentMatch.timestamp.seconds * 1000) : new Date(currentMatch.timestamp);
+      return date.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+  };
+
+  const getBallNumber = (index) => {
+      let count = parseInt(currentMatch.legalBalls || 0);
+      for(let i = 0; i < index; i++) { if(currentMatch.timeline[i].type === 'legal') count--; }
+      return formatOvers(count);
+  };
+
+  const getBatterStats = (name) => {
+      const stats = currentMatch.battingStats?.[name] || { runs: 0, balls: 0, fours: 0, sixes: 0 };
+      const sr = stats.balls > 0 ? ((stats.runs / stats.balls) * 100).toFixed(0) : 0;
+      return { ...stats, sr };
+  };
+
+  const getBowlerStats = (name) => {
+      const stats = currentMatch.bowlingStats?.[name] || { overs: 0, runs: 0, wickets: 0, balls: 0 };
+      const eco = stats.balls > 0 ? ((stats.runs / stats.balls) * 6).toFixed(1) : 0;
+      const oversDisplay = formatOvers(stats.balls);
+      return { ...stats, eco, oversDisplay };
+  };
+
+  const renderPlayerCard = (p, i) => {
+    const player = typeof p === 'string' ? { name: p, role: 'Player', photo: '', isCaptain: false, isWk: false } : p;
+    return (
+      <div key={i} className="flex items-center gap-3 p-2.5 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+        <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center shadow-sm">
+          {player.photo ? <img src={player.photo} alt={player.name} className="w-full h-full object-cover" /> : <User className="w-5 h-5 text-gray-400" />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="font-bold text-gray-800 text-sm truncate">{player.name}</span>
+            {player.isCaptain && <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500 shrink-0" />}
+            {player.isWk && <span className="bg-blue-100 text-blue-700 text-[9px] font-bold px-1 rounded shrink-0">WK</span>}
+          </div>
+          <div className="text-xs text-gray-500 truncate">{player.role || 'Player'}</div>
+        </div>
+      </div>
+    );
   };
 
   const strikerStats = getBatterStats(currentMatch.striker);
   const nonStrikerStats = getBatterStats(currentMatch.nonStriker);
   const bowlerStats = getBowlerStats(currentMatch.bowler);
+
   const partnershipData = getPartnershipData(); 
   const projected = getProjectedScore();
   const equation = getEquation(); 
   const rrr = getRRR(); 
-  const currentFowList = getFOW(); // Getting Correct FOW
   const manhattanData = getManhattanData();
   const recentBalls = getRecentBalls();
-  const timelineEvents = processTimelineForDisplay();
 
   return (
     <div className="space-y-6 pb-20">
       <div id="printable-area" className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
         
-        {/* --- HEADER --- */}
+        {/* --- DARK HEADER SECTION --- */}
         <div className="bg-gray-900 text-white p-4 md:p-6 relative">
            
-           <button onClick={shareMatch} className="md:hidden absolute top-4 right-4 p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors z-10">{copied ? <Check className="w-4 h-4 text-green-400" /> : <Share2 className="w-4 h-4 text-white" />}</button>
+           {/* MOBILE SHARE BUTTON */}
+           <button onClick={shareMatch} className="md:hidden absolute top-4 right-4 p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors z-10">
+               {copied ? <Check className="w-4 h-4 text-green-400" /> : <Share2 className="w-4 h-4 text-white" />}
+           </button>
            
+           {/* Header Content (Teams) - Hidden on Mobile if Live, Hidden Always if Completed */}
            {!isCompleted && (
                <div className="hidden md:flex flex-col md:flex-row justify-between items-center gap-4 mb-2 pt-4 md:pt-0 relative px-2 md:px-0">
                   <div className="flex items-center gap-3 w-full md:w-auto justify-center md:justify-start">
@@ -400,6 +311,7 @@ export default function MatchDetails({ currentMatch, setView }) {
                          <TeamLogo name={currentMatch.teamB} color={currentMatch.teamBColor} logo={currentMatch.teamBLogo} size="sm" />
                       </div>
                       
+                      {/* DESKTOP SHARE BUTTON */}
                       <button onClick={shareMatch} className="hidden md:flex items-center justify-center p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors ml-2">
                         {copied ? <Check className="w-5 h-5 text-green-400" /> : <Share2 className="w-5 h-5 text-white" />}
                       </button>
@@ -410,6 +322,7 @@ export default function MatchDetails({ currentMatch, setView }) {
            {/* Score & Stats & Badges */}
            <div className="text-center mb-6 pt-4 md:pt-8"> 
               
+              {/* Views & Status Pills */}
               <div className="flex flex-col items-center justify-center gap-2 mb-3">
                   <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium backdrop-blur-sm border transition-colors ${currentMatch.status === 'Live' ? 'bg-red-500/20 border-red-500/30 text-red-100' : 'bg-white/10 border-white/10 text-gray-200'}`}>
                       <Eye className={`w-3 h-3 ${currentMatch.status === 'Live' ? 'text-red-400 animate-pulse' : 'text-blue-400'}`} />
@@ -420,8 +333,9 @@ export default function MatchDetails({ currentMatch, setView }) {
                   </div>
               </div>
 
-              {/* Score Display */}
+              {/* --- DYNAMIC SCORE DISPLAY --- */}
               {isCompleted && currentMatch.innings1 ? (
+                  /* COMPLETED: SPLIT SCORE */
                   <div className="flex justify-center items-end gap-2 md:gap-12 mb-4 animate-in fade-in zoom-in duration-500 mt-2">
                       <div className="text-right flex flex-col items-end w-[45%] md:w-auto">
                           <div className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 opacity-80 truncate w-full text-right">{currentMatch.innings1.teamName}</div>
@@ -432,6 +346,7 @@ export default function MatchDetails({ currentMatch, setView }) {
                           <div className="text-xs md:text-sm text-gray-500 font-bold uppercase tracking-widest mt-1 mr-1">{currentMatch.innings1.overs} ov</div>
                       </div>
 
+                      {/* FIXED VS ALIGNMENT */}
                       <div className="text-gray-500 font-black text-xl md:text-3xl italic pb-3 md:pb-6 opacity-60">VS</div>
 
                       <div className="text-left flex flex-col items-start w-[45%] md:w-auto">
@@ -444,25 +359,33 @@ export default function MatchDetails({ currentMatch, setView }) {
                       </div>
                   </div>
               ) : (
+                  /* LIVE MATCH */
                   <div className="mb-2">
+                      {/* LIVE LAYOUT (Logos Flanking Score) */}
                       <div className="flex justify-center items-center gap-3 md:gap-6 animate-in fade-in zoom-in duration-500">
+                          {/* Batting Team Logo (Left) */}
                           <div className="md:hidden opacity-80 scale-90">
                              <TeamLogo name={currentMatch.battingTeam} color={battingColor} logo={battingLogo} size="sm" />
                           </div>
 
                           <h1 className="text-5xl md:text-7xl font-black tracking-tighter shadow-lg drop-shadow-md">{currentMatch.score}/{currentMatch.wickets}</h1>
 
+                          {/* Bowling Team Logo (Right) */}
                           <div className="md:hidden opacity-80 scale-90">
                              <TeamLogo name={currentMatch.bowlingTeam} color={bowlingColor} logo={bowlingLogo} size="sm" />
                           </div>
                       </div>
                       
+                      {/* MOBILE FULL TEAM NAMES (WHO IS BATTING?) + VS */}
                       <div className="md:hidden flex items-center justify-center gap-3 mt-3 px-1 w-full">
+                          {/* Batting Team */}
                           <div className="flex items-center justify-end gap-1.5 shrink-0">
                               <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)] shrink-0"></div>
                               <span className="text-[10px] font-bold text-white uppercase tracking-wide leading-tight">{currentMatch.battingTeam}</span>
                           </div>
+                          {/* VS */}
                           <div className="text-center text-[10px] font-black text-gray-600 italic shrink-0">VS</div>
+                          {/* Bowling Team */}
                           <div className="flex items-center justify-start gap-1.5 shrink-0">
                               <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide leading-tight">{currentMatch.bowlingTeam}</span>
                           </div>
@@ -473,20 +396,23 @@ export default function MatchDetails({ currentMatch, setView }) {
               {(currentMatch.status === 'Live') && (
                 <div className="flex flex-col items-center justify-center gap-2 mb-6 mt-4">
                     
-                    {/* INNINGS 2: TARGET EQUATION */}
+                    {/* INNINGS 2: TARGET EQUATION (Narrow Screen Fixed) */}
                     {currentMatch.currentInnings === 2 && equation && (
                         <div className="animate-in slide-in-from-bottom-2 fade-in duration-700 w-full flex flex-col items-center">
+                            {/* UPDATED: Reduced padding, forced single line, centered, responsive font */}
                             <div className="bg-gradient-to-r from-blue-900/60 to-blue-800/60 border border-blue-500/30 px-3 py-2 md:px-6 md:py-2.5 rounded-full flex items-center justify-center gap-1.5 md:gap-2 shadow-lg backdrop-blur-md whitespace-nowrap max-w-[95%]">
                                 <Target className="w-3 h-3 md:w-4 md:h-4 text-yellow-400 animate-pulse shrink-0" />
                                 <span className="text-blue-100 text-[10px] xs:text-xs md:text-sm font-bold tracking-wide truncate">
                                     {currentMatch.battingTeam} need <span className="text-yellow-400 text-sm md:text-lg">{equation.runsNeeded}</span> runs in <span className="text-white text-sm md:text-lg">{equation.ballsRemaining}</span> balls
                                 </span>
                             </div>
+                            
+                            {/* FIX: Target is now pure white and bold */}
                             <div className="text-[10px] text-white font-bold uppercase tracking-widest mt-1.5 opacity-100">Target: {currentMatch.target}</div>
                         </div>
                     )}
 
-                    {/* INNINGS 1: PROJECTED SCORE */}
+                    {/* INNINGS 1: PROJECTED SCORE (Only shown in 1st innings) */}
                     {currentMatch.currentInnings === 1 && (
                         <div className="bg-gray-800/80 border border-gray-700 px-3 py-1.5 rounded-full text-xs md:text-sm text-gray-300 font-medium">
                             Projected: <span className="text-white font-bold">{projected}</span>
@@ -500,6 +426,7 @@ export default function MatchDetails({ currentMatch, setView }) {
                      <span className="bg-gray-800 px-2 py-1 rounded">Overs: {formatOvers(currentMatch.legalBalls)} / {currentMatch.totalOvers}</span>
                      <span className="bg-gray-800 px-2 py-1 rounded">CRR: {calculateRunRate(currentMatch.score, currentMatch.legalBalls)}</span>
                      
+                     {/* --- RRR BADGE (Shows in 2nd Innings) --- */}
                      {currentMatch.currentInnings === 2 && (
                         <span className={`bg-gray-800 px-2 py-1 rounded border border-gray-700 
                            ${parseFloat(rrr) > 12 ? 'text-red-500 font-bold animate-pulse' : 
@@ -512,7 +439,7 @@ export default function MatchDetails({ currentMatch, setView }) {
                   </div>
               )}
               
-              {/* Winner Banner */}
+              {/* --- ULTIMATE PREMIUM WINNER BANNER --- */}
               {(currentMatch.status === 'Completed' || currentMatch.status === 'Concluding') && (
                  <div className="mt-6 relative overflow-hidden group rounded-xl max-w-lg mx-auto mb-2 shadow-2xl ring-1 ring-emerald-500/30">
                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer transition-transform"></div>
@@ -558,7 +485,7 @@ export default function MatchDetails({ currentMatch, setView }) {
                            </div>
                        )}
                        
-                       {/* --- PARTNERSHIP CARD --- */}
+                       {/* --- PARTNERSHIP CARD (Under Batsmen) --- */}
                        {(currentMatch.status === 'Live') && (
                            <div className="mt-3">
                                <div className="bg-white/10 rounded-lg p-2.5 w-full border border-white/5">
@@ -596,7 +523,7 @@ export default function MatchDetails({ currentMatch, setView }) {
                        </div>
                    )}
 
-                   {/* --- RECENT BALLS --- */}
+                   {/* --- RECENT BALLS STRIP (Under Commentary) --- */}
                    {(currentMatch.status === 'Live') && (
                         <div className="flex justify-center items-center gap-2 mt-3 animate-in fade-in zoom-in duration-500 border-t border-gray-800 pt-3">
                             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mr-1">Recent:</span>
@@ -622,9 +549,10 @@ export default function MatchDetails({ currentMatch, setView }) {
            )}
         </div>
         
-        {/* --- POLLS & REACTIONS --- */}
+        {/* --- POLLS & REACTIONS SECTION --- */}
         {(currentMatch.status === 'Live') && (
             <div className="px-4 md:px-6 mt-4">
+               {/* Poll */}
                <MatchPoll 
                   matchId={currentMatch.id} 
                   teamA={currentMatch.teamA} 
@@ -633,6 +561,7 @@ export default function MatchDetails({ currentMatch, setView }) {
                   colorB={currentMatch.teamBColor || '#f97316'} 
                />
                
+               {/* Reactions */}
                <div className="flex justify-center gap-4 mt-2 mb-4">
                    <button onClick={() => sendReaction('fire')} className="flex flex-col items-center gap-1 group">
                        <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center group-hover:bg-orange-200 transition-colors shadow-sm">
@@ -662,7 +591,7 @@ export default function MatchDetails({ currentMatch, setView }) {
             </div>
         )}
 
-        {/* --- TABS --- */}
+        {/* Tabs */}
         <div className="flex border-b border-gray-200 overflow-x-auto">
            <button onClick={() => setActiveTab('scorecard')} className={`flex-1 p-3 text-sm font-bold whitespace-nowrap ${activeTab === 'scorecard' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-500'}`}>Scorecard</button>
            <button onClick={() => setActiveTab('analysis')} className={`flex-1 p-3 text-sm font-bold whitespace-nowrap ${activeTab === 'analysis' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-500'}`}>Analysis</button>
@@ -683,11 +612,8 @@ export default function MatchDetails({ currentMatch, setView }) {
                         extras={currentMatch.innings1.extras} 
                         battingStats={currentMatch.innings1.battingStats || {}} 
                         bowlingStats={currentMatch.innings1.bowlingStats || {}} 
-                        // PASSING NEW PROPS for Yet to Bat
-                        players={getTeamPlayers(currentMatch.innings1.teamName)}
-                        matchStatus={currentMatch.status}
                     />
-                    {renderFOWSection(currentMatch.innings1.fow, currentMatch.innings1.teamName)}
+                    {/* FOW REMOVED */}
                  </>
              )}
              <InningsScorecard 
@@ -700,11 +626,8 @@ export default function MatchDetails({ currentMatch, setView }) {
                 bowlingStats={currentMatch.bowlingStats || {}} 
                 matchResult={currentMatch.result} 
                 mom={currentMatch.mom} 
-                // PASSING NEW PROPS for Yet to Bat
-                players={getTeamPlayers(currentMatch.battingTeam)}
-                matchStatus={currentMatch.status}
              />
-             {renderFOWSection(currentFowList, currentMatch.battingTeam)}
+             {/* FOW REMOVED */}
            </div>
         )}
 
@@ -779,31 +702,24 @@ export default function MatchDetails({ currentMatch, setView }) {
             </div>
         )}
 
-        {/* 4. NEW: BEAUTIFUL TIMELINE TAB */}
+        {/* 4. TIMELINE TAB */}
         {activeTab === 'timeline' && (
-            <div className="p-4 bg-gray-50 min-h-[500px]">
-              {/* Innings Toggles */}
-              <div className="flex justify-center mb-6">
-                   <div className="bg-white p-1 rounded-full border border-gray-200 shadow-sm flex">
-                       <button onClick={() => setTimelineInnings(1)} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${timelineInnings === 1 ? 'bg-green-600 text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>
-                           1st Innings
-                       </button>
-                       <button onClick={() => setTimelineInnings(2)} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${timelineInnings === 2 ? 'bg-green-600 text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>
-                           2nd Innings
-                       </button>
-                   </div>
-              </div>
-
-              {timelineEvents.length === 0 ? (
-                  <div className="text-center text-gray-400 py-12 italic flex flex-col items-center">
-                      <Activity className="w-8 h-8 mb-2 text-gray-300" />
-                      No timeline data available for this innings.
+            <div className="p-4 bg-gray-50 space-y-2">
+              <h3 className="font-bold text-gray-700 mb-4 flex items-center"><Activity className="w-4 h-4 mr-2" /> Ball by Ball Timeline</h3>
+              {(!currentMatch.timeline || currentMatch.timeline.length === 0) && <div className="text-center text-gray-400 p-4 italic">No balls bowled yet.</div>}
+              {currentMatch.timeline?.map((ball, index) => (
+                  <div key={index} className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                          <div className="text-xs font-mono font-bold text-gray-400 w-8 text-right">{getBallNumber(index)}</div>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${ball.isWicket ? 'bg-red-500 text-white' : ball.runs === 4 ? 'bg-blue-500 text-white' : ball.runs === 6 ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700'}`}>{ball.isWicket ? 'W' : ball.type !== 'legal' ? ball.type.toUpperCase() : ball.runs}</div>
+                          <div className="text-sm">
+                              <div className="font-semibold text-gray-800">{ball.bowler} to {ball.striker}</div>
+                              <div className="text-xs text-gray-500">{ball.isWicket ? `OUT (${ball.dismissalInfo?.type || 'Wicket'})` : ball.type === 'wide' ? 'Wide Ball' : ball.type === 'nb' ? 'No Ball' : `${ball.runs} Run${ball.runs !== 1 ? 's' : ''}`}</div>
+                          </div>
+                      </div>
+                      <div className="text-[10px] text-gray-400 shrink-0">{new Date(ball.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                   </div>
-              ) : (
-                  <div className="px-2">
-                      {timelineEvents.map((event, index) => renderTimelineEvent(event, index))}
-                  </div>
-              )}
+              ))}
             </div>
         )}
       </div>
