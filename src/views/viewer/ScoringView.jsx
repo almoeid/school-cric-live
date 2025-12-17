@@ -240,16 +240,23 @@ export default function ScoringView({ currentMatch, teams, setView }) {
     }
 
     let newWickets = currentMatch.wickets;
+    let outPlayerName = null;
+
     if (isWicket) {
        newWickets += 1; 
        if (dismissalInfo?.type !== 'Run Out') bwStats[bowler].wickets += 1;
-       bStats[striker].out = true;
        
-       let dismissalText = dismissalInfo?.type || 'Out';
-       if (dismissalInfo?.fielder) dismissalText = `c ${dismissalInfo.fielder} b ${bowler}`;
-       else if (dismissalInfo?.type === 'Bowled') dismissalText = `b ${bowler}`;
-       else if (dismissalInfo?.type === 'LBW') dismissalText = `lbw b ${bowler}`;
-       bStats[striker].dismissal = dismissalText;
+       outPlayerName = (dismissalInfo?.who === 'nonStriker') ? nonStriker : striker;
+
+       if (bStats[outPlayerName]) {
+           bStats[outPlayerName].out = true;
+           let dismissalText = dismissalInfo?.type || 'Out';
+           if (dismissalInfo?.fielder) dismissalText = `c ${dismissalInfo.fielder} b ${bowler}`;
+           else if (dismissalInfo?.type === 'Bowled') dismissalText = `b ${bowler}`;
+           else if (dismissalInfo?.type === 'LBW') dismissalText = `lbw b ${bowler}`;
+           else if (dismissalInfo?.type === 'Run Out') dismissalText = 'Run Out';
+           bStats[outPlayerName].dismissal = dismissalText;
+       }
     }
 
     const currentLegalBalls = Number(currentMatch.legalBalls || 0); 
@@ -261,7 +268,8 @@ export default function ScoringView({ currentMatch, teams, setView }) {
       legalBalls: newLegalBalls,
       wickets: newWickets,
       timeline: [{ runs, type, isWicket, dismissalInfo, striker, nonStriker, bowler, timestamp: new Date().toISOString() }, ...(currentMatch.timeline || [])].slice(0, 50),
-      battingStats: bStats, bowlingStats: bwStats
+      battingStats: bStats,
+      bowlingStats: bwStats
     };
 
     let nextStriker = striker;
@@ -305,7 +313,7 @@ export default function ScoringView({ currentMatch, teams, setView }) {
     }
 
     if (isWicket) { 
-        setModalState({ type: 'newBatsman', data: { ...updates, nextStriker, nextNonStriker, whoOut: dismissalInfo.who, isOverComplete } }); 
+        setModalState({ type: 'newBatsman', data: { ...updates, nextStriker, nextNonStriker, outPlayerName, isOverComplete } }); 
         return; 
     }
 
@@ -353,28 +361,57 @@ export default function ScoringView({ currentMatch, teams, setView }) {
     try {
       const { nextStriker, nextNonStriker, ...updates } = modalState.data || {};
       const updatesToSave = updates.score !== undefined ? updates : {}; 
+      
       const currentBowlingStats = updates.bowlingStats || currentMatch.bowlingStats || {};
       if (!currentBowlingStats[newBowlerName]) {
           const nextNum = Object.keys(currentBowlingStats).length + 1;
           currentBowlingStats[newBowlerName] = { overs: 0, balls: 0, runs: 0, wickets: 0, number: nextNum };
       }
-      await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'matches', currentMatch.id), { ...updatesToSave, bowlingStats: currentBowlingStats, striker: nextStriker || striker, nonStriker: nextNonStriker || nonStriker, bowler: newBowlerName });
+
+      await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'matches', currentMatch.id), { 
+          ...updatesToSave, 
+          bowlingStats: currentBowlingStats, 
+          striker: nextStriker || striker, 
+          nonStriker: nextNonStriker || nonStriker, 
+          bowler: newBowlerName 
+      });
       setBowler(newBowlerName); setModalState({ type: null });
     } catch (err) { alert("Error: " + err.message); }
   };
 
   const confirmNewBatsman = async (newPlayerName) => {
     try {
-      const { nextStriker, nextNonStriker, whoOut, isOverComplete, ...updates } = modalState.data;
+      const { nextStriker, nextNonStriker, outPlayerName, isOverComplete, ...updates } = modalState.data;
       let finalStriker = nextStriker, finalNonStriker = nextNonStriker;
-      if (whoOut === 'striker') finalStriker = newPlayerName; else finalNonStriker = newPlayerName;
+      if (outPlayerName) {
+          if (finalStriker === outPlayerName) finalStriker = newPlayerName;
+          else if (finalNonStriker === outPlayerName) finalNonStriker = newPlayerName;
+      } else { if(updates.wickets > 0) finalStriker = newPlayerName; }
+      
       const currentBattingStats = updates.battingStats || {};
-      const nextBattingNumber = Object.keys(currentBattingStats).length + 1;
-      currentBattingStats[newPlayerName] = { runs: 0, balls: 0, fours: 0, sixes: 0, out: false, number: nextBattingNumber };
+      if (currentBattingStats[newPlayerName]) {
+          delete currentBattingStats[newPlayerName].dismissal;
+      } else {
+          const nextBattingNumber = Object.keys(currentBattingStats).length + 1;
+          currentBattingStats[newPlayerName] = { runs: 0, balls: 0, fours: 0, sixes: 0, out: false, number: nextBattingNumber };
+      }
       if (isOverComplete) { setModalState({ type: 'nextBowler', data: { ...updates, battingStats: currentBattingStats, nextStriker: finalStriker, nextNonStriker: finalNonStriker } }); return; }
       await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'matches', currentMatch.id), { ...updates, battingStats: currentBattingStats, striker: finalStriker, nonStriker: finalNonStriker });
       setStriker(finalStriker); setNonStriker(finalNonStriker); setModalState({ type: null });
     } catch (err) { alert("Error: " + err.message); }
+  };
+
+  const confirmRetire = async (retiringPlayer, newPlayer) => {
+    try {
+      const currentBattingStats = currentMatch.battingStats || {};
+      if (currentBattingStats[retiringPlayer]) currentBattingStats[retiringPlayer].dismissal = 'Retired Hurt';
+      if (currentBattingStats[newPlayer]) { delete currentBattingStats[newPlayer].dismissal; } 
+      else { const nextBattingNumber = Object.keys(currentBattingStats).length + 1; currentBattingStats[newPlayer] = { runs: 0, balls: 0, fours: 0, sixes: 0, out: false, number: nextBattingNumber }; }
+      let newStriker = striker, newNonStriker = nonStriker;
+      if (retiringPlayer === striker) newStriker = newPlayer; if (retiringPlayer === nonStriker) newNonStriker = newPlayer;
+      await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'matches', currentMatch.id), { battingStats: currentBattingStats, striker: newStriker, nonStriker: newNonStriker });
+      setStriker(newStriker); setNonStriker(newNonStriker); setModalState({ type: null });
+    } catch (err) { alert(err.message); }
   };
 
   const confirmWide = async (extraRuns) => { try { await processScoreUpdate(extraRuns, 'wide', false, null); setModalState({ type: null }); } catch (err) { alert(err.message); } };
@@ -383,7 +420,15 @@ export default function ScoringView({ currentMatch, teams, setView }) {
   const confirmLegBye = async (runs) => { try { const nextBalls = Number(currentMatch.legalBalls) + 1; const isOverEnding = nextBalls > 0 && nextBalls % 6 === 0; await processScoreUpdate(runs, 'legbye', false, null); if (!isOverEnding) setModalState({ type: null }); } catch (err) { alert(err.message); } };
   
   const confirmCatcher = async (fielderName) => { await processScoreUpdate(0, 'legal', true, { type: 'Caught', who: 'striker', fielder: fielderName }); };
-  const handleWicketClick = (type) => { if (type === 'Caught') setModalState({ type: 'selectFielder', data: { dismissalType: type } }); else processScoreUpdate(0, 'legal', true, { type: type, who: 'striker' }); };
+  const handleWicketClick = (type) => { 
+    if (type === 'Caught') {
+      setModalState({ type: 'selectFielder', data: { dismissalType: type } });
+    } else if (type === 'Run Out') {
+      setModalState({ type: 'runOut', data: { dismissalType: type } });
+    } else { 
+      processScoreUpdate(0, 'legal', true, { type: type, who: 'striker' }); 
+    }
+  };
   const rotateStrike = async () => { if (isProcessing) return; try { const newStriker = nonStriker; const newNonStriker = striker; setStriker(newStriker); setNonStriker(newNonStriker); await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'matches', currentMatch.id), { striker: newStriker, nonStriker: newNonStriker }); } catch (err) { alert("Failed to rotate"); } };
   const finalizeMatch = async () => { await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'matches', currentMatch.id), { status: 'Completed' }); setModalState({ type: null }); setView('admin-dash'); };
   const startSecondInnings = async () => {
@@ -445,12 +490,21 @@ export default function ScoringView({ currentMatch, teams, setView }) {
        
        {modalState.type === 'wicket' && (
           <Modal title="Wicket Details" onClose={() => setModalState({type: null})}>
-             <div className="grid grid-cols-2 gap-3 mb-4">{['Bowled', 'Caught', 'LBW', 'Stumped'].map(type => <button key={type} onClick={() => handleWicketClick(type)} className="p-3 bg-gray-100 hover:bg-gray-200 rounded font-bold text-sm">{type}</button>)}</div>
-             <div className="border-t pt-4"><p className="text-sm text-gray-500 mb-2">Run Out?</p><div className="grid grid-cols-2 gap-3">
-                <button onClick={() => { processScoreUpdate(0, 'legal', true, { type: 'Run Out', who: 'striker' }); setModalState({type: null}); }} className="p-3 bg-red-100 text-red-700 rounded font-bold text-sm">Striker</button>
-                <button onClick={() => { processScoreUpdate(0, 'legal', true, { type: 'Run Out', who: 'nonStriker' }); setModalState({type: null}); }} className="p-3 bg-red-100 text-red-700 rounded font-bold text-sm">Non-Striker</button>
-             </div></div>
+             <div className="grid grid-cols-2 gap-3 mb-4">
+               {['Bowled', 'Caught', 'LBW', 'Stumped', 'Run Out'].map(type => 
+                 <button key={type} onClick={() => handleWicketClick(type)} className="p-3 bg-gray-100 hover:bg-gray-200 rounded font-bold text-sm">{type}</button>
+               )}
+             </div>
           </Modal>
+       )}
+       {modalState.type === 'runOut' && (
+           <Modal title="Run Out Details" onClose={() => setModalState({type: null})}>
+               <p className="text-sm text-gray-500 mb-2">Who got out?</p>
+               <div className="grid grid-cols-2 gap-3 mb-4">
+                   <button onClick={() => { processScoreUpdate(0, 'legal', true, { type: 'Run Out', who: 'striker' }); }} className="p-3 bg-red-100 text-red-700 rounded font-bold text-sm">Striker ({striker})</button>
+                   <button onClick={() => { processScoreUpdate(0, 'legal', true, { type: 'Run Out', who: 'nonStriker' }); }} className="p-3 bg-red-100 text-red-700 rounded font-bold text-sm">Non-Striker ({nonStriker})</button>
+               </div>
+           </Modal>
        )}
        {modalState.type === 'wideOptions' && (<Modal title="Wide Ball" onClose={() => setModalState({type: null})}><div className="grid grid-cols-2 gap-3">{[0, 1, 2, 3, 4].map(extra => <button key={extra} onClick={() => confirmWide(extra)} className="p-3 bg-gray-100 font-bold rounded hover:bg-gray-200">Wide + {extra}</button>)}</div></Modal>)}
        {modalState.type === 'nbOptions' && (<Modal title="No Ball" onClose={() => setModalState({type: null})}><div className="grid grid-cols-3 gap-3">{[0, 1, 2, 3, 4, 6].map(run => <button key={run} onClick={() => confirmNB(run)} className="p-3 bg-gray-100 font-bold rounded hover:bg-gray-200">NB + {run}</button>)}</div></Modal>)}
