@@ -133,6 +133,7 @@ export default function ScoringView({ currentMatch, teams, setView }) {
         if (type === 'bye') { setModalState({ type: 'byeOptions' }); return; } 
         if (type === 'legbye') { setModalState({ type: 'legByeOptions' }); return; } 
         if (isWicket) { setModalState({ type: 'wicket', data: { runs: 0, type: 'legal' } }); return; }
+        
         setIsProcessing(true);
         await processScoreUpdate(runs, type, false, null);
     } catch (err) { console.error(err); alert("Error: " + err.message); } finally { setIsProcessing(false); }
@@ -143,7 +144,6 @@ export default function ScoringView({ currentMatch, teams, setView }) {
     let bStats = JSON.parse(JSON.stringify(currentMatch.battingStats || {}));
     let bwStats = JSON.parse(JSON.stringify(currentMatch.bowlingStats || {}));
     
-    // SAFETY INIT with ORDER NUMBER
     const getNextBatNum = () => { const n = Object.values(bStats).map(p=>p.number||0); return (n.length>0?Math.max(...n):0)+1; };
     const getNextBowlNum = () => { const n = Object.values(bwStats).map(p=>p.number||0); return (n.length>0?Math.max(...n):0)+1; };
 
@@ -180,7 +180,12 @@ export default function ScoringView({ currentMatch, teams, setView }) {
        newWickets += 1; 
        if (dismissalInfo?.type !== 'Run Out') bwStats[bowler].wickets += 1;
        
-       outPlayerName = (dismissalInfo?.who === 'nonStriker') ? nonStriker : striker;
+       // FIX: Use explicit target from run out, or default to striker
+       if (dismissalInfo?.type === 'Run Out' && dismissalInfo?.who) {
+           outPlayerName = (dismissalInfo.who === 'nonStriker') ? nonStriker : striker;
+       } else {
+           outPlayerName = striker;
+       }
 
        if (bStats[outPlayerName]) {
            bStats[outPlayerName].out = true;
@@ -188,6 +193,7 @@ export default function ScoringView({ currentMatch, teams, setView }) {
            if (dismissalInfo?.fielder) dismissalText = `c ${dismissalInfo.fielder} b ${bowler}`;
            else if (dismissalInfo?.type === 'Bowled') dismissalText = `b ${bowler}`;
            else if (dismissalInfo?.type === 'LBW') dismissalText = `lbw b ${bowler}`;
+           else if (dismissalInfo?.type === 'Run Out') dismissalText = `Run Out`; // Simple text for Run Out
            bStats[outPlayerName].dismissal = dismissalText;
        }
     }
@@ -202,6 +208,8 @@ export default function ScoringView({ currentMatch, teams, setView }) {
 
     let nextStriker = striker; let nextNonStriker = nonStriker;
     if (runs % 2 !== 0) [nextStriker, nextNonStriker] = [nextNonStriker, nextStriker];
+    
+    // Check Over End
     const isOverComplete = (newLegalBalls > 0 && newLegalBalls % 6 === 0 && (type === 'legal' || type === 'bye' || type === 'legbye'));
     if (isOverComplete) [nextStriker, nextNonStriker] = [nextNonStriker, nextStriker];
 
@@ -228,6 +236,7 @@ export default function ScoringView({ currentMatch, teams, setView }) {
     }
 
     if (isWicket) { 
+        // FIX: Pass explicit outPlayerName to modal, AND isOverComplete so it knows to ask for bowler next
         setModalState({ type: 'newBatsman', data: { ...updates, nextStriker, nextNonStriker, outPlayerName, isOverComplete } }); 
         return; 
     }
@@ -272,20 +281,12 @@ export default function ScoringView({ currentMatch, teams, setView }) {
     try {
       const { nextStriker, nextNonStriker, ...updates } = modalState.data || {};
       const updatesToSave = updates.score !== undefined ? updates : {}; 
-      
       const currentBowlingStats = updates.bowlingStats || currentMatch.bowlingStats || {};
       if (!currentBowlingStats[newBowlerName]) {
           const nextNum = Object.keys(currentBowlingStats).length + 1;
           currentBowlingStats[newBowlerName] = { overs: 0, balls: 0, runs: 0, wickets: 0, number: nextNum };
       }
-
-      await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'matches', currentMatch.id), { 
-          ...updatesToSave, 
-          bowlingStats: currentBowlingStats, 
-          striker: nextStriker || striker, 
-          nonStriker: nextNonStriker || nonStriker, 
-          bowler: newBowlerName 
-      });
+      await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'matches', currentMatch.id), { ...updatesToSave, bowlingStats: currentBowlingStats, striker: nextStriker || striker, nonStriker: nextNonStriker || nonStriker, bowler: newBowlerName });
       setBowler(newBowlerName); setModalState({ type: null });
     } catch (err) { alert("Error: " + err.message); }
   };
@@ -306,7 +307,22 @@ export default function ScoringView({ currentMatch, teams, setView }) {
           const nextBattingNumber = Object.keys(currentBattingStats).length + 1;
           currentBattingStats[newPlayerName] = { runs: 0, balls: 0, fours: 0, sixes: 0, out: false, number: nextBattingNumber };
       }
-      if (isOverComplete) { setModalState({ type: 'nextBowler', data: { ...updates, battingStats: currentBattingStats, nextStriker: finalStriker, nextNonStriker: finalNonStriker } }); return; }
+      
+      // FIX: Check if over ended on the wicket ball
+      if (isOverComplete) { 
+          // Update data in modalState but transition to nextBowler
+          setModalState({ 
+              type: 'nextBowler', 
+              data: { 
+                  ...updates, 
+                  battingStats: currentBattingStats, 
+                  nextStriker: finalStriker, 
+                  nextNonStriker: finalNonStriker 
+              } 
+          }); 
+          return; 
+      }
+      
       await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'matches', currentMatch.id), { ...updates, battingStats: currentBattingStats, striker: finalStriker, nonStriker: finalNonStriker });
       setStriker(finalStriker); setNonStriker(finalNonStriker); setModalState({ type: null });
     } catch (err) { alert("Error: " + err.message); }
@@ -329,7 +345,6 @@ export default function ScoringView({ currentMatch, teams, setView }) {
   const confirmNB = async (batRuns) => { try { await processScoreUpdate(batRuns, 'nb', false, null); setModalState({ type: null }); } catch (err) { alert(err.message); } };
   const confirmBye = async (runs) => { try { const nextBalls = Number(currentMatch.legalBalls) + 1; const isOverEnding = nextBalls > 0 && nextBalls % 6 === 0; await processScoreUpdate(runs, 'bye', false, null); if (!isOverEnding) setModalState({ type: null }); } catch (err) { alert(err.message); } };
   const confirmLegBye = async (runs) => { try { const nextBalls = Number(currentMatch.legalBalls) + 1; const isOverEnding = nextBalls > 0 && nextBalls % 6 === 0; await processScoreUpdate(runs, 'legbye', false, null); if (!isOverEnding) setModalState({ type: null }); } catch (err) { alert(err.message); } };
-  
   const confirmCatcher = async (fielderName) => { await processScoreUpdate(0, 'legal', true, { type: 'Caught', who: 'striker', fielder: fielderName }); };
   const handleWicketClick = (type) => { if (type === 'Caught') setModalState({ type: 'selectFielder', data: { dismissalType: type } }); else processScoreUpdate(0, 'legal', true, { type: type, who: 'striker' }); };
   const rotateStrike = async () => { if (isProcessing) return; try { const newStriker = nonStriker; const newNonStriker = striker; setStriker(newStriker); setNonStriker(newNonStriker); await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'matches', currentMatch.id), { striker: newStriker, nonStriker: newNonStriker }); } catch (err) { alert("Failed to rotate"); } };
