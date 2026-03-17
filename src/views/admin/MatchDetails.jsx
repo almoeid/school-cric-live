@@ -407,8 +407,10 @@ export default function MatchDetails({ currentMatch, setView }) {
                                 </span>
                             </div>
                             
-                            {/* FIX: Target is now pure white and bold */}
-                            <div className="text-[10px] text-white font-bold uppercase tracking-widest mt-1.5 opacity-100">Target: {currentMatch.target}</div>
+                            {/* ── DLS CHANGE 1: append "(DLS)" to Target line as a plain string ── */}
+                            <div className="text-[10px] text-white font-bold uppercase tracking-widest mt-1.5 opacity-100">
+                                {'Target: ' + currentMatch.target + (currentMatch.dlsApplied ? ' (DLS)' : '')}
+                            </div>
                         </div>
                     )}
 
@@ -436,6 +438,13 @@ export default function MatchDetails({ currentMatch, setView }) {
                      )}
                      
                      <span className="text-green-400 bg-gray-800 px-2 py-1 rounded">Extras: {currentMatch.extras || 0}</span>
+
+                     {/* ── DLS CHANGE 2: DLS pill in the stats bar — plain conditional render ── */}
+                     {currentMatch.dlsApplied && (
+                        <span className="bg-blue-700 text-white px-2 py-1 rounded font-bold text-xs tracking-wide">
+                            🌧️ DLS Applied
+                        </span>
+                     )}
                   </div>
               )}
               
