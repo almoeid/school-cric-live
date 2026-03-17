@@ -302,11 +302,11 @@ export default function ScoringView({ currentMatch, teams, setView }) {
        updates.status = 'Concluding'; 
        if (targetReached) {
           const wicketsInHand = 10 - updates.wickets;
-          updates.result = `${currentMatch.battingTeam} won by ${wicketsInHand} wickets`;
+          updates.result = `${currentMatch.battingTeam} won by ${wicketsInHand} wickets${currentMatch.dlsApplied ? ' (DLS)' : ''}`;
        } else {
           const runsShort = currentMatch.target - 1 - updates.score;
           if (runsShort === 0) updates.result = "Match Tied";
-          else updates.result = `${currentMatch.bowlingTeam} won by ${runsShort} runs`;
+          else updates.result = `${currentMatch.bowlingTeam} won by ${runsShort} runs${currentMatch.dlsApplied ? ' (DLS)' : ''}`;
        }
        
        const mom = calculateMOM(
