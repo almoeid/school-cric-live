@@ -3,7 +3,6 @@ import { addDoc, collection, doc, updateDoc, writeBatch, serverTimestamp, delete
 import { Play, Trophy, Activity, Database, PlusCircle, Edit2, Trash2, AlertTriangle, Save, X, Upload, User, Crown, Shield, Users, CheckSquare } from 'lucide-react';
 import { db, APP_ID, auth } from '../../config/firebase';
 import { formatOvers, getInitials } from '../../utils/helpers';
-import { calculateDLS } from '../../utils/dls'; // ── DLS IMPORT
 import TeamLogo from '../../components/TeamLogo';
 import Modal from '../../components/Modal'; 
 
@@ -38,16 +37,6 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
   
   const [editingTeam, setEditingTeam] = useState(null);
   const [activeTournament, setActiveTournament] = useState(null);
-
-  // ── DLS STATE ─────────────────────────────────────────────────────────────────
-  const [showDLS, setShowDLS]   = useState(false);
-  const [dlsForm, setDlsForm]   = useState({
-    team1OversLost:   0,
-    team2OversAvail:  0,
-    team2OversPlayed: 0,
-    team2WicketsLost: 0,
-  });
-  const [dlsResult, setDlsResult] = useState(null);
 
   const getTeamName = (id) => teams.find(t => t.id === id)?.name || 'Unknown';
 
@@ -449,21 +438,6 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
                </div>
              ))}
           </div>
-
-          {/* ── DLS TRIGGER BUTTON — only shown when a 2nd innings is live ── */}
-          {matches.some(m => m.status === 'Live' && m.currentInnings === 2) && (
-            <button
-              onClick={() => {
-                setDlsForm({ team1OversLost: 0, team2OversAvail: '', team2OversPlayed: 0, team2WicketsLost: 0 });
-                setDlsResult(null);
-                setShowDLS(true);
-              }}
-              className="w-full p-4 bg-blue-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-md hover:bg-blue-700 transition"
-            >
-              🌧️ Apply DLS Method
-            </button>
-          )}
-
           <button onClick={() => setDashView('teams')} className="w-full p-6 bg-white rounded-xl shadow-md hover:shadow-lg transition flex flex-col items-center justify-center text-center border-b-4 border-blue-500"><Users className="w-8 h-8 text-blue-600 mb-2" /> <span className="font-bold text-lg">Manage Teams</span></button>
         </>
       )}
@@ -653,139 +627,6 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
                </div>
            </Modal>
        )}
-
-      {/* ── DLS CALCULATOR MODAL ──────────────────────────────────────────────────── */}
-      {showDLS && (
-        <Modal title="🌧️ DLS Revised Target" onClose={() => { setShowDLS(false); setDlsResult(null); }}>
-          {(() => {
-            // Find the active/live match to pull context
-            const liveMatch = matches.find(m => m.status === 'Live' || m.status === 'Concluding');
-            const innings1Score = liveMatch?.innings1?.score ?? liveMatch?.score ?? 0;
-            const totalOvers    = liveMatch?.totalOvers ?? parseInt(newMatchForm.overs) ?? 10;
-
-            const handleCompute = () => {
-              const result = calculateDLS({
-                team1Score:       innings1Score,
-                totalOvers,
-                team1OversLost:   parseFloat(dlsForm.team1OversLost)  || 0,
-                team2OversAvail:  parseFloat(dlsForm.team2OversAvail) || totalOvers,
-                team2OversPlayed: parseFloat(dlsForm.team2OversPlayed)|| 0,
-                team2WicketsLost: parseInt(dlsForm.team2WicketsLost)  || 0,
-              });
-              setDlsResult(result);
-            };
-
-            const applyTarget = async () => {
-              if (!dlsResult || !liveMatch) return;
-              setIsLoading(true);
-              try {
-                await withTimeout(updateDoc(
-                  doc(db, 'artifacts', APP_ID, 'public', 'data', 'matches', liveMatch.id),
-                  {
-                    target:       dlsResult.revisedTarget,
-                    dlsApplied:   true,
-                    dlsTarget:    dlsResult.revisedTarget,
-                    dlsResources: { R1: dlsResult.team1Resources, R2: dlsResult.team2Resources },
-                    totalOvers:   parseFloat(dlsForm.team2OversAvail) || totalOvers,
-                  }
-                ));
-                alert(`✅ DLS target set: ${dlsResult.revisedTarget} in ${dlsForm.team2OversAvail} overs`);
-                setShowDLS(false);
-                setDlsResult(null);
-              } catch (err) {
-                alert('Error applying DLS: ' + err.message);
-              } finally {
-                setIsLoading(false);
-              }
-            };
-
-            return (
-              <div className="space-y-4">
-                {/* Context strip */}
-                <div className="bg-blue-50 p-3 rounded-lg text-sm">
-                  <div className="font-bold text-blue-800">Match Context</div>
-                  <div className="text-gray-600">1st Innings Score: <span className="font-mono font-bold text-gray-800">{innings1Score}</span></div>
-                  <div className="text-gray-600">Scheduled Overs: <span className="font-mono font-bold text-gray-800">{totalOvers}</span></div>
-                </div>
-
-                {/* 1st innings interruption */}
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                    Overs lost in 1st innings (0 if none)
-                  </label>
-                  <input
-                    type="number" min="0" max={totalOvers} step="0.1"
-                    value={dlsForm.team1OversLost}
-                    onChange={e => setDlsForm({ ...dlsForm, team1OversLost: e.target.value })}
-                    className="w-full mt-1 p-2 border rounded-lg"
-                    placeholder="e.g. 0"
-                  />
-                </div>
-
-                {/* 2nd innings fields */}
-                <div className="border-t pt-4 space-y-3">
-                  <div className="text-xs font-bold text-gray-500 uppercase tracking-wide">2nd Innings Interruption</div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <label className="text-xs text-gray-500">Overs played</label>
-                      <input type="number" min="0" max={totalOvers} step="0.1"
-                        value={dlsForm.team2OversPlayed}
-                        onChange={e => setDlsForm({ ...dlsForm, team2OversPlayed: e.target.value })}
-                        className="w-full mt-1 p-2 border rounded-lg text-sm"
-                        placeholder="0" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500">Wickets lost</label>
-                      <input type="number" min="0" max="9"
-                        value={dlsForm.team2WicketsLost}
-                        onChange={e => setDlsForm({ ...dlsForm, team2WicketsLost: e.target.value })}
-                        className="w-full mt-1 p-2 border rounded-lg text-sm"
-                        placeholder="0" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500">Overs available</label>
-                      <input type="number" min="1" max={totalOvers} step="0.1"
-                        value={dlsForm.team2OversAvail}
-                        onChange={e => setDlsForm({ ...dlsForm, team2OversAvail: e.target.value })}
-                        className="w-full mt-1 p-2 border rounded-lg text-sm"
-                        placeholder={totalOvers} />
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleCompute}
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition"
-                >
-                  Calculate DLS Target
-                </button>
-
-                {/* Result card */}
-                {dlsResult && (
-                  <div className="bg-green-50 border border-green-300 rounded-xl p-4 text-center">
-                    <div className="text-xs text-green-700 font-bold uppercase mb-1">Revised Target</div>
-                    <div className="text-5xl font-black text-green-700 mb-2">{dlsResult.revisedTarget}</div>
-                    <div className="text-xs text-gray-500">
-                      Team 1 resources: <strong>{dlsResult.team1Resources}%</strong> &nbsp;|&nbsp;
-                      Team 2 resources: <strong>{dlsResult.team2Resources}%</strong>
-                    </div>
-                    {liveMatch && (
-                      <button
-                        onClick={applyTarget}
-                        disabled={isLoading}
-                        className="mt-3 w-full bg-green-600 text-white py-2 rounded-lg font-bold text-sm"
-                      >
-                        {isLoading ? 'Applying…' : '✅ Apply to Live Match'}
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-        </Modal>
-      )}
-
     </div>
   );
 }
