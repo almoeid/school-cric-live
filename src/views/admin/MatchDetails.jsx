@@ -402,14 +402,20 @@ export default function MatchDetails({ currentMatch, setView }) {
                             {/* UPDATED: Reduced padding, forced single line, centered, responsive font */}
                             <div className="bg-gradient-to-r from-blue-900/60 to-blue-800/60 border border-blue-500/30 px-3 py-2 md:px-6 md:py-2.5 rounded-full flex items-center justify-center gap-1.5 md:gap-2 shadow-lg backdrop-blur-md whitespace-nowrap max-w-[95%]">
                                 <Target className="w-3 h-3 md:w-4 md:h-4 text-yellow-400 animate-pulse shrink-0" />
-                                <span className="text-blue-100 text-[10px] xs:text-xs md:text-sm font-bold tracking-wide truncate">
-                                    {currentMatch.battingTeam} need <span className="text-yellow-400 text-sm md:text-lg">{equation.runsNeeded}</span> runs in <span className="text-white text-sm md:text-lg">{equation.ballsRemaining}</span> balls
-                                </span>
+<span className="text-blue-100 text-[10px] xs:text-xs md:text-sm font-bold tracking-wide truncate">
+    {currentMatch.battingTeam} need <span className="text-yellow-400 text-sm md:text-lg">{equation.runsNeeded}</span> runs in <span className="text-white text-sm md:text-lg">{equation.ballsRemaining}</span> balls
+    {currentMatch.dlsApplied && <span className="ml-1 text-blue-300 text-[9px]">(DLS)</span>}
+</span>
                             </div>
                             
-                            {/* FIX: Target is now pure white and bold */}
-                            <div className="text-[10px] text-white font-bold uppercase tracking-widest mt-1.5 opacity-100">Target: {currentMatch.target}</div>
-                        </div>
+<div className="text-[10px] text-white font-bold uppercase tracking-widest mt-1.5 opacity-100 flex items-center justify-center gap-1.5">
+  Target: {currentMatch.target}
+  {currentMatch.dlsApplied && (
+    <span className="bg-blue-500/30 border border-blue-400/50 text-blue-200 text-[9px] px-1.5 py-0.5 rounded-full">
+      DLS
+    </span>
+  )}
+</div>
                     )}
 
                     {/* INNINGS 1: PROJECTED SCORE (Only shown in 1st innings) */}
