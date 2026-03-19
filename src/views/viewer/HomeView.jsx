@@ -29,29 +29,29 @@ export default function HomeView({ matches, tournaments, setCurrentMatch, setSel
   return (
     <div className="space-y-10 max-w-5xl mx-auto pb-6">
       
-      {/* VIBRANT & PREMIUM EID BANNER */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 shadow-lg shadow-emerald-500/20 p-6 md:p-8 flex items-center gap-5 md:gap-6 border border-emerald-400/40">
+      {/* PREMIUM EID MUBARAK BANNER (Million Dollar Aesthetic) */}
+      <div className="relative overflow-hidden rounded-2xl bg-[#022c22] border border-emerald-800/60 shadow-2xl p-6 md:p-8 flex items-center gap-5 md:gap-8">
         
-        {/* Sleek light streaks (Glass reflection effect) */}
-        <div className="absolute top-0 right-1/4 w-32 h-full bg-white/10 skew-x-[30deg] transform -translate-x-1/2 pointer-events-none"></div>
-        <div className="absolute top-0 right-1/4 w-8 h-full bg-white/10 skew-x-[30deg] transform translate-x-8 pointer-events-none"></div>
+        {/* Abstract Glowing Background Orbs */}
+        <div className="absolute -left-20 -top-20 w-64 h-64 bg-emerald-500/10 blur-3xl rounded-full pointer-events-none"></div>
+        <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-teal-500/10 blur-3xl rounded-full pointer-events-none"></div>
         
-        {/* Giant subtle moon on the right */}
-        <div className="absolute -right-8 -top-8 pointer-events-none">
-            <Moon className="w-48 h-48 text-white opacity-10 transform -rotate-12" />
+        {/* Faded Giant Background Icon */}
+        <div className="absolute right-0 top-0 opacity-5 transform translate-x-1/4 -translate-y-1/4 pointer-events-none">
+            <Moon className="w-64 h-64 text-emerald-50" />
         </div>
         
-        {/* Clean, popping icon box */}
-        <div className="relative z-10 bg-white p-3.5 rounded-2xl shadow-md">
-            <Moon className="w-7 h-7 md:w-8 md:h-8 text-emerald-500 fill-emerald-500" />
+        {/* Glassmorphism Icon Box */}
+        <div className="relative z-10 p-4 bg-gradient-to-br from-emerald-800/40 to-emerald-900/40 border border-emerald-700/50 rounded-2xl backdrop-blur-md shadow-inner">
+            <Moon className="w-8 h-8 md:w-10 md:h-10 text-amber-300 drop-shadow-[0_0_12px_rgba(252,211,77,0.6)]" />
         </div>
         
-        {/* Text */}
+        {/* Premium Typography */}
         <div className="relative z-10 flex-1">
-            <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-1 drop-shadow-sm">
+            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 mb-1.5">
                 Eid Mubarak
             </h2>
-            <p className="text-sm md:text-base font-medium text-emerald-50 max-w-lg leading-relaxed">
+            <p className="text-sm md:text-base font-medium text-emerald-100/70 tracking-wide max-w-lg">
                 Wishing you joy, peace, and great cricket from the ZBSM Community.
             </p>
         </div>
@@ -59,7 +59,7 @@ export default function HomeView({ matches, tournaments, setCurrentMatch, setSel
 
       {/* BREAKING NEWS TICKER */}
       <NewsTicker 
-        news="Batch 21 secured a strong 32-run win over Batch 2018 in the ZBSM School League, with Munna Kumar smashing a brilliant 76 off just 26 balls to earn Man of the Match! Batch 2014 kicked off their ZBSM School League 2026 campaign in style, claiming a dominant 52-run victory in their opening match with an all-round performance! " 
+        news="Batch 2014 kicked off their ZBSM School League 2026 campaign in style, claiming a dominant 52-run victory in their opening match with an all-round performance! BREAKING: Batch 21 secured a strong 32-run win over Batch 2018 in the ZBSM School League, with Munna Kumar smashing a brilliant 76 off just 26 balls to earn Man of the Match!" 
       />
 
       {/* LIVE MATCHES */}
