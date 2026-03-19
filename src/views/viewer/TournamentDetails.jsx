@@ -59,15 +59,10 @@ export default function TournamentDetails({ tournament, matches, teams, setView,
 
   // --- SHARE LOGIC (Professional URL) ---
   const shareTournament = () => {
-      // 1. Create a readable slug (e.g. "IPL-2025")
       const slug = tournament.name
-        .replace(/[^a-zA-Z0-9 ]/g, "") // Remove special chars
-        .replace(/\s+/g, "-"); // Replace spaces with dashes
-      
-      // 2. Construct URL: Put the Readable Name FIRST so it looks trustworthy
-      // Format: domain.com/?tournament=IPL-2025&tournamentId=12345
+        .replace(/[^a-zA-Z0-9 ]/g, "")
+        .replace(/\s+/g, "-");
       const url = `${window.location.origin}${window.location.pathname}?tournament=${slug}&tournamentId=${tournament.id}`;
-      
       navigator.clipboard.writeText(url).then(() => {
           setCopied(true);
           setTimeout(() => setCopied(false), 2000);
@@ -142,7 +137,7 @@ export default function TournamentDetails({ tournament, matches, teams, setView,
      return stats.sort((a, b) => b.points - a.points || b.nrr - a.nrr);
   };
 
-  // 2. PERFORMERS (FIXED: Team Association Logic)
+  // 2. PERFORMERS
   const getPerformers = () => {
       let players = {};
       
@@ -154,19 +149,16 @@ export default function TournamentDetails({ tournament, matches, teams, setView,
           }
       };
 
-      // Pass 1: Process Matches
       tournamentMatches.filter(m => m.status === 'Completed' || m.status === 'Concluding').forEach(m => {
-          // Register from Match Rosters
           const teamAList = m.teamAPlayers || [];
           const teamBList = m.teamBPlayers || [];
           teamAList.forEach(p => { initPlayer(getPlayerName(p), m.teamA); players[getPlayerName(p)].matches++; });
           teamBList.forEach(p => { initPlayer(getPlayerName(p), m.teamB); players[getPlayerName(p)].matches++; });
 
-          // Process Scorecard Stats
           const processStats = (stats, type) => {
               if(!stats) return;
               Object.entries(stats).forEach(([name, data]) => {
-                  initPlayer(name, 'Unknown'); // Ensure player exists if not in roster
+                  initPlayer(name, 'Unknown');
                   if (type === 'bat') {
                       players[name].batInns++;
                       players[name].runs += (data.runs || 0);
@@ -200,16 +192,12 @@ export default function TournamentDetails({ tournament, matches, teams, setView,
           processStats(m.innings1?.bowlingStats, 'bowl');
       });
 
-      // Pass 2: Global Team Lookup (The Fix for "Unknown")
       Object.values(players).forEach(p => {
           if (p.team === 'Unknown') {
-              // Search in all teams registered in the system
               const foundTeam = teams.find(t => 
                   t.players.some(tp => getPlayerName(tp) === p.name)
               );
-              if (foundTeam) {
-                  p.team = foundTeam.name;
-              }
+              if (foundTeam) p.team = foundTeam.name;
           }
       });
 
@@ -265,7 +253,6 @@ export default function TournamentDetails({ tournament, matches, teams, setView,
                              key={m.id} 
                              onClick={() => { 
                                 if (setCurrentMatch && typeof setCurrentMatch === 'function') {
-                                    console.log("Opening Match:", m.id);
                                     setCurrentMatch(m); 
                                     setView('match'); 
                                 } else {
@@ -300,7 +287,7 @@ export default function TournamentDetails({ tournament, matches, teams, setView,
       );
   };
   
-  // --- NEW: Render Roster Player ---
+  // --- Render Roster Player ---
   const renderRosterPlayer = (p, i) => {
       const player = typeof p === 'string' ? { name: p, role: 'Player', photo: '', isCaptain: false, isWk: false } : p;
       return (
@@ -334,7 +321,6 @@ export default function TournamentDetails({ tournament, matches, teams, setView,
               </div>
           </div>
           <div className="flex items-center gap-3 ml-2 shrink-0">
-              {/* SHARE BUTTON */}
               <button 
                 onClick={shareTournament}
                 className="p-2 bg-gray-100 rounded-full hover:bg-blue-50 text-gray-600 hover:text-blue-600 transition-colors"
@@ -374,7 +360,11 @@ export default function TournamentDetails({ tournament, matches, teams, setView,
        {activeTab === 'matches' && (
            <div>
                {tournamentMatches.length === 0 && <p className="text-center text-gray-400 py-10">No matches scheduled yet.</p>}
+               {/* ✅ All stages rendered in logical tournament order */}
                {renderMatchList('Group Stage')}
+               {renderMatchList('Qualifier 1')}
+               {renderMatchList('Eliminator')}
+               {renderMatchList('Qualifier 2')}
                {renderMatchList('Semi Final')}
                {renderMatchList('Final')}
            </div>
@@ -414,8 +404,6 @@ export default function TournamentDetails({ tournament, matches, teams, setView,
                                   <td className="p-4 text-center">{row.played}</td>
                                   <td className="p-4 text-center font-bold text-green-600">{row.won}</td>
                                   <td className="p-4 text-center text-red-500">{row.lost}</td>
-                                  
-                                  {/* --- FORM PILLS --- */}
                                   <td className="p-4 text-center">
                                       <div className="flex gap-1 justify-center">
                                           {row.recentForm.map((m, idx) => (
@@ -430,15 +418,12 @@ export default function TournamentDetails({ tournament, matches, teams, setView,
                                           {row.recentForm.length === 0 && <span className="text-gray-300 text-xs">-</span>}
                                       </div>
                                   </td>
-    
                                   <td className="p-4 text-center font-mono text-xs">{row.nrr > 0 ? `+${row.nrr}` : row.nrr}</td>
                                   <td className="p-4 text-center font-bold text-base">{row.points}</td>
                                   <td className="p-4 text-center text-gray-400">
                                       {expandedTeamId === row.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                                   </td>
                                </tr>
-                               
-                               {/* --- DROPDOWN ROW CONTENT --- */}
                                {expandedTeamId === row.id && (
                                    <tr className="bg-gray-50">
                                        <td colSpan="8" className="p-0">
@@ -446,18 +431,15 @@ export default function TournamentDetails({ tournament, matches, teams, setView,
                                                <h4 className="text-xs font-bold text-gray-500 uppercase mb-3 flex items-center">
                                                    <Activity className="w-3 h-3 mr-2" /> Match History - {row.name}
                                                </h4>
-                                               
                                                {row.history.length === 0 ? (
                                                    <p className="text-center text-gray-400 py-2 text-sm">No matches played yet.</p>
                                                ) : (
                                                    <div className="space-y-2">
-                                                       {/* History Header */}
                                                        <div className="grid grid-cols-3 text-[10px] font-bold text-gray-400 uppercase px-2">
                                                            <div>Opponent</div>
                                                            <div>Result</div>
                                                            <div className="text-right">Date</div>
                                                        </div>
-                                                       {/* History List */}
                                                        {row.history.map((m, idx) => (
                                                            <div key={idx} className="grid grid-cols-3 text-sm p-2 bg-white rounded border border-gray-200 items-center">
                                                                <div className="font-semibold text-gray-700 truncate pr-2">vs {m.opponent}</div>
@@ -483,7 +465,7 @@ export default function TournamentDetails({ tournament, matches, teams, setView,
            </div>
        )}
        
-       {/* --- NEW: TEAMS TAB --- */}
+       {/* TEAMS TAB */}
        {activeTab === 'teams' && (
            <div>
               {selectedTeamForRoster ? (
@@ -516,9 +498,9 @@ export default function TournamentDetails({ tournament, matches, teams, setView,
            </div>
        )}
 
+       {/* PERFORMERS TAB */}
        {activeTab === 'performers' && (
            <div className="space-y-8">
-               {/* MVP */}
                <div className="bg-white rounded-xl shadow-sm border border-yellow-200 overflow-hidden">
                    <div className="bg-yellow-50 p-4 border-b border-yellow-200 flex items-center"><Trophy className="w-5 h-5 text-yellow-600 mr-2" /><h3 className="font-bold text-yellow-900">Player of the Tournament</h3></div>
                    <div className="overflow-x-auto">
