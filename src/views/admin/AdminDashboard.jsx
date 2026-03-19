@@ -10,25 +10,21 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
   const [dashView, setDashView] = useState('main'); 
   const [isLoading, setIsLoading] = useState(false);
   
-  // Toss State
   const [tossResult, setTossResult] = useState(null);
   const [isTossing, setIsTossing] = useState(false);
 
   const [newMatchForm, setNewMatchForm] = useState({ teamAId: '', teamBId: '', batFirst: '', overs: 10, venue: 'ZBSM BAZAR GROUND', isScheduled: false });
   
-  // --- SQUAD SELECTION STATE (For picking 11 from 16) ---
   const [selectingXI, setSelectingXI] = useState(false);
   const [teamAXI, setTeamAXI] = useState([]);
   const [teamBXI, setTeamBXI] = useState([]);
 
-  // --- TEAM FORM (UPDATED TO 16 PLAYERS) ---
   const createEmptyPlayer = () => ({ name: '', role: 'Batter', isCaptain: false, isWk: false, photo: '' });
   
   const [newTeamForm, setNewTeamForm] = useState({ 
       name: '', 
       color: '#2563EB', 
       logo: '', 
-      // UPDATED: Changed from 11 to 16 for squad size
       players: Array(16).fill().map(createEmptyPlayer) 
   });
   
@@ -47,7 +43,6 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
       ]);
   };
 
-  // --- IMAGE PROCESSING ---
   const processImage = (file, callback) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -70,14 +65,12 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
       if(e.target.files[0]) processImage(e.target.files[0], (base64) => setter(prev => ({ ...prev, [field]: base64 })));
   };
 
-  // --- PLAYER HANDLERS ---
   const handlePlayerPhotoUpload = (e, index, isEditing = false) => {
       if (e.target.files[0]) {
           processImage(e.target.files[0], (base64) => {
               const setter = isEditing ? setEditingTeam : setNewTeamForm;
               setter(prev => {
                   const newPlayers = [...prev.players];
-                  // Ensure object structure
                   if (typeof newPlayers[index] === 'string') {
                       newPlayers[index] = { name: newPlayers[index], role: 'Batter', photo: base64 };
                   } else {
@@ -93,25 +86,20 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
       const setter = isEditing ? setEditingTeam : setNewTeamForm;
       setter(prev => {
           const newPlayers = [...prev.players];
-          
           if (typeof newPlayers[index] === 'string') {
               newPlayers[index] = { name: newPlayers[index], role: 'Batter', isCaptain: false, isWk: false, photo: '' };
           }
-
-          // Single Captain/WK Logic
           if (field === 'isCaptain' && value === true) {
               newPlayers.forEach(p => { if (typeof p === 'object') p.isCaptain = false; });
           }
           if (field === 'isWk' && value === true) {
               newPlayers.forEach(p => { if (typeof p === 'object') p.isWk = false; });
           }
-
           newPlayers[index] = { ...newPlayers[index], [field]: value };
           return { ...prev, players: newPlayers };
       });
   };
 
-  // --- COIN TOSS LOGIC ---
   const performToss = () => {
       setIsTossing(true);
       setTossResult(null);
@@ -122,18 +110,12 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
       }, 1500);
   };
 
-  // Helper to toggle player in XI
   const togglePlayerInXI = (player, teamSide) => {
       const list = teamSide === 'A' ? teamAXI : teamBXI;
       const setList = teamSide === 'A' ? setTeamAXI : setTeamBXI;
-      
-      // Robust check for object vs string
       const pName = typeof player === 'string' ? player : player.name;
       const exists = list.some(p => (typeof p === 'string' ? p : p.name) === pName);
-      
-      // Ensure player is saved as an object in the XI list if it was a string
       const playerObject = typeof player === 'string' ? { name: player, role: 'Batter', isCaptain: false, isWk: false, photo: '' } : player;
-      
       if (exists) {
           setList(list.filter(p => (typeof p === 'string' ? p : p.name) !== pName));
       } else {
@@ -142,18 +124,14 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
       }
   };
 
-  // --- MATCH START LOGIC ---
-  
-  // Step 1: Open Modal
   const initiateMatchStart = (matchId = null) => {
-      // Handle scheduled match resume logic
       if (matchId) {
           const match = matches.find(m => m.id === matchId);
           if (!match) throw new Error("Match not found");
           setNewMatchForm({ 
               teamAId: match.teamAId, 
               teamBId: match.teamBId, 
-              batFirst: '', // Force toss/selection first
+              batFirst: '',
               overs: match.totalOvers || 10, 
               venue: match.venue || 'ZBSM BAZAR GROUND', 
               isScheduled: true, 
@@ -162,45 +140,32 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
           setDashView('create-match');
           return;
       }
-      
       if (!newMatchForm.teamAId || !newMatchForm.teamBId) return alert("Select both teams first.");
       if (!newMatchForm.batFirst) return alert("Please complete the toss/batting first selection.");
-
       const teamA = teams.find(t => t.id === newMatchForm.teamAId);
       const teamB = teams.find(t => t.id === newMatchForm.teamBId);
-      
-      // Pre-select up to 11 players
       setTeamAXI(teamA.players.slice(0, 11));
       setTeamBXI(teamB.players.slice(0, 11));
-      
       setSelectingXI(true); 
   };
 
-  // Step 2: Confirm & Save
   const confirmMatchStart = async () => {
-      // Validation warning
       if (teamAXI.length !== 11 || teamBXI.length !== 11) {
           if(!window.confirm(`Standard cricket requires 11 players.\n\nTeam A: ${teamAXI.length}\nTeam B: ${teamBXI.length}\n\nStart anyway?`)) return;
       }
-      
       setIsLoading(true);
       setTossResult(null);
-      
       try {
         const teamA = teams.find(t => t.id === newMatchForm.teamAId);
         const teamB = teams.find(t => t.id === newMatchForm.teamBId);
-        
         const isTeamABatting = newMatchForm.batFirst === 'A';
         const battingTeam = isTeamABatting ? teamA : teamB;
         const bowlingTeam = isTeamABatting ? teamB : teamA;
-        
         const matchInitData = {
             teamA: teamA.name, teamAId: teamA.id, teamALogo: teamA.logo || '', teamAColor: teamA.color,
-            teamAPlayers: teamAXI, // SAVE SELECTED 11
-            
+            teamAPlayers: teamAXI,
             teamB: teamB.name, teamBId: teamB.id, teamBLogo: teamB.logo || '', teamBColor: teamB.color,
-            teamBPlayers: teamBXI, // SAVE SELECTED 11
-
+            teamBPlayers: teamBXI,
             battingTeam: battingTeam.name, battingTeamId: battingTeam.id,
             bowlingTeam: bowlingTeam.name, bowlingTeamId: bowlingTeam.id,
             score: 0, wickets: 0, legalBalls: 0, overs: 0, totalOvers: parseInt(newMatchForm.overs),
@@ -212,7 +177,6 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
             scorerEmail: auth.currentUser?.email || 'Anonymous', 
             scorerName: auth.currentUser?.displayName || 'Official Scorer'
         };
-
         if (newMatchForm.isScheduled) {
             await withTimeout(updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'matches', newMatchForm.matchId), matchInitData));
             setCurrentMatch({ id: newMatchForm.matchId, ...matchInitData });
@@ -220,36 +184,25 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
             const ref = await withTimeout(addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'matches'), { ...matchInitData, matchType: 'Friendly' }));
             setCurrentMatch({ id: ref.id, ...matchInitData });
         }
-        
         setSelectingXI(false);
         setNewMatchForm({ teamAId: '', teamBId: '', batFirst: '', overs: 10, venue: 'ZBSM BAZAR GROUND', isScheduled: false });
         setView('admin-score');
-
       } catch(err) { alert(err.message); } finally { setIsLoading(false); }
   };
 
-  // Re-map scheduled match start to initiateMatchStart
   const startScheduledMatch = (matchId) => {
       initiateMatchStart(matchId);
   };
 
-
-  // --- TEAM ACTIONS ---
   const handleCreateTeam = async () => {
     if (!newTeamForm.name) return alert("Team Name required!");
     const validPlayers = newTeamForm.players.filter(p => (typeof p === 'string' ? p.trim() : p.name.trim()) !== '');
     if (validPlayers.length < 2) return alert("Add at least 2 players.");
-
     setIsLoading(true);
     try {
         await withTimeout(addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'teams'), {
-            name: newTeamForm.name, 
-            color: newTeamForm.color, 
-            logo: newTeamForm.logo, 
-            players: validPlayers, 
-            timestamp: serverTimestamp()
+            name: newTeamForm.name, color: newTeamForm.color, logo: newTeamForm.logo, players: validPlayers, timestamp: serverTimestamp()
         }));
-        // Reset to 16 players
         setNewTeamForm({ name: '', color: '#2563EB', logo: '', players: Array(16).fill().map(createEmptyPlayer) });
         alert("Team Created!");
     } catch (err) { alert("Error: " + err.message); } finally { setIsLoading(false); }
@@ -264,17 +217,12 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
              if (p && typeof p.name === 'string') return p.name.trim() !== '';
              return false;
         });
-
         await withTimeout(updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'teams', editingTeam.id), {
             name: editingTeam.name, color: editingTeam.color, logo: editingTeam.logo, players: validPlayers
         }));
         setEditingTeam(null);
         alert("Team Updated Successfully!");
-     } catch (err) {
-        alert("Error updating team: " + err.message);
-     } finally {
-        setIsLoading(false);
-     }
+     } catch (err) { alert("Error updating team: " + err.message); } finally { setIsLoading(false); }
   };
 
   const deleteTeam = async (teamId) => {
@@ -291,45 +239,27 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
       if (!confirm1) return;
       const confirm2 = window.confirm("‼️ FINAL WARNING: This will delete ALL Matches, Teams, and Tournaments permanently. Confirm?");
       if (!confirm2) return;
-
       setIsLoading(true);
       try {
           const deleteCollection = async (collName) => {
               const q = query(collection(db, 'artifacts', APP_ID, 'public', 'data', collName));
               const snapshot = await getDocs(q);
               const batch = writeBatch(db);
-              snapshot.docs.forEach((doc) => {
-                  batch.delete(doc.ref);
-              });
+              snapshot.docs.forEach((doc) => { batch.delete(doc.ref); });
               await batch.commit();
           };
-
-          await Promise.all([
-              deleteCollection('matches'),
-              deleteCollection('teams'),
-              deleteCollection('tournaments')
-          ]);
-          
+          await Promise.all([deleteCollection('matches'), deleteCollection('teams'), deleteCollection('tournaments')]);
           setCurrentMatch(null);
           setSelectedTournament(null);
-          
           alert("💥 System Wiped. All data has been deleted.");
-      } catch (err) {
-          alert("Error wiping data: " + err.message);
-      } finally {
-          setIsLoading(false);
-      }
+      } catch (err) { alert("Error wiping data: " + err.message); } finally { setIsLoading(false); }
   };
 
-  // --- TOURNAMENT ACTIONS ---
   const createTournament = async () => {
      if (!newTournamentForm.name || newTournamentForm.teamIds.length < 2) return alert("Need name and 2+ teams.");
      setIsLoading(true);
      try {
-        await withTimeout(addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'tournaments'), { 
-            ...newTournamentForm, 
-            timestamp: serverTimestamp() 
-        }));
+        await withTimeout(addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'tournaments'), { ...newTournamentForm, timestamp: serverTimestamp() }));
         setNewTournamentForm({ name: '', overs: 10, logo: '', teamIds: [] });
         alert("Tournament Created!"); setDashView('tournaments'); 
      } catch (err) { alert("Error: " + err.message); } finally { setIsLoading(false); }
@@ -341,11 +271,7 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
       try {
           await deleteDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'matches', matchId));
           alert("Match deleted successfully");
-      } catch (err) {
-          alert("Error deleting match: " + err.message);
-      } finally {
-          setIsLoading(false);
-      }
+      } catch (err) { alert("Error deleting match: " + err.message); } finally { setIsLoading(false); }
   };
 
   const deleteTournament = async (id) => {
@@ -360,34 +286,26 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
 
   const addFixture = async () => { 
       if (!newFixtureForm.teamAId || !newFixtureForm.teamBId || !newFixtureForm.date) return alert("Fill all fields");
-      
-      if (newFixtureForm.teamAId === newFixtureForm.teamBId) {
-         return alert("Cannot select the same team for both sides! Please choose different teams.");
-      }
-
+      if (newFixtureForm.teamAId === newFixtureForm.teamBId) return alert("Cannot select the same team for both sides!");
       setIsLoading(true);
       try {
         const teamA = teams.find(t => t.id === newFixtureForm.teamAId);
         const teamB = teams.find(t => t.id === newFixtureForm.teamBId);
         const scheduleTime = new Date(`${newFixtureForm.date}T${newFixtureForm.time || '10:00'}`).toISOString();
-
         const matchData = {
             teamA: teamA.name, teamAId: teamA.id, teamALogo: teamA.logo || '', teamAPlayers: teamA.players || [], teamAColor: teamA.color,
             teamB: teamB.name, teamBId: teamB.id, teamBLogo: teamB.logo || '', teamBPlayers: teamB.players || [], teamBColor: teamB.color,
             battingTeam: '', bowlingTeam: '', score: 0, wickets: 0, legalBalls: 0, overs: 0, totalOvers: parseInt(activeTournament.overs),
             timeline: [], status: 'Scheduled', currentInnings: 1, target: null, extras: 0,
             tournamentId: activeTournament.id, stage: newFixtureForm.stage, 
-            scheduledTime: scheduleTime,
-            venue: newFixtureForm.venue, timestamp: serverTimestamp()
+            scheduledTime: scheduleTime, venue: newFixtureForm.venue, timestamp: serverTimestamp()
         };
-        
         await withTimeout(addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'matches'), matchData));
         setNewFixtureForm({ teamAId: '', teamBId: '', stage: 'Group Stage', date: '', time: '', venue: 'ZBSM BAZAR GROUND' });
         alert("Fixture Added");
     } catch (err) { alert("Error: " + err.message); } finally { setIsLoading(false); }
   };
 
-  // --- RENDER HELPER FOR PLAYER ROW ---
   const renderPlayerInput = (p, i, isEditing) => {
       const player = typeof p === 'string' ? { name: p, role: 'Batter', photo: '', isCaptain: false, isWk: false } : p;
       return (
@@ -416,13 +334,14 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
 
   return (
     <div className="space-y-6">
+
+      {/* MAIN VIEW */}
       {dashView === 'main' && (
         <>
           <div className="grid grid-cols-2 gap-4">
              <button onClick={() => setDashView('create-match')} className="p-6 bg-white rounded-xl shadow-md hover:shadow-lg transition flex flex-col items-center justify-center text-center border-b-4 border-green-500"><Play className="w-8 h-8 text-green-600 mb-2" /> <span className="font-bold text-lg">Friendly Match</span></button>
              <button onClick={() => setDashView('tournaments')} className="p-6 bg-white rounded-xl shadow-md hover:shadow-lg transition flex flex-col items-center justify-center text-center border-b-4 border-yellow-500"><Trophy className="w-8 h-8 text-yellow-500 mb-2" /> <span className="font-bold text-lg">Tournaments</span></button>
           </div>
-          {/* Live Matches List */}
           <div className="bg-white rounded-xl shadow-sm p-4 border border-green-100">
              <h3 className="font-bold text-green-800 mb-4 flex items-center"><Activity className="w-5 h-5 mr-2 animate-pulse" /> Live Matches</h3>
              {matches.filter(m => m.status === 'Live' || m.status === 'Concluding').length === 0 && <p className="text-gray-400 text-sm italic">No matches currently live.</p>}
@@ -440,6 +359,7 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
         </>
       )}
 
+      {/* CREATE MATCH VIEW */}
       {dashView === 'create-match' && (
         <div className="bg-white p-6 rounded-xl shadow-md">
            <h2 className="text-xl font-bold mb-6">Start Match</h2>
@@ -452,19 +372,17 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
              <div><label className="text-xs font-bold text-gray-500">Batting 1st</label><select className="w-full p-3 border rounded-lg" onChange={e => setNewMatchForm({...newMatchForm, batFirst: e.target.value})}><option value="">Select</option>{newMatchForm.teamAId && <option value="A">{getTeamName(newMatchForm.teamAId)}</option>}{newMatchForm.teamBId && <option value="B">{getTeamName(newMatchForm.teamBId)}</option>}</select></div>
            </div>
            <div className="mb-4"><label className="text-xs font-bold text-gray-500">Venue</label><select className="w-full p-3 border rounded-lg bg-gray-50" value={newMatchForm.venue} onChange={e => setNewMatchForm({...newMatchForm, venue: e.target.value})}><option>ZBSM BAZAR GROUND</option><option>ZBSM SCHOOL GROUND</option></select></div>
-           
            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200 text-center">
                <div className="flex justify-center items-center mb-3"><div className={`w-16 h-16 rounded-full border-4 border-yellow-500 flex items-center justify-center text-xl font-bold text-yellow-600 shadow-md ${isTossing ? 'animate-spin' : ''} ${tossResult ? 'bg-yellow-100' : 'bg-white'}`}>{isTossing ? '...' : (tossResult || '?')}</div></div>
                {tossResult && <div className="text-sm font-bold text-gray-800 mb-3">Result: <span className="text-blue-600 text-lg ml-1">{tossResult}</span></div>}
                <button onClick={performToss} disabled={isTossing} className="px-6 py-2 bg-yellow-500 text-white rounded-full text-sm font-bold hover:bg-yellow-600 transition shadow-sm">Flip Coin</button>
            </div>
-
-           {/* Button triggers XI selection now */}
            <button onClick={() => initiateMatchStart()} disabled={!newMatchForm.batFirst || isLoading} className={`w-full text-white py-3 rounded-lg font-bold ${isLoading ? 'bg-gray-400' : 'bg-green-600'}`}>{isLoading ? 'Starting...' : 'Select Playing XI & Start'}</button>
            <button onClick={() => setDashView('main')} disabled={isLoading} className="w-full mt-2 text-gray-500">Cancel</button>
         </div>
       )}
 
+      {/* TEAMS VIEW */}
       {dashView === 'teams' && (
         <div className="space-y-6">
            <div className="flex justify-between items-center"><h2 className="text-xl font-bold">Manage Teams</h2><button onClick={()=>setDashView('main')} className="text-sm text-gray-500">Back</button></div>
@@ -480,13 +398,11 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
                       {newTeamForm.logo ? <img src={newTeamForm.logo} alt="Preview" className="w-full h-full object-cover rounded" /> : <div className="text-center"><Upload className="w-6 h-6 text-gray-400 mx-auto" /><span className="text-[10px] text-gray-400">Logo</span></div>}
                   </div>
               </div>
-              {/* The grid handles rendering up to 16 rows */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 max-h-96 overflow-y-auto pr-1">
                  {newTeamForm.players.map((p, i) => renderPlayerInput(p, i, false))}
               </div>
               <button onClick={handleCreateTeam} disabled={isLoading} className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold">{isLoading ? 'Saving...' : 'Save Team'}</button>
            </div>
-
            {teams.map(team => (
              <div key={team.id} className="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center">
                 <div className="flex items-center space-x-3"><TeamLogo name={team.name} color={team.color} logo={team.logo} /><div className="font-bold">{team.name}</div></div>
@@ -499,7 +415,7 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
         </div>
       )}
 
-      {/* TOURNAMENT VIEW */}
+      {/* TOURNAMENTS VIEW */}
       {dashView === 'tournaments' && (
          <div className="space-y-6">
             <div className="flex justify-between items-center"><h2 className="text-xl font-bold">Tournaments</h2><button onClick={()=>setDashView('main')} className="text-sm text-gray-500">Back</button></div>
@@ -530,17 +446,23 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
          </div>
       )}
 
+      {/* MANAGE TOURNAMENT VIEW */}
       {dashView === 'manage-tournament' && activeTournament && (
          <div className="space-y-6">
-            <div className="flex justify-between items-center"><h2 className="text-xl font-bold">{activeTournament.name}</h2><button onClick={()=>setDashView('tournaments')} className="text-sm text-gray-500">Back</button></div>
+            <div className="flex justify-between items-center">
+               <h2 className="text-xl font-bold">{activeTournament.name}</h2>
+               <button onClick={()=>setDashView('tournaments')} className="text-sm text-gray-500">Back</button>
+            </div>
             <div className="bg-white p-4 rounded-xl shadow-sm">
                <h3 className="font-bold mb-3 text-sm uppercase text-gray-500">Add Fixture</h3>
                <div className="grid grid-cols-2 gap-2 mb-2">
                   <select className="p-2 border rounded" onChange={e=>setNewFixtureForm({...newFixtureForm, teamAId: e.target.value})}><option value="">Team A</option>{teams.filter(t=>activeTournament.teamIds.includes(t.id)).map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>
                   <select className="p-2 border rounded" onChange={e=>setNewFixtureForm({...newFixtureForm, teamBId: e.target.value})}><option value="">Team B</option>{teams.filter(t=>activeTournament.teamIds.includes(t.id)).map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>
                </div>
-               <div className="grid grid-cols-2 gap-2 mb-2"><input type="date" className="p-2 border rounded" onChange={e=>setNewFixtureForm({...newFixtureForm, date: e.target.value})} /><input type="time" className="p-2 border rounded" onChange={e=>setNewFixtureForm({...newFixtureForm, time: e.target.value})} /></div>
-               {/* ✅ UPDATED: Added Qualifier 1, Qualifier 2, and Eliminator stages */}
+               <div className="grid grid-cols-2 gap-2 mb-2">
+                  <input type="date" className="p-2 border rounded" onChange={e=>setNewFixtureForm({...newFixtureForm, date: e.target.value})} />
+                  <input type="time" className="p-2 border rounded" onChange={e=>setNewFixtureForm({...newFixtureForm, time: e.target.value})} />
+               </div>
                <select className="w-full p-2 border rounded mb-2" value={newFixtureForm.stage} onChange={e=>setNewFixtureForm({...newFixtureForm, stage: e.target.value})}>
                  <option value="Group Stage">Group Stage</option>
                  <option value="Qualifier 1">Qualifier 1</option>
@@ -549,79 +471,85 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
                  <option value="Semi Final">Semi Final</option>
                  <option value="Final">Final</option>
                </select>
-               <div className="mb-4"><label className="text-xs font-bold text-gray-500">Venue</label><select className="w-full p-2 border rounded bg-gray-50" value={newFixtureForm.venue} onChange={e => setNewFixtureForm({...newFixtureForm, venue: e.target.value})}><option>ZBSM BAZAR GROUND</option><option>ZBSM SCHOOL GROUND</option></select></div>
+               <div className="mb-4">
+                  <label className="text-xs font-bold text-gray-500">Venue</label>
+                  <select className="w-full p-2 border rounded bg-gray-50" value={newFixtureForm.venue} onChange={e => setNewFixtureForm({...newFixtureForm, venue: e.target.value})}>
+                     <option>ZBSM BAZAR GROUND</option>
+                     <option>ZBSM SCHOOL GROUND</option>
+                  </select>
+               </div>
                <button onClick={addFixture} disabled={isLoading} className="w-full bg-green-600 text-white py-2 rounded font-bold">{isLoading ? 'Adding...' : 'Add to Schedule'}</button>
             </div>
-<div className="bg-white p-4 rounded-xl shadow-sm mt-4">
-                <h3 className="font-bold mb-3">Fixtures in this Tournament</h3>
-                {matches.filter(m => m.tournamentId === activeTournament.id).length === 0 ? (
-                    <p className="text-sm text-gray-400 italic">No fixtures added yet.</p>
-                ) : (
-                    [...matches.filter(m => m.tournamentId === activeTournament.id)]
-                        .sort((a, b) => {
-                            const order = { Completed: 0, Concluding: 1, Live: 2, Scheduled: 3 };
-                            const diff = (order[a.status] ?? 4) - (order[b.status] ?? 4);
-                            if (diff !== 0) return diff;
-                            return new Date(b.scheduledTime || b.timestamp) - new Date(a.scheduledTime || a.timestamp);
-                        })
-                        .map((m) => {
-                            const isCompleted = m.status === 'Completed' || m.status === 'Concluding';
-                            const isLive = m.status === 'Live';
-                            const matchDate = m.scheduledTime
-                                ? new Date(m.scheduledTime).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-                                : null;
-                            const allSorted = [...matches.filter(tm => tm.tournamentId === activeTournament.id)]
-                                .sort((a, b) => new Date(a.scheduledTime || a.timestamp) - new Date(b.scheduledTime || b.timestamp));
-                            const matchNo = allSorted.findIndex(tm => tm.id === m.id) + 1;
 
-                            return (
-                                <div key={m.id} className={`p-3 border-b last:border-0 ${isLive ? 'bg-green-50' : ''}`}>
-                                    {/* Top row: match number + stage + date */}
-                                    <div className="flex justify-between items-center mb-1.5">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded">M{matchNo}</span>
-                                            <span className="text-[10px] font-bold text-gray-400 uppercase">{m.stage}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            {matchDate && <span className="text-[10px] text-gray-400">{matchDate}</span>}
-                                            {isLive && <span className="text-[10px] font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded animate-pulse">LIVE</span>}
-                                        </div>
-                                    </div>
-                                    {/* Bottom row: teams + result + actions */}
-                                    <div className="flex justify-between items-center">
-                                        <div>
-                                            <span className="font-bold text-gray-800 text-sm">{m.teamA} vs {m.teamB}</span>
-                                            {isCompleted && m.result ? (
-                                                <div className="text-xs text-green-700 font-medium mt-0.5">{m.result}</div>
-                                            ) : isLive ? (
-                                                <div className="text-xs text-green-600 font-mono mt-0.5">{m.score}/{m.wickets} ({m.overs || 0} ov)</div>
-                                            ) : (
-                                                <div className="text-xs text-orange-500 mt-0.5">Scheduled</div>
-                                            )}
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            {m.status === 'Scheduled' && (
-                                                <button onClick={() => startScheduledMatch(m.id)} className="bg-black text-white px-3 py-1 rounded text-xs font-bold">START</button>
-                                            )}
-                                            <button
-                                                onClick={() => { setCurrentMatch(m); setView('match'); }}
-                                                className="p-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
-                                                title="View Match"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                                                </svg>
-                                            </button>
-                                            <button onClick={() => deleteMatch(m.id)} className="bg-red-100 text-red-600 p-1.5 rounded hover:bg-red-200" title="Delete">
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })
-                )}
+            {/* FIXTURES LIST */}
+            <div className="bg-white p-4 rounded-xl shadow-sm">
+               <h3 className="font-bold mb-3">Fixtures in this Tournament</h3>
+               {matches.filter(m => m.tournamentId === activeTournament.id).length === 0 ? (
+                   <p className="text-sm text-gray-400 italic">No fixtures added yet.</p>
+               ) : (
+                   [...matches.filter(m => m.tournamentId === activeTournament.id)]
+                       .sort((a, b) => {
+                           const order = { Completed: 0, Concluding: 1, Live: 2, Scheduled: 3 };
+                           const diff = (order[a.status] ?? 4) - (order[b.status] ?? 4);
+                           if (diff !== 0) return diff;
+                           return new Date(b.scheduledTime || b.timestamp) - new Date(a.scheduledTime || a.timestamp);
+                       })
+                       .map((m) => {
+                           const isCompleted = m.status === 'Completed' || m.status === 'Concluding';
+                           const isLive = m.status === 'Live';
+                           const matchDate = m.scheduledTime
+                               ? new Date(m.scheduledTime).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+                               : null;
+                           const allSorted = [...matches.filter(tm => tm.tournamentId === activeTournament.id)]
+                               .sort((a, b) => new Date(a.scheduledTime || a.timestamp) - new Date(b.scheduledTime || b.timestamp));
+                           const matchNo = allSorted.findIndex(tm => tm.id === m.id) + 1;
+                           return (
+                               <div key={m.id} className={`p-3 border-b last:border-0 ${isLive ? 'bg-green-50' : ''}`}>
+                                   <div className="flex justify-between items-center mb-1.5">
+                                       <div className="flex items-center gap-2">
+                                           <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded">M{matchNo}</span>
+                                           <span className="text-[10px] font-bold text-gray-400 uppercase">{m.stage}</span>
+                                       </div>
+                                       <div className="flex items-center gap-2">
+                                           {matchDate && <span className="text-[10px] text-gray-400">{matchDate}</span>}
+                                           {isLive && <span className="text-[10px] font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded animate-pulse">LIVE</span>}
+                                       </div>
+                                   </div>
+                                   <div className="flex justify-between items-center">
+                                       <div>
+                                           <span className="font-bold text-gray-800 text-sm">{m.teamA} vs {m.teamB}</span>
+                                           {isCompleted && m.result ? (
+                                               <div className="text-xs text-green-700 font-medium mt-0.5">{m.result}</div>
+                                           ) : isLive ? (
+                                               <div className="text-xs text-green-600 font-mono mt-0.5">{m.score}/{m.wickets} ({m.overs || 0} ov)</div>
+                                           ) : (
+                                               <div className="text-xs text-orange-500 mt-0.5">Scheduled</div>
+                                           )}
+                                       </div>
+                                       <div className="flex items-center gap-2">
+                                           {m.status === 'Scheduled' && (
+                                               <button onClick={() => startScheduledMatch(m.id)} className="bg-black text-white px-3 py-1 rounded text-xs font-bold">START</button>
+                                           )}
+                                           <button
+                                               onClick={() => { setCurrentMatch(m); setView('match'); }}
+                                               className="p-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
+                                               title="View Match"
+                                           >
+                                               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                                               </svg>
+                                           </button>
+                                           <button onClick={() => deleteMatch(m.id)} className="bg-red-100 text-red-600 p-1.5 rounded hover:bg-red-200" title="Delete">
+                                               <Trash2 className="w-4 h-4" />
+                                           </button>
+                                       </div>
+                                   </div>
+                               </div>
+                           );
+                       })
+               )}
             </div>
+         </div>
       )}
 
       {/* EDIT TEAM MODAL */}
@@ -646,15 +574,13 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
          </Modal>
       )}
 
-      {/* --- SELECT XI MODAL --- */}
+      {/* SELECT XI MODAL */}
       {selectingXI && (
            <Modal title="Select Playing XI" onClose={() => setSelectingXI(false)}>
                <div className="space-y-6">
-                   {/* Team A */}
                    <div>
                        <h3 className="font-bold text-blue-800 mb-2 flex justify-between">{getTeamName(newMatchForm.teamAId)} <span className={teamAXI.length === 11 ? "text-green-600" : "text-red-500"}>{teamAXI.length}/11</span></h3>
                        <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border p-2 rounded">
-                           {/* Iterate over the full squad */}
                            {teams.find(t => t.id === newMatchForm.teamAId)?.players.map((p, i) => {
                                const pName = typeof p === 'string' ? p : p.name;
                                const isSelected = teamAXI.some(tp => (typeof tp === 'string' ? tp : tp.name) === pName);
@@ -662,16 +588,14 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
                                return (
                                    <div key={i} onClick={() => togglePlayerInXI(p, 'A')} className={`p-2 text-sm border rounded cursor-pointer flex items-center gap-2 ${isSelected ? 'bg-blue-100 border-blue-500' : 'bg-white'}`}>
                                        <CheckSquare className={`w-4 h-4 ${isSelected ? 'text-blue-600' : 'text-gray-300'}`} /> {pName}
-                               </div>
-                           );
+                                   </div>
+                               );
                            })}
                        </div>
                    </div>
-                   {/* Team B */}
                    <div>
                        <h3 className="font-bold text-orange-800 mb-2 flex justify-between">{getTeamName(newMatchForm.teamBId)} <span className={teamBXI.length === 11 ? "text-green-600" : "text-red-500"}>{teamBXI.length}/11</span></h3>
                        <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border p-2 rounded">
-                           {/* Iterate over the full squad */}
                            {teams.find(t => t.id === newMatchForm.teamBId)?.players.map((p, i) => {
                                const pName = typeof p === 'string' ? p : p.name;
                                const isSelected = teamBXI.some(tp => (typeof tp === 'string' ? tp : tp.name) === pName);
@@ -679,8 +603,8 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
                                return (
                                    <div key={i} onClick={() => togglePlayerInXI(p, 'B')} className={`p-2 text-sm border rounded cursor-pointer flex items-center gap-2 ${isSelected ? 'bg-orange-100 border-orange-500' : 'bg-white'}`}>
                                        <CheckSquare className={`w-4 h-4 ${isSelected ? 'text-orange-600' : 'text-gray-300'}`} /> {pName}
-                               </div>
-                           );
+                                   </div>
+                               );
                            })}
                        </div>
                    </div>
@@ -688,6 +612,7 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
                </div>
            </Modal>
        )}
+
     </div>
   );
 }
