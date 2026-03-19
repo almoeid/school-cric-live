@@ -41,7 +41,7 @@ return (
         
         {/* Banner Image - Locked to a cinematic widescreen ratio on PC */}
         <img 
-          src="/eidbanner.webp" 
+          src="/eidbanner.png" 
           alt="Eid Mubarak" 
           className="w-full h-48 md:h-56 lg:h-[350px] xl:h-[400px] object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
         />
