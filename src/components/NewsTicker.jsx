@@ -23,7 +23,7 @@ export default function NewsTicker({ news }) {
               /* MAGIC FIX: This makes it start exactly at the right edge of any screen size */
               padding-left: 100%; 
               /* 20s is the speed. Lower is faster. */
-              animation: marquee 20s linear infinite; 
+              animation: marquee 40s linear infinite; 
             }
             .marquee-content:hover {
               animation-play-state: paused;
