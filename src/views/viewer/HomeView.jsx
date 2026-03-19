@@ -26,76 +26,92 @@ export default function HomeView({ matches, tournaments, setCurrentMatch, setSel
       return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
   };
 
-  return (
-    <div className="space-y-10 max-w-5xl mx-auto pb-6">
+return (
+    <div className="space-y-8 max-w-5xl mx-auto pb-6 pt-2">
       
-{/* EID MUBARAK BANNER */}
-      <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-emerald-800 rounded-2xl shadow-lg p-6 text-white flex flex-col md:flex-row items-center justify-between gap-4 relative overflow-hidden">
-        {/* Decorative background elements */}
-        <div className="absolute top-[-20px] right-[-20px] opacity-10">
-            <Moon className="w-32 h-32" />
+      {/* 1. BREAKING NEWS (Moved to the absolute top like a pro alert bar) */}
+      <div className="w-full drop-shadow-sm">
+        <NewsTicker 
+          news="Batch 2014 kicked off their ZBSM School League 2026 campaign in style, claiming a dominant 52-run victory in their opening match with an all-round performance! BREAKING: Batch 21 secured a strong 32-run win over Batch 2018 in the ZBSM School League, with Munna Kumar smashing a brilliant 76 off just 26 balls to earn Man of the Match!" 
+        />
+      </div>
+
+      {/* 2. EID BANNER (Using the vibrant premium aesthetic) */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 shadow-lg shadow-emerald-500/20 p-6 md:p-8 flex items-center gap-4 md:gap-6 border border-emerald-400/40">
+        {/* Sleek light streaks */}
+        <div className="absolute top-0 right-1/4 w-32 h-full bg-white/10 skew-x-[30deg] transform -translate-x-1/2 pointer-events-none"></div>
+        <div className="absolute top-0 right-1/4 w-8 h-full bg-white/10 skew-x-[30deg] transform translate-x-8 pointer-events-none"></div>
+        
+        {/* Clean, popping icon box */}
+        <div className="relative z-10 bg-white p-3 md:p-3.5 rounded-2xl shadow-md shrink-0">
+            <Moon className="w-7 h-7 md:w-8 md:h-8 text-emerald-500 fill-emerald-500" />
         </div>
-        <div className="relative z-10 flex items-center gap-4">
-            <div className="bg-white/20 p-3 rounded-full backdrop-blur-sm">
-                <Moon className="w-8 h-8 text-yellow-300 fill-yellow-300" />
-            </div>
-            <div>
-                <h2 className="text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-yellow-400 drop-shadow-sm">
-                    Eid Mubarak!
-                </h2>
-                <p className="text-emerald-50 text-sm md:text-base font-medium mt-1">
-                    Wishing you joy, peace, and great cricket from the ZBSM Community.
-                </p>
-            </div>
+        
+        {/* Text */}
+        <div className="relative z-10 flex-1">
+            <h2 className="text-xl md:text-3xl font-extrabold text-white tracking-tight mb-0.5 md:mb-1 drop-shadow-sm">
+                Eid Mubarak!
+            </h2>
+            <p className="text-sm md:text-base font-medium text-emerald-50 max-w-lg leading-snug md:leading-relaxed">
+                Wishing you joy, peace, and great cricket from the ZBSM Community.
+            </p>
         </div>
       </div>
 
-      {/* BREAKING NEWS TICKER */}
-      <NewsTicker 
-        news="Batch 2014 kicked off their ZBSM School League 2026 campaign in style, claiming a dominant 52-run victory in their opening match with an all-round performance! BREAKING: Batch 21 secured a strong 32-run win over Batch 2018 in the ZBSM School League, with Munna Kumar smashing a brilliant 76 off just 26 balls to earn Man of the Match!" 
-      />
-
-      {/* LIVE MATCHES */}
+      {/* 3. LIVE MATCHES (Added a pulsing section header) */}
       {liveMatches.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {liveMatches.map(match => (
-            <div 
-              key={match.id} 
-              onClick={() => { setCurrentMatch(match); setView('match'); }} 
-              className="group bg-gradient-to-br from-slate-900 via-emerald-900 to-slate-900 rounded-2xl shadow-xl hover:shadow-emerald-900/20 border border-slate-800/50 overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-all duration-300 relative"
-            >
-              <div className="absolute top-4 right-4 z-10"><LiveBadge /></div>
-              
-              <div className="absolute inset-0 bg-white/5 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <div>
+          {/* New Live Header */}
+          <div className="flex items-center gap-2.5 mb-4 px-1">
+             <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              </span>
+             <h3 className="text-lg font-extrabold text-slate-800 tracking-tight uppercase">Live Action</h3>
+          </div>
 
-              <div className="p-6 text-white relative z-10">
-                <div className="flex justify-between items-center mb-6">
-                   <div className="flex-1 flex justify-center"><TeamLogo name={match.teamA} color={match.teamAColor} logo={match.teamALogo} /></div>
-                   <div className="flex-none px-4 text-center">
-                     <span className="font-extrabold text-2xl tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-300">
-                       {match.score}/{match.wickets}
-                     </span>
-                   </div>
-                   <div className="flex-1 flex justify-center"><TeamLogo name={match.teamB} color={match.teamBColor} logo={match.teamBLogo} /></div>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {liveMatches.map(match => (
+              <div 
+                key={match.id} 
+                onClick={() => { setCurrentMatch(match); setView('match'); }} 
+                className="group bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 rounded-2xl shadow-xl hover:shadow-emerald-900/20 border border-slate-800/50 overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-all duration-300 relative"
+              >
+                <div className="absolute top-4 right-4 z-10"><LiveBadge /></div>
                 
-                <div className="text-center">
-                   <div className="inline-flex items-center gap-2 bg-slate-800/50 px-4 py-1.5 rounded-full text-sm font-medium text-emerald-300 border border-slate-700/50">
-                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                     {match.battingTeam} Batting ({formatOvers(match.legalBalls)} Ov)
-                   </div>
-                </div>
+                <div className="absolute inset-0 bg-white/5 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
 
-                {match.currentInnings === 2 && (
-                  <div className="text-center text-xs font-semibold bg-emerald-500/20 text-emerald-200 mt-4 py-2 px-4 rounded-xl border border-emerald-500/30">
-                    Need {match.target - match.score} off {(match.totalOvers * 6) - match.legalBalls} balls
+                <div className="p-6 text-white relative z-10">
+                  <div className="flex justify-between items-center mb-6">
+                     <div className="flex-1 flex justify-center"><TeamLogo name={match.teamA} color={match.teamAColor} logo={match.teamALogo} /></div>
+                     <div className="flex-none px-4 text-center">
+                       <span className="font-extrabold text-3xl tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-300">
+                         {match.score}/{match.wickets}
+                       </span>
+                     </div>
+                     <div className="flex-1 flex justify-center"><TeamLogo name={match.teamB} color={match.teamBColor} logo={match.teamBLogo} /></div>
                   </div>
-                )}
+                  
+                  <div className="text-center">
+                     <div className="inline-flex items-center gap-2 bg-slate-800/60 px-4 py-1.5 rounded-full text-sm font-semibold text-emerald-300 border border-slate-700/50 shadow-inner">
+                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                       {match.battingTeam} Batting ({formatOvers(match.legalBalls)} Ov)
+                     </div>
+                  </div>
+
+                  {match.currentInnings === 2 && (
+                    <div className="text-center text-xs font-bold tracking-wide bg-emerald-500/20 text-emerald-100 mt-5 py-2.5 px-4 rounded-xl border border-emerald-500/30">
+                      Need {match.target - match.score} off {(match.totalOvers * 6) - match.legalBalls} balls
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
+
+      {/* SCHEDULED (The rest of your code remains exactly the same below here) */}
 
       {/* SCHEDULED */}
       <div>
