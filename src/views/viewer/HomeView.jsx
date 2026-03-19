@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import LiveBadge from '../../components/LiveBadge';
 import TeamLogo from '../../components/TeamLogo';
+import NewsTicker from '../../components/NewsTicker';
 import { formatOvers } from '../../utils/helpers';
 
 export default function HomeView({ matches, tournaments, setCurrentMatch, setSelectedTournament, setView }) {
@@ -48,6 +49,11 @@ export default function HomeView({ matches, tournaments, setCurrentMatch, setSel
             </div>
         </div>
       </div>
+
+      {/* NEW: BREAKING NEWS TICKER */}
+      <NewsTicker 
+        news="Recent Match Update: Batch 21 Won by 32 Run with 2018 Batch, Munna Kumar was the Man of the match and scored 76 in just 26 balls!" 
+      />
 
       {/* LIVE MATCHES */}
       {liveMatches.length > 0 && (
@@ -212,7 +218,12 @@ export default function HomeView({ matches, tournaments, setCurrentMatch, setSel
       {/* --- FOOTER --- */}
       <div className="mt-16 pt-10 border-t border-slate-200 text-center">
           <div className="flex items-center justify-center gap-2 mb-6 text-slate-800 font-extrabold text-2xl tracking-tight">
-             <Activity className="w-7 h-7 text-emerald-500" /> ZBSMCric<span className="text-slate-400 font-light">.Live</span>
+             <Activity className="w-7 h-7 text-emerald-500" /> 
+             {/* Wraps the text in flex-baseline to enforce zero gap */}
+             <div className="flex items-baseline">
+                 <span>ZBSMCric</span>
+                 <span className="text-slate-400 font-light">.Live</span>
+             </div>
           </div>
           
           <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 mb-8">
