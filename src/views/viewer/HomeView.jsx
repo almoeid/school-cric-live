@@ -32,7 +32,7 @@ return (
       {/* 1. BREAKING NEWS (Moved to the absolute top like a pro alert bar) */}
       <div className="w-full drop-shadow-sm">
         <NewsTicker 
-          news="Batch 2014 kicked off their ZBSM School League 2026 campaign in style, claiming a dominant 52-run victory in their opening match with an all-round performance! BREAKING: Batch 21 secured a strong 32-run win over Batch 2018 in the ZBSM School League, with Munna Kumar smashing a brilliant 76 off just 26 balls to earn Man of the Match!" 
+          news="Batch 2014 kicked off their ZBSM School League 2026 campaign in style, claiming a dominant 52-run victory in their opening match with an all-round performance! BREAKING: Batch 21 secured a strong 32-run win over Batch 2018 in the ZBSM School League, posting the tournament’s highest score of 163/3, with Munna Kumar smashing a brilliant 76 off just 26 balls to earn Man of the Match!" 
         />
       </div>
 
