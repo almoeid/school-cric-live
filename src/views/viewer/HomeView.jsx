@@ -29,31 +29,24 @@ export default function HomeView({ matches, tournaments, setCurrentMatch, setSel
   return (
     <div className="space-y-10 max-w-5xl mx-auto pb-6">
       
-      {/* PREMIUM EID MUBARAK BANNER (Million Dollar Aesthetic) */}
-      <div className="relative overflow-hidden rounded-2xl bg-[#022c22] border border-emerald-800/60 shadow-2xl p-6 md:p-8 flex items-center gap-5 md:gap-8">
-        
-        {/* Abstract Glowing Background Orbs */}
-        <div className="absolute -left-20 -top-20 w-64 h-64 bg-emerald-500/10 blur-3xl rounded-full pointer-events-none"></div>
-        <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-teal-500/10 blur-3xl rounded-full pointer-events-none"></div>
-        
-        {/* Faded Giant Background Icon */}
-        <div className="absolute right-0 top-0 opacity-5 transform translate-x-1/4 -translate-y-1/4 pointer-events-none">
-            <Moon className="w-64 h-64 text-emerald-50" />
+{/* EID MUBARAK BANNER */}
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-emerald-800 rounded-2xl shadow-lg p-6 text-white flex flex-col md:flex-row items-center justify-between gap-4 relative overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="absolute top-[-20px] right-[-20px] opacity-10">
+            <Moon className="w-32 h-32" />
         </div>
-        
-        {/* Glassmorphism Icon Box */}
-        <div className="relative z-10 p-4 bg-gradient-to-br from-emerald-800/40 to-emerald-900/40 border border-emerald-700/50 rounded-2xl backdrop-blur-md shadow-inner">
-            <Moon className="w-8 h-8 md:w-10 md:h-10 text-amber-300 drop-shadow-[0_0_12px_rgba(252,211,77,0.6)]" />
-        </div>
-        
-        {/* Premium Typography */}
-        <div className="relative z-10 flex-1">
-            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 mb-1.5">
-                Eid Mubarak
-            </h2>
-            <p className="text-sm md:text-base font-medium text-emerald-100/70 tracking-wide max-w-lg">
-                Wishing you joy, peace, and great cricket from the ZBSM Community.
-            </p>
+        <div className="relative z-10 flex items-center gap-4">
+            <div className="bg-white/20 p-3 rounded-full backdrop-blur-sm">
+                <Moon className="w-8 h-8 text-yellow-300 fill-yellow-300" />
+            </div>
+            <div>
+                <h2 className="text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-yellow-400 drop-shadow-sm">
+                    Eid Mubarak!
+                </h2>
+                <p className="text-emerald-50 text-sm md:text-base font-medium mt-1">
+                    Wishing you joy, peace, and great cricket from the ZBSM Community.
+                </p>
+            </div>
         </div>
       </div>
 
