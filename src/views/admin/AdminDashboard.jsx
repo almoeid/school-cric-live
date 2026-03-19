@@ -554,81 +554,75 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
             </div>
 <div className="bg-white p-4 rounded-xl shadow-sm mt-4">
                 <h3 className="font-bold mb-3">Fixtures in this Tournament</h3>
-                {(() => {
-                    const tourneyMatches = matches.filter(m => m.tournamentId === activeTournament.id);
-                    
-                    // Sort: completed/live first (most recent), then scheduled last
-                    const sorted = [...tourneyMatches].sort((a, b) => {
-                        const order = { 'Completed': 0, 'Concluding': 1, 'Live': 2, 'Scheduled': 3 };
-                        const statusDiff = (order[a.status] ?? 4) - (order[b.status] ?? 4);
-                        if (statusDiff !== 0) return statusDiff;
-                        // Within same status, most recent first
-                        return new Date(b.scheduledTime || b.timestamp) - new Date(a.scheduledTime || a.timestamp);
-                    });
+                {matches.filter(m => m.tournamentId === activeTournament.id).length === 0 ? (
+                    <p className="text-sm text-gray-400 italic">No fixtures added yet.</p>
+                ) : (
+                    [...matches.filter(m => m.tournamentId === activeTournament.id)]
+                        .sort((a, b) => {
+                            const order = { Completed: 0, Concluding: 1, Live: 2, Scheduled: 3 };
+                            const diff = (order[a.status] ?? 4) - (order[b.status] ?? 4);
+                            if (diff !== 0) return diff;
+                            return new Date(b.scheduledTime || b.timestamp) - new Date(a.scheduledTime || a.timestamp);
+                        })
+                        .map((m) => {
+                            const isCompleted = m.status === 'Completed' || m.status === 'Concluding';
+                            const isLive = m.status === 'Live';
+                            const matchDate = m.scheduledTime
+                                ? new Date(m.scheduledTime).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+                                : null;
+                            const allSorted = [...matches.filter(tm => tm.tournamentId === activeTournament.id)]
+                                .sort((a, b) => new Date(a.scheduledTime || a.timestamp) - new Date(b.scheduledTime || b.timestamp));
+                            const matchNo = allSorted.findIndex(tm => tm.id === m.id) + 1;
 
-                    if (sorted.length === 0) return <p className="text-sm text-gray-400 italic">No fixtures added yet.</p>;
-
-                    return sorted.map((m, i) => {
-                        const isCompleted = m.status === 'Completed' || m.status === 'Concluding';
-                        const isLive = m.status === 'Live';
-                        const matchDate = m.scheduledTime ? new Date(m.scheduledTime).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : null;
-                        // Global match number within tournament (by scheduled order)
-                        const matchNo = tourneyMatches
-                            .sort((a, b) => new Date(a.scheduledTime || a.timestamp) - new Date(b.scheduledTime || b.timestamp))
-                            .findIndex(tm => tm.id === m.id) + 1;
-
-                        return (
-                            <div key={m.id} className={`p-3 border-b last:border-0 ${isLive ? 'bg-green-50' : ''}`}>
-                                {/* Top row: match number + stage + date */}
-                                <div className="flex justify-between items-center mb-1.5">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded">M{matchNo}</span>
-                                        <span className="text-[10px] font-bold text-gray-400 uppercase">{m.stage}</span>
+                            return (
+                                <div key={m.id} className={`p-3 border-b last:border-0 ${isLive ? 'bg-green-50' : ''}`}>
+                                    {/* Top row: match number + stage + date */}
+                                    <div className="flex justify-between items-center mb-1.5">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded">M{matchNo}</span>
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase">{m.stage}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {matchDate && <span className="text-[10px] text-gray-400">{matchDate}</span>}
+                                            {isLive && <span className="text-[10px] font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded animate-pulse">LIVE</span>}
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        {matchDate && <span className="text-[10px] text-gray-400">{matchDate}</span>}
-                                        {isLive && <span className="text-[10px] font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded animate-pulse">LIVE</span>}
-                                    </div>
-                                </div>
-
-                                {/* Middle row: teams + actions */}
-                                <div className="flex justify-between items-center">
-                                    <div>
-                                        <span className="font-bold text-gray-800 text-sm">{m.teamA} vs {m.teamB}</span>
-                                        {/* Result or score */}
-                                        {isCompleted && m.result ? (
-                                            <div className="text-xs text-green-700 font-medium mt-0.5">{m.result}</div>
-                                        ) : isLive ? (
-                                            <div className="text-xs text-green-600 font-mono mt-0.5">{m.score}/{m.wickets} ({m.overs || 0} ov)</div>
-                                        ) : (
-                                            <div className="text-xs text-orange-500 mt-0.5">Scheduled</div>
-                                        )}
-                                    </div>
-
-                                    <div className="flex items-center gap-2">
-                                        {m.status === 'Scheduled' && (
-                                            <button onClick={() => startScheduledMatch(m.id)} className="bg-black text-white px-3 py-1 rounded text-xs font-bold">START</button>
-                                        )}
-                                        {/* Eye: view match details */}
-                                        <button
-                                            onClick={() => { setCurrentMatch(m); setView('match'); }}
-                                            className="p-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
-                                            title="View Match"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                                            </svg>
-                                        </button>
-                                        <button onClick={() => deleteMatch(m.id)} className="bg-red-100 text-red-600 p-1.5 rounded hover:bg-red-200" title="Delete Match">
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                    {/* Bottom row: teams + result + actions */}
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <span className="font-bold text-gray-800 text-sm">{m.teamA} vs {m.teamB}</span>
+                                            {isCompleted && m.result ? (
+                                                <div className="text-xs text-green-700 font-medium mt-0.5">{m.result}</div>
+                                            ) : isLive ? (
+                                                <div className="text-xs text-green-600 font-mono mt-0.5">{m.score}/{m.wickets} ({m.overs || 0} ov)</div>
+                                            ) : (
+                                                <div className="text-xs text-orange-500 mt-0.5">Scheduled</div>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {m.status === 'Scheduled' && (
+                                                <button onClick={() => startScheduledMatch(m.id)} className="bg-black text-white px-3 py-1 rounded text-xs font-bold">START</button>
+                                            )}
+                                            <button
+                                                onClick={() => { setCurrentMatch(m); setView('match'); }}
+                                                className="p-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
+                                                title="View Match"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                                                </svg>
+                                            </button>
+                                            <button onClick={() => deleteMatch(m.id)} className="bg-red-100 text-red-600 p-1.5 rounded hover:bg-red-200" title="Delete">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        );
-                    });
-                })()}
+                            );
+                        })
+                )}
             </div>
+      )}
 
       {/* EDIT TEAM MODAL */}
       {editingTeam && (
