@@ -476,12 +476,13 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
                   <select className="w-full p-2 border rounded bg-gray-50" value={newFixtureForm.venue} onChange={e => setNewFixtureForm({...newFixtureForm, venue: e.target.value})}>
                      <option>ZBSM BAZAR GROUND</option>
                      <option>ZBSM SCHOOL GROUND</option>
+                    <option>ZBSM 2NO GATE GROUND</option>
                   </select>
                </div>
                <button onClick={addFixture} disabled={isLoading} className="w-full bg-green-600 text-white py-2 rounded font-bold">{isLoading ? 'Adding...' : 'Add to Schedule'}</button>
             </div>
 
-            {/* FIXTURES LIST */}
+{/* FIXTURES LIST */}
             <div className="bg-white p-4 rounded-xl shadow-sm">
                <h3 className="font-bold mb-3">Fixtures in this Tournament</h3>
                {matches.filter(m => m.tournamentId === activeTournament.id).length === 0 ? (
@@ -489,10 +490,13 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
                ) : (
                    [...matches.filter(m => m.tournamentId === activeTournament.id)]
                        .sort((a, b) => {
-                           const order = { Completed: 0, Concluding: 1, Live: 2, Scheduled: 3 };
+                           const order = { Scheduled: 0, Live: 1, Concluding: 2, Completed: 3 };
                            const diff = (order[a.status] ?? 4) - (order[b.status] ?? 4);
                            if (diff !== 0) return diff;
-                           return new Date(b.scheduledTime || b.timestamp) - new Date(a.scheduledTime || a.timestamp);
+                           // Scheduled: soonest first (ascending); Completed: most recent first (descending)
+                           const dateA = new Date(a.scheduledTime || a.timestamp);
+                           const dateB = new Date(b.scheduledTime || b.timestamp);
+                           return a.status === 'Scheduled' ? dateA - dateB : dateB - dateA;
                        })
                        .map((m) => {
                            const isCompleted = m.status === 'Completed' || m.status === 'Concluding';
