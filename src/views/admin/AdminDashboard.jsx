@@ -286,8 +286,6 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
     } catch (err) { alert("Error deleting team: " + err.message); } finally { setIsLoading(false); }
   };
 
-  // REMOVED: generateDemoTeams function
-
   const wipeAllData = async () => {
       const confirm1 = window.confirm("⚠️ DANGER: Are you sure you want to DELETE ALL DATA?");
       if (!confirm1) return;
@@ -489,8 +487,6 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
               <button onClick={handleCreateTeam} disabled={isLoading} className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold">{isLoading ? 'Saving...' : 'Save Team'}</button>
            </div>
 
-           {/* REMOVED: Demo Teams button */}
-
            {teams.map(team => (
              <div key={team.id} className="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center">
                 <div className="flex items-center space-x-3"><TeamLogo name={team.name} color={team.color} logo={team.logo} /><div className="font-bold">{team.name}</div></div>
@@ -527,7 +523,7 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
                     </div>
                     <div className="flex items-center gap-2">
                         <button onClick={()=>{setActiveTournament(t); setDashView('manage-tournament')}} className="bg-blue-50 text-blue-600 px-3 py-1 rounded text-xs font-bold">Manage</button>
-                        <button onClick={() => deleteTournament(t.id)} className="bg-red-50 text-red-600 p-1.5 rounded hover:bg-red-100"><Trash2 className="w-4 h-4" /></button>
+                        <button onClick={() => deleteTournament(t.id)} className="bg-red-50 text-red-600 p-1.5 rounded hover:bg-red-200"><Trash2 className="w-4 h-4" /></button>
                     </div>
                 </div>
             ))}
@@ -544,7 +540,15 @@ export default function AdminDashboard({ matches, teams, tournaments, setView, s
                   <select className="p-2 border rounded" onChange={e=>setNewFixtureForm({...newFixtureForm, teamBId: e.target.value})}><option value="">Team B</option>{teams.filter(t=>activeTournament.teamIds.includes(t.id)).map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>
                </div>
                <div className="grid grid-cols-2 gap-2 mb-2"><input type="date" className="p-2 border rounded" onChange={e=>setNewFixtureForm({...newFixtureForm, date: e.target.value})} /><input type="time" className="p-2 border rounded" onChange={e=>setNewFixtureForm({...newFixtureForm, time: e.target.value})} /></div>
-               <select className="w-full p-2 border rounded mb-2" onChange={e=>setNewFixtureForm({...newFixtureForm, stage: e.target.value})}><option value="Group Stage">Group Stage</option><option value="Semi Final">Semi Final</option><option value="Final">Final</option></select>
+               {/* ✅ UPDATED: Added Qualifier 1, Qualifier 2, and Eliminator stages */}
+               <select className="w-full p-2 border rounded mb-2" value={newFixtureForm.stage} onChange={e=>setNewFixtureForm({...newFixtureForm, stage: e.target.value})}>
+                 <option value="Group Stage">Group Stage</option>
+                 <option value="Qualifier 1">Qualifier 1</option>
+                 <option value="Qualifier 2">Qualifier 2</option>
+                 <option value="Eliminator">Eliminator</option>
+                 <option value="Semi Final">Semi Final</option>
+                 <option value="Final">Final</option>
+               </select>
                <div className="mb-4"><label className="text-xs font-bold text-gray-500">Venue</label><select className="w-full p-2 border rounded bg-gray-50" value={newFixtureForm.venue} onChange={e => setNewFixtureForm({...newFixtureForm, venue: e.target.value})}><option>ZBSM BAZAR GROUND</option><option>ZBSM SCHOOL GROUND</option></select></div>
                <button onClick={addFixture} disabled={isLoading} className="w-full bg-green-600 text-white py-2 rounded font-bold">{isLoading ? 'Adding...' : 'Add to Schedule'}</button>
             </div>
