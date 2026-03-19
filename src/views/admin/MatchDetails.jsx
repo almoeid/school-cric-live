@@ -68,6 +68,8 @@ export default function MatchDetails({ currentMatch, setView }) {
   if (!currentMatch) return null;
 
   const isCompleted = currentMatch.status === 'Completed' || currentMatch.status === 'Concluding';
+  // FIX: Added isScheduled flag
+  const isScheduled = currentMatch.status === 'Scheduled';
   
   // FIX: Display Live Count if Live, otherwise display Total Hits from DB
   const displayViews = currentMatch.status === 'Live' ? liveCount : (storedViews || 0);
@@ -329,147 +331,171 @@ export default function MatchDetails({ currentMatch, setView }) {
                       <span>{formatViewCount(displayViews)} {viewLabel}</span>
                   </div>
                   <div className="transform scale-90 md:scale-100">
-                      {currentMatch.status === 'Live' ? <LiveBadge /> : <div className="text-xs font-bold bg-white/20 px-3 py-1 rounded-full uppercase tracking-wider">COMPLETED</div>}
+                      {/* FIX: Show correct badge for Scheduled, Live, and Completed */}
+                      {currentMatch.status === 'Live'
+                        ? <LiveBadge />
+                        : currentMatch.status === 'Scheduled'
+                          ? <div className="text-xs font-bold bg-orange-500/30 text-orange-200 px-3 py-1 rounded-full uppercase tracking-wider">Upcoming</div>
+                          : <div className="text-xs font-bold bg-white/20 px-3 py-1 rounded-full uppercase tracking-wider">COMPLETED</div>
+                      }
                   </div>
               </div>
 
-              {/* --- DYNAMIC SCORE DISPLAY --- */}
-              {isCompleted && currentMatch.innings1 ? (
-                  /* COMPLETED: SPLIT SCORE */
-                  <div className="flex justify-center items-end gap-2 md:gap-12 mb-4 animate-in fade-in zoom-in duration-500 mt-2">
-                      <div className="text-right flex flex-col items-end w-[45%] md:w-auto">
-                          <div className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 opacity-80 truncate w-full text-right">{currentMatch.innings1.teamName}</div>
-                          <div className="flex items-center justify-end gap-2 md:gap-3">
-                              <span className="text-2xl md:text-5xl font-black text-gray-300 tracking-tighter shadow-lg drop-shadow-md">{currentMatch.innings1.score}/{currentMatch.innings1.wickets}</span>
-                              <div className="shrink-0"><TeamLogo name={currentMatch.innings1.teamName} color={color1} logo={logo1} size="sm" /></div>
-                          </div>
-                          <div className="text-xs md:text-sm text-gray-500 font-bold uppercase tracking-widest mt-1 mr-1">{currentMatch.innings1.overs} ov</div>
-                      </div>
-
-                      {/* FIXED VS ALIGNMENT */}
-                      <div className="text-gray-500 font-black text-xl md:text-3xl italic pb-3 md:pb-6 opacity-60">VS</div>
-
-                      <div className="text-left flex flex-col items-start w-[45%] md:w-auto">
-                          <div className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 opacity-80 truncate w-full text-left">{currentMatch.battingTeam}</div>
-                          <div className="flex items-center justify-start gap-2 md:gap-3">
-                              <div className="shrink-0"><TeamLogo name={currentMatch.battingTeam} color={color2} logo={logo2} size="sm" /></div>
-                              <span className="text-2xl md:text-5xl font-black text-white tracking-tighter shadow-lg drop-shadow-md">{currentMatch.score}/{currentMatch.wickets}</span>
-                          </div>
-                          <div className="text-xs md:text-sm text-gray-400 font-bold uppercase tracking-widest mt-1 ml-1">{formatOvers(currentMatch.legalBalls)} ov</div>
-                      </div>
-                  </div>
-              ) : (
-                  /* LIVE MATCH */
-                  <div className="mb-2">
-                      {/* LIVE LAYOUT (Logos Flanking Score) */}
-                      <div className="flex justify-center items-center gap-3 md:gap-6 animate-in fade-in zoom-in duration-500">
-                          {/* Batting Team Logo (Left) */}
-                          <div className="md:hidden opacity-80 scale-90">
-                             <TeamLogo name={currentMatch.battingTeam} color={battingColor} logo={battingLogo} size="sm" />
+              {/* --- DYNAMIC SCORE DISPLAY — hidden for scheduled matches --- */}
+              {!isScheduled && (
+                <>
+                  {isCompleted && currentMatch.innings1 ? (
+                      /* COMPLETED: SPLIT SCORE */
+                      <div className="flex justify-center items-end gap-2 md:gap-12 mb-4 animate-in fade-in zoom-in duration-500 mt-2">
+                          <div className="text-right flex flex-col items-end w-[45%] md:w-auto">
+                              <div className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 opacity-80 truncate w-full text-right">{currentMatch.innings1.teamName}</div>
+                              <div className="flex items-center justify-end gap-2 md:gap-3">
+                                  <span className="text-2xl md:text-5xl font-black text-gray-300 tracking-tighter shadow-lg drop-shadow-md">{currentMatch.innings1.score}/{currentMatch.innings1.wickets}</span>
+                                  <div className="shrink-0"><TeamLogo name={currentMatch.innings1.teamName} color={color1} logo={logo1} size="sm" /></div>
+                              </div>
+                              <div className="text-xs md:text-sm text-gray-500 font-bold uppercase tracking-widest mt-1 mr-1">{currentMatch.innings1.overs} ov</div>
                           </div>
 
-                          <h1 className="text-5xl md:text-7xl font-black tracking-tighter shadow-lg drop-shadow-md">{currentMatch.score}/{currentMatch.wickets}</h1>
+                          {/* FIXED VS ALIGNMENT */}
+                          <div className="text-gray-500 font-black text-xl md:text-3xl italic pb-3 md:pb-6 opacity-60">VS</div>
 
-                          {/* Bowling Team Logo (Right) */}
-                          <div className="md:hidden opacity-80 scale-90">
-                             <TeamLogo name={currentMatch.bowlingTeam} color={bowlingColor} logo={bowlingLogo} size="sm" />
+                          <div className="text-left flex flex-col items-start w-[45%] md:w-auto">
+                              <div className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 opacity-80 truncate w-full text-left">{currentMatch.battingTeam}</div>
+                              <div className="flex items-center justify-start gap-2 md:gap-3">
+                                  <div className="shrink-0"><TeamLogo name={currentMatch.battingTeam} color={color2} logo={logo2} size="sm" /></div>
+                                  <span className="text-2xl md:text-5xl font-black text-white tracking-tighter shadow-lg drop-shadow-md">{currentMatch.score}/{currentMatch.wickets}</span>
+                              </div>
+                              <div className="text-xs md:text-sm text-gray-400 font-bold uppercase tracking-widest mt-1 ml-1">{formatOvers(currentMatch.legalBalls)} ov</div>
                           </div>
                       </div>
-                      
-                      {/* MOBILE FULL TEAM NAMES (WHO IS BATTING?) + VS */}
-                      <div className="md:hidden flex items-center justify-center gap-3 mt-3 px-1 w-full">
-                          {/* Batting Team */}
-                          <div className="flex items-center justify-end gap-1.5 shrink-0">
-                              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)] shrink-0"></div>
-                              <span className="text-[10px] font-bold text-white uppercase tracking-wide leading-tight">{currentMatch.battingTeam}</span>
+                  ) : (
+                      /* LIVE MATCH */
+                      <div className="mb-2">
+                          {/* LIVE LAYOUT (Logos Flanking Score) */}
+                          <div className="flex justify-center items-center gap-3 md:gap-6 animate-in fade-in zoom-in duration-500">
+                              {/* Batting Team Logo (Left) */}
+                              <div className="md:hidden opacity-80 scale-90">
+                                 <TeamLogo name={currentMatch.battingTeam} color={battingColor} logo={battingLogo} size="sm" />
+                              </div>
+
+                              <h1 className="text-5xl md:text-7xl font-black tracking-tighter shadow-lg drop-shadow-md">{currentMatch.score}/{currentMatch.wickets}</h1>
+
+                              {/* Bowling Team Logo (Right) */}
+                              <div className="md:hidden opacity-80 scale-90">
+                                 <TeamLogo name={currentMatch.bowlingTeam} color={bowlingColor} logo={bowlingLogo} size="sm" />
+                              </div>
                           </div>
-                          {/* VS */}
-                          <div className="text-center text-[10px] font-black text-gray-600 italic shrink-0">VS</div>
-                          {/* Bowling Team */}
-                          <div className="flex items-center justify-start gap-1.5 shrink-0">
-                              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide leading-tight">{currentMatch.bowlingTeam}</span>
+                          
+                          {/* MOBILE FULL TEAM NAMES (WHO IS BATTING?) + VS */}
+                          <div className="md:hidden flex items-center justify-center gap-3 mt-3 px-1 w-full">
+                              {/* Batting Team */}
+                              <div className="flex items-center justify-end gap-1.5 shrink-0">
+                                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)] shrink-0"></div>
+                                  <span className="text-[10px] font-bold text-white uppercase tracking-wide leading-tight">{currentMatch.battingTeam}</span>
+                              </div>
+                              {/* VS */}
+                              <div className="text-center text-[10px] font-black text-gray-600 italic shrink-0">VS</div>
+                              {/* Bowling Team */}
+                              <div className="flex items-center justify-start gap-1.5 shrink-0">
+                                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide leading-tight">{currentMatch.bowlingTeam}</span>
+                              </div>
                           </div>
                       </div>
-                  </div>
-              )}
-              
-              {(currentMatch.status === 'Live') && (
-                <div className="flex flex-col items-center justify-center gap-2 mb-6 mt-4">
-                    
-                    {/* INNINGS 2: TARGET EQUATION (Narrow Screen Fixed) */}
-                    {currentMatch.currentInnings === 2 && equation && (
-                        <div className="animate-in slide-in-from-bottom-2 fade-in duration-700 w-full flex flex-col items-center">
-                            {/* UPDATED: Reduced padding, forced single line, centered, responsive font */}
-                            <div className="bg-gradient-to-r from-blue-900/60 to-blue-800/60 border border-blue-500/30 px-3 py-2 md:px-6 md:py-2.5 rounded-full flex items-center justify-center gap-1.5 md:gap-2 shadow-lg backdrop-blur-md whitespace-nowrap max-w-[95%]">
-                                <Target className="w-3 h-3 md:w-4 md:h-4 text-yellow-400 animate-pulse shrink-0" />
-                                <span className="text-blue-100 text-[10px] xs:text-xs md:text-sm font-bold tracking-wide truncate">
-                                    {currentMatch.battingTeam} need <span className="text-yellow-400 text-sm md:text-lg">{equation.runsNeeded}</span> runs in <span className="text-white text-sm md:text-lg">{equation.ballsRemaining}</span> balls
-                                </span>
+                  )}
+                  
+                  {(currentMatch.status === 'Live') && (
+                    <div className="flex flex-col items-center justify-center gap-2 mb-6 mt-4">
+                        
+                        {/* INNINGS 2: TARGET EQUATION (Narrow Screen Fixed) */}
+                        {currentMatch.currentInnings === 2 && equation && (
+                            <div className="animate-in slide-in-from-bottom-2 fade-in duration-700 w-full flex flex-col items-center">
+                                <div className="bg-gradient-to-r from-blue-900/60 to-blue-800/60 border border-blue-500/30 px-3 py-2 md:px-6 md:py-2.5 rounded-full flex items-center justify-center gap-1.5 md:gap-2 shadow-lg backdrop-blur-md whitespace-nowrap max-w-[95%]">
+                                    <Target className="w-3 h-3 md:w-4 md:h-4 text-yellow-400 animate-pulse shrink-0" />
+                                    <span className="text-blue-100 text-[10px] xs:text-xs md:text-sm font-bold tracking-wide truncate">
+                                        {currentMatch.battingTeam} need <span className="text-yellow-400 text-sm md:text-lg">{equation.runsNeeded}</span> runs in <span className="text-white text-sm md:text-lg">{equation.ballsRemaining}</span> balls
+                                    </span>
+                                </div>
+                                
+                                {/* ── DLS CHANGE 1: append "(DLS)" to Target line as a plain string ── */}
+                                <div className="text-[10px] text-white font-bold uppercase tracking-widest mt-1.5 opacity-100">
+                                    {'Target: ' + currentMatch.target + (currentMatch.dlsApplied ? ' (DLS)' : '')}
+                                </div>
                             </div>
-                            
-                            {/* ── DLS CHANGE 1: append "(DLS)" to Target line as a plain string ── */}
-                            <div className="text-[10px] text-white font-bold uppercase tracking-widest mt-1.5 opacity-100">
-                                {'Target: ' + currentMatch.target + (currentMatch.dlsApplied ? ' (DLS)' : '')}
+                        )}
+
+                        {/* INNINGS 1: PROJECTED SCORE (Only shown in 1st innings) */}
+                        {currentMatch.currentInnings === 1 && (
+                            <div className="bg-gray-800/80 border border-gray-700 px-3 py-1.5 rounded-full text-xs md:text-sm text-gray-300 font-medium">
+                                Projected: <span className="text-white font-bold">{projected}</span>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
+                  )}
 
-                    {/* INNINGS 1: PROJECTED SCORE (Only shown in 1st innings) */}
-                    {currentMatch.currentInnings === 1 && (
-                        <div className="bg-gray-800/80 border border-gray-700 px-3 py-1.5 rounded-full text-xs md:text-sm text-gray-300 font-medium">
-                            Projected: <span className="text-white font-bold">{projected}</span>
-                        </div>
-                    )}
-                </div>
-              )}
-
-              {!isCompleted && (
-                  <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-sm font-medium text-gray-400">
-                     <span className="bg-gray-800 px-2 py-1 rounded">Overs: {formatOvers(currentMatch.legalBalls)} / {currentMatch.totalOvers}</span>
-                     <span className="bg-gray-800 px-2 py-1 rounded">CRR: {calculateRunRate(currentMatch.score, currentMatch.legalBalls)}</span>
-                     
-                     {/* --- RRR BADGE (Shows in 2nd Innings) --- */}
-                     {currentMatch.currentInnings === 2 && (
-                        <span className={`bg-gray-800 px-2 py-1 rounded border border-gray-700 
-                           ${parseFloat(rrr) > 12 ? 'text-red-500 font-bold animate-pulse' : 
-                             parseFloat(rrr) > 9 ? 'text-orange-400 font-bold' : 'text-blue-400'}`}>
-                           RRR: {rrr}
-                        </span>
-                     )}
-                     
-                     <span className="text-green-400 bg-gray-800 px-2 py-1 rounded">Extras: {currentMatch.extras || 0}</span>
-
-                     {/* ── DLS CHANGE 2: DLS pill in the stats bar — plain conditional render ── */}
-                     {currentMatch.dlsApplied && (
-                        <span className="bg-blue-700 text-white px-2 py-1 rounded font-bold text-xs tracking-wide">
-                            🌧️ DLS Applied
-                        </span>
-                     )}
-                  </div>
-              )}
-              
-              {/* --- ULTIMATE PREMIUM WINNER BANNER --- */}
-              {(currentMatch.status === 'Completed' || currentMatch.status === 'Concluding') && (
-                 <div className="mt-6 relative overflow-hidden group rounded-xl max-w-lg mx-auto mb-2 shadow-2xl ring-1 ring-emerald-500/30">
-                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer transition-transform"></div>
-                     <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/40 via-emerald-500/20 to-emerald-600/40"></div>
-                     <div className="relative bg-black/30 backdrop-blur-md px-6 py-4 rounded-xl flex flex-col items-center justify-center gap-2">
-                         <div className="flex items-center gap-3">
-                             <Trophy className="w-6 h-6 text-yellow-300 shrink-0 drop-shadow-[0_0_10px_rgba(253,224,71,0.5)]" />
-                             <span className="text-white font-bold tracking-wide uppercase text-sm md:text-lg text-center drop-shadow-md">
-                                 {currentMatch.result}
-                             </span>
-                         </div>
-                         {currentMatch.mom && (
-                             <div className="mt-2">
-                                 <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-900/80 to-yellow-900/80 text-amber-100 px-4 py-1.5 rounded-full text-xs font-bold border border-amber-500/50 shadow-lg">
-                                     <Sparkles className="w-3 h-3 text-yellow-300" />
-                                     <span>MOM: <span className="text-white tracking-wide">{currentMatch.mom}</span></span>
-                                 </div>
-                             </div>
+                  {!isCompleted && (
+                      <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-sm font-medium text-gray-400">
+                         <span className="bg-gray-800 px-2 py-1 rounded">Overs: {formatOvers(currentMatch.legalBalls)} / {currentMatch.totalOvers}</span>
+                         <span className="bg-gray-800 px-2 py-1 rounded">CRR: {calculateRunRate(currentMatch.score, currentMatch.legalBalls)}</span>
+                         
+                         {/* --- RRR BADGE (Shows in 2nd Innings) --- */}
+                         {currentMatch.currentInnings === 2 && (
+                            <span className={`bg-gray-800 px-2 py-1 rounded border border-gray-700 
+                               ${parseFloat(rrr) > 12 ? 'text-red-500 font-bold animate-pulse' : 
+                                 parseFloat(rrr) > 9 ? 'text-orange-400 font-bold' : 'text-blue-400'}`}>
+                               RRR: {rrr}
+                            </span>
                          )}
+                         
+                         <span className="text-green-400 bg-gray-800 px-2 py-1 rounded">Extras: {currentMatch.extras || 0}</span>
+
+                         {/* ── DLS CHANGE 2: DLS pill in the stats bar — plain conditional render ── */}
+                         {currentMatch.dlsApplied && (
+                            <span className="bg-blue-700 text-white px-2 py-1 rounded font-bold text-xs tracking-wide">
+                                🌧️ DLS Applied
+                            </span>
+                         )}
+                      </div>
+                  )}
+                  
+                  {/* --- ULTIMATE PREMIUM WINNER BANNER --- */}
+                  {(currentMatch.status === 'Completed' || currentMatch.status === 'Concluding') && (
+                     <div className="mt-6 relative overflow-hidden group rounded-xl max-w-lg mx-auto mb-2 shadow-2xl ring-1 ring-emerald-500/30">
+                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer transition-transform"></div>
+                         <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/40 via-emerald-500/20 to-emerald-600/40"></div>
+                         <div className="relative bg-black/30 backdrop-blur-md px-6 py-4 rounded-xl flex flex-col items-center justify-center gap-2">
+                             <div className="flex items-center gap-3">
+                                 <Trophy className="w-6 h-6 text-yellow-300 shrink-0 drop-shadow-[0_0_10px_rgba(253,224,71,0.5)]" />
+                                 <span className="text-white font-bold tracking-wide uppercase text-sm md:text-lg text-center drop-shadow-md">
+                                     {currentMatch.result}
+                                 </span>
+                             </div>
+                             {currentMatch.mom && (
+                                 <div className="mt-2">
+                                     <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-900/80 to-yellow-900/80 text-amber-100 px-4 py-1.5 rounded-full text-xs font-bold border border-amber-500/50 shadow-lg">
+                                         <Sparkles className="w-3 h-3 text-yellow-300" />
+                                         <span>MOM: <span className="text-white tracking-wide">{currentMatch.mom}</span></span>
+                                     </div>
+                                 </div>
+                             )}
+                         </div>
                      </div>
-                 </div>
+                  )}
+                </>
+              )}
+
+              {/* FIX: Show team names for scheduled matches instead of score */}
+              {isScheduled && (
+                  <div className="flex justify-center items-center gap-6 mt-4 mb-6">
+                      <div className="flex flex-col items-center gap-2">
+                          <TeamLogo name={currentMatch.teamA} color={currentMatch.teamAColor} logo={currentMatch.teamALogo} size="md" />
+                          <span className="font-bold text-white text-sm">{currentMatch.teamA}</span>
+                      </div>
+                      <div className="text-gray-500 font-black text-2xl italic">VS</div>
+                      <div className="flex flex-col items-center gap-2">
+                          <TeamLogo name={currentMatch.teamB} color={currentMatch.teamBColor} logo={currentMatch.teamBLogo} size="md" />
+                          <span className="font-bold text-white text-sm">{currentMatch.teamB}</span>
+                      </div>
+                  </div>
               )}
            </div>
 
