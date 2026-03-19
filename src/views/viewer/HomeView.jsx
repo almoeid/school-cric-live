@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Calendar, Clock, Trophy, ChevronRight, Activity, 
   BookOpen, Info, Heart, Image as ImageIcon, Moon 
@@ -10,9 +10,6 @@ import { formatOvers } from '../../utils/helpers';
 
 export default function HomeView({ matches, tournaments, setCurrentMatch, setSelectedTournament, setView }) {
   
-  // State for the interactive Eid Banner
-  const [isCelebrated, setIsCelebrated] = useState(false);
-
   const liveMatches = matches.filter(m => m.status === 'Live');
   const scheduledMatches = matches.filter(m => m.status === 'Scheduled');
   const completedMatches = matches
@@ -32,52 +29,31 @@ export default function HomeView({ matches, tournaments, setCurrentMatch, setSel
   return (
     <div className="space-y-10 max-w-5xl mx-auto pb-6">
       
-      {/* INTERACTIVE EID MUBARAK BANNER */}
-      <div 
-        onClick={() => setIsCelebrated(true)}
-        className={`relative overflow-hidden rounded-2xl shadow-lg p-6 flex flex-col md:flex-row items-center justify-between gap-4 cursor-pointer transition-all duration-700 transform hover:scale-[1.02] group ${
-          isCelebrated 
-            ? 'bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 shadow-yellow-500/40 text-white' 
-            : 'bg-gradient-to-r from-emerald-600 via-teal-700 to-emerald-800 hover:shadow-emerald-600/30 text-white'
-        }`}
-      >
-        {/* Decorative background elements */}
-        <div className={`absolute transition-all duration-1000 ease-out ${
-          isCelebrated ? 'top-[-40px] right-[-40px] opacity-20 scale-150 rotate-45' : 'top-[-20px] right-[-20px] opacity-10'
-        }`}>
-            <Moon className="w-32 h-32" />
+      {/* PREMIUM EID MUBARAK BANNER (Million Dollar Aesthetic) */}
+      <div className="relative overflow-hidden rounded-2xl bg-[#022c22] border border-emerald-800/60 shadow-2xl p-6 md:p-8 flex items-center gap-5 md:gap-8">
+        
+        {/* Abstract Glowing Background Orbs */}
+        <div className="absolute -left-20 -top-20 w-64 h-64 bg-emerald-500/10 blur-3xl rounded-full pointer-events-none"></div>
+        <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-teal-500/10 blur-3xl rounded-full pointer-events-none"></div>
+        
+        {/* Faded Giant Background Icon */}
+        <div className="absolute right-0 top-0 opacity-5 transform translate-x-1/4 -translate-y-1/4 pointer-events-none">
+            <Moon className="w-64 h-64 text-emerald-50" />
         </div>
         
-        <div className="relative z-10 flex items-center gap-4 w-full">
-            {/* Moon Icon Container */}
-            <div className={`p-3 rounded-full backdrop-blur-sm transition-all duration-700 ${
-              isCelebrated ? 'bg-white/30 rotate-[360deg] scale-110' : 'bg-white/20 group-hover:rotate-12'
-            }`}>
-                <Moon className={`w-8 h-8 transition-colors duration-500 ${isCelebrated ? 'text-white fill-white' : 'text-yellow-300 fill-yellow-300'}`} />
-            </div>
-            
-            {/* Text Content */}
-            <div className="flex-1">
-                <h2 className={`text-xl md:text-2xl font-bold drop-shadow-sm transition-colors duration-500 ${
-                  isCelebrated ? 'text-white' : 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-yellow-400'
-                }`}>
-                    {isCelebrated ? 'Jazakallah Khair! ✨' : 'Eid Mubarak!'}
-                </h2>
-                <p className={`text-sm md:text-base font-medium mt-1 transition-colors duration-500 ${
-                  isCelebrated ? 'text-amber-50' : 'text-emerald-50'
-                }`}>
-                    {isCelebrated 
-                      ? 'May your days be filled with endless blessings.' 
-                      : 'Wishing you joy, peace, and great cricket from the ZBSM Community.'}
-                </p>
-            </div>
-
-            {/* Tap Prompt (Hides after click) */}
-            {!isCelebrated && (
-              <div className="hidden md:block text-xs font-bold bg-white/20 px-3 py-1.5 rounded-full animate-bounce border border-white/30">
-                Tap to Celebrate
-              </div>
-            )}
+        {/* Glassmorphism Icon Box */}
+        <div className="relative z-10 p-4 bg-gradient-to-br from-emerald-800/40 to-emerald-900/40 border border-emerald-700/50 rounded-2xl backdrop-blur-md shadow-inner">
+            <Moon className="w-8 h-8 md:w-10 md:h-10 text-amber-300 drop-shadow-[0_0_12px_rgba(252,211,77,0.6)]" />
+        </div>
+        
+        {/* Premium Typography */}
+        <div className="relative z-10 flex-1">
+            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 mb-1.5">
+                Eid Mubarak
+            </h2>
+            <p className="text-sm md:text-base font-medium text-emerald-100/70 tracking-wide max-w-lg">
+                Wishing you joy, peace, and great cricket from the ZBSM Community.
+            </p>
         </div>
       </div>
 
@@ -97,7 +73,6 @@ export default function HomeView({ matches, tournaments, setCurrentMatch, setSel
             >
               <div className="absolute top-4 right-4 z-10"><LiveBadge /></div>
               
-              {/* Glassmorphism overlay */}
               <div className="absolute inset-0 bg-white/5 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
               <div className="p-6 text-white relative z-10">
@@ -250,7 +225,6 @@ export default function HomeView({ matches, tournaments, setCurrentMatch, setSel
       <div className="mt-16 pt-10 border-t border-slate-200 text-center">
           <div className="flex items-center justify-center gap-2 mb-6 text-slate-800 font-extrabold text-2xl tracking-tight">
              <Activity className="w-7 h-7 text-emerald-500" /> 
-             {/* Wraps the text in flex-baseline to enforce zero gap */}
              <div className="flex items-baseline">
                  <span>ZBSMCric</span>
                  <span className="text-slate-400 font-light">.Live</span>
