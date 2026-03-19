@@ -36,26 +36,26 @@ return (
         />
       </div>
 
-      {/* 2. EID BANNER (Using the vibrant premium aesthetic) */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 shadow-lg shadow-emerald-500/20 p-6 md:p-8 flex items-center gap-4 md:gap-6 border border-emerald-400/40">
-        {/* Sleek light streaks */}
-        <div className="absolute top-0 right-1/4 w-32 h-full bg-white/10 skew-x-[30deg] transform -translate-x-1/2 pointer-events-none"></div>
-        <div className="absolute top-0 right-1/4 w-8 h-full bg-white/10 skew-x-[30deg] transform translate-x-8 pointer-events-none"></div>
+{/* 2. EID BANNER (Image Version) */}
+      <div className="relative overflow-hidden rounded-2xl shadow-lg border border-slate-200/50 group">
         
-        {/* Clean, popping icon box */}
-        <div className="relative z-10 bg-white p-3 md:p-3.5 rounded-2xl shadow-md shrink-0">
-            <Moon className="w-7 h-7 md:w-8 md:h-8 text-emerald-500 fill-emerald-500" />
-        </div>
+        {/* Banner Image */}
+        <img 
+          src="/eidbanner.png" 
+          alt="Eid Mubarak" 
+          className="w-full h-40 md:h-56 lg:h-64 object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+        />
         
-        {/* Text */}
-        <div className="relative z-10 flex-1">
-            <h2 className="text-xl md:text-3xl font-extrabold text-white tracking-tight mb-0.5 md:mb-1 drop-shadow-sm">
-                Eid Mubarak!
-            </h2>
-            <p className="text-sm md:text-base font-medium text-emerald-50 max-w-lg leading-snug md:leading-relaxed">
+        {/* Smooth Dark Gradient Overlay at the bottom for text legibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-indigo-950/90 via-indigo-950/20 to-transparent pointer-events-none"></div>
+        
+        {/* ZBSM Community Message */}
+        <div className="absolute bottom-0 left-0 w-full p-4 md:p-6 flex flex-col items-center md:items-start text-center md:text-left">
+            <p className="text-sm md:text-base font-semibold text-white tracking-wide drop-shadow-md">
                 Wishing you joy, peace, and great cricket from the ZBSM Community.
             </p>
         </div>
+        
       </div>
 
       {/* 3. LIVE MATCHES (Added a pulsing section header) */}
