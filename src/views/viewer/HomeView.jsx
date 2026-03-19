@@ -36,33 +36,26 @@ return (
         />
       </div>
 
-{/* --- 2. NEW, REDESIGNED, PRO EID BANNER (Image Version) --- */}
-      <div className="relative overflow-hidden rounded-2xl shadow-xl shadow-emerald-500/10 group border border-emerald-900/50">
+{/* 2. EID BANNER (Image Version) */}
+      <div className="relative overflow-hidden rounded-2xl shadow-lg border border-slate-200/50 group">
         
-        {/* Banner Image with controlled, responsive height to fix the cutoff issue */}
+        {/* Banner Image - Locked to a cinematic widescreen ratio on PC */}
         <img 
-          src="/eidbanner.png" 
-          alt="Eid Mubarak Celebration" 
-          className="w-full h-48 sm:h-64 md:h-80 lg:h-[28rem] object-cover object-center group-hover:scale-105 transition-transform duration-1000 ease-in-out" 
+          src="/eidbanner.webp" 
+          alt="Eid Mubarak" 
+          className="w-full h-48 md:h-56 lg:h-[350px] xl:h-[400px] object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
         />
         
-        {/* Deep, Integrated Gradient Overlay and Text */}
-        <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-emerald-950/95 via-emerald-950/40 to-transparent pt-24 pb-6 px-6 md:px-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                
-                {/* Message Block */}
-                <div className="flex-1 text-center md:text-left">
-                    <p className="text-base md:text-lg font-bold text-white tracking-wide drop-shadow-xl leading-relaxed md:leading-normal">
-                        Wishing you joy, peace, and great cricket from the ZBSM Community.
-                    </p>
-                </div>
-
-                {/* A stylized, glowing moon/star badge for that "million-dollar" feel */}
-                <div className="flex-none p-3.5 bg-gradient-to-br from-emerald-700/60 to-emerald-800/80 rounded-2xl border-2 border-amber-300/40 shadow-inner group-hover:border-amber-300/60 transition-colors">
-                    <Moon className="w-8 h-8 text-amber-300 drop-shadow-[0_0_12px_rgba(252,211,77,0.7)]" />
-                </div>
-            </div>
+        {/* Smooth Dark Gradient Overlay at the bottom for text legibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-indigo-950/90 via-indigo-950/20 to-transparent pointer-events-none"></div>
+        
+        {/* ZBSM Community Message */}
+        <div className="absolute bottom-0 left-0 w-full p-4 md:p-6 flex flex-col items-center md:items-start text-center md:text-left z-10">
+            <p className="text-sm md:text-base font-semibold text-white tracking-wide drop-shadow-md">
+                Wishing you joy, peace, and great cricket from the ZBSM Community.
+            </p>
         </div>
+        
       </div>
 
       {/* 3. LIVE MATCHES (Added a pulsing section header) */}
