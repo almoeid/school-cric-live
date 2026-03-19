@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Calendar, Clock, Trophy, ChevronRight, Activity, 
   BookOpen, Info, Heart, Image as ImageIcon, Moon 
@@ -10,6 +10,9 @@ import { formatOvers } from '../../utils/helpers';
 
 export default function HomeView({ matches, tournaments, setCurrentMatch, setSelectedTournament, setView }) {
   
+  // State for the interactive Eid Banner
+  const [isCelebrated, setIsCelebrated] = useState(false);
+
   const liveMatches = matches.filter(m => m.status === 'Live');
   const scheduledMatches = matches.filter(m => m.status === 'Scheduled');
   const completedMatches = matches
@@ -29,28 +32,56 @@ export default function HomeView({ matches, tournaments, setCurrentMatch, setSel
   return (
     <div className="space-y-10 max-w-5xl mx-auto pb-6">
       
-      {/* EID MUBARAK BANNER */}
-      <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-emerald-800 rounded-2xl shadow-lg p-6 text-white flex flex-col md:flex-row items-center justify-between gap-4 relative overflow-hidden">
+      {/* INTERACTIVE EID MUBARAK BANNER */}
+      <div 
+        onClick={() => setIsCelebrated(true)}
+        className={`relative overflow-hidden rounded-2xl shadow-lg p-6 flex flex-col md:flex-row items-center justify-between gap-4 cursor-pointer transition-all duration-700 transform hover:scale-[1.02] group ${
+          isCelebrated 
+            ? 'bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 shadow-yellow-500/40 text-white' 
+            : 'bg-gradient-to-r from-emerald-600 via-teal-700 to-emerald-800 hover:shadow-emerald-600/30 text-white'
+        }`}
+      >
         {/* Decorative background elements */}
-        <div className="absolute top-[-20px] right-[-20px] opacity-10">
+        <div className={`absolute transition-all duration-1000 ease-out ${
+          isCelebrated ? 'top-[-40px] right-[-40px] opacity-20 scale-150 rotate-45' : 'top-[-20px] right-[-20px] opacity-10'
+        }`}>
             <Moon className="w-32 h-32" />
         </div>
-        <div className="relative z-10 flex items-center gap-4">
-            <div className="bg-white/20 p-3 rounded-full backdrop-blur-sm">
-                <Moon className="w-8 h-8 text-yellow-300 fill-yellow-300" />
+        
+        <div className="relative z-10 flex items-center gap-4 w-full">
+            {/* Moon Icon Container */}
+            <div className={`p-3 rounded-full backdrop-blur-sm transition-all duration-700 ${
+              isCelebrated ? 'bg-white/30 rotate-[360deg] scale-110' : 'bg-white/20 group-hover:rotate-12'
+            }`}>
+                <Moon className={`w-8 h-8 transition-colors duration-500 ${isCelebrated ? 'text-white fill-white' : 'text-yellow-300 fill-yellow-300'}`} />
             </div>
-            <div>
-                <h2 className="text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-yellow-400 drop-shadow-sm">
-                    Eid Mubarak!
+            
+            {/* Text Content */}
+            <div className="flex-1">
+                <h2 className={`text-xl md:text-2xl font-bold drop-shadow-sm transition-colors duration-500 ${
+                  isCelebrated ? 'text-white' : 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-yellow-400'
+                }`}>
+                    {isCelebrated ? 'Jazakallah Khair! ✨' : 'Eid Mubarak!'}
                 </h2>
-                <p className="text-emerald-50 text-sm md:text-base font-medium mt-1">
-                    Wishing you joy, peace, and great cricket from the ZBSM Community.
+                <p className={`text-sm md:text-base font-medium mt-1 transition-colors duration-500 ${
+                  isCelebrated ? 'text-amber-50' : 'text-emerald-50'
+                }`}>
+                    {isCelebrated 
+                      ? 'May your days be filled with endless blessings.' 
+                      : 'Wishing you joy, peace, and great cricket from the ZBSM Community.'}
                 </p>
             </div>
+
+            {/* Tap Prompt (Hides after click) */}
+            {!isCelebrated && (
+              <div className="hidden md:block text-xs font-bold bg-white/20 px-3 py-1.5 rounded-full animate-bounce border border-white/30">
+                Tap to Celebrate
+              </div>
+            )}
         </div>
       </div>
 
-      {/* NEW: BREAKING NEWS TICKER */}
+      {/* BREAKING NEWS TICKER */}
       <NewsTicker 
         news="Recent Match Update: Batch 21 Won by 32 Run with 2018 Batch, Munna Kumar was the Man of the match and scored 76 in just 26 balls!" 
       />
