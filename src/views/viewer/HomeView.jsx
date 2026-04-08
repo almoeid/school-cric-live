@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   Calendar, Clock, Trophy, ChevronRight, Activity, 
-  BookOpen, Info, Heart, Image as ImageIcon, Moon 
+  BookOpen, Info, Heart, Image as ImageIcon, Moon, UserPlus // <-- Added UserPlus here
 } from 'lucide-react';
 import LiveBadge from '../../components/LiveBadge';
 import TeamLogo from '../../components/TeamLogo';
@@ -29,39 +29,66 @@ export default function HomeView({ matches, tournaments, setCurrentMatch, setSel
 return (
     <div className="space-y-8 max-w-5xl mx-auto pb-6 pt-2">
       
-      {/* 1. BREAKING NEWS (Moved to the absolute top like a pro alert bar) */}
-      <div className="w-full drop-shadow-sm">
+      {/* 1. BREAKING NEWS */}
+      <div className="w-full drop-shadow-sm px-2 sm:px-0">
         <NewsTicker 
           news="Batch 2014 kicked off their ZBSM School League 2026 campaign in style, claiming a dominant 52-run victory in their opening match with an all-round performance! BREAKING: Batch 21 secured a strong 32-run win over Batch 2018 in the ZBSM School League, posting the tournament’s highest score of 163/3, with Munna Kumar smashing a brilliant 76 off just 26 balls to earn Man of the Match!" 
         />
       </div>
 
-{/* 2. EID BANNER (Image Version) */}
-      <div className="relative overflow-hidden rounded-2xl shadow-lg border border-slate-200/50 group">
-        
-        {/* Banner Image - Locked to a cinematic widescreen ratio on PC */}
-        <img 
-          src="/eidbanner.png" 
-          alt="Eid Mubarak" 
-          className="w-full h-48 md:h-56 lg:h-[350px] xl:h-[400px] object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
-        />
-        
-        {/* Smooth Dark Gradient Overlay at the bottom for text legibility */}
-        <div className="absolute inset-0 bg-gradient-to-t from-indigo-950/90 via-indigo-950/20 to-transparent pointer-events-none"></div>
-        
-        {/* ZBSM Community Message */}
-        <div className="absolute bottom-0 left-0 w-full p-4 md:p-6 flex flex-col items-center md:items-start text-center md:text-left z-10">
-            <p className="text-sm md:text-base font-semibold text-white tracking-wide drop-shadow-md">
-                Wishing you joy, peace, and great cricket from the ZBSM Community.
-            </p>
-        </div>
-        
+      {/* 2. REGISTRATION CTA CARD (Replaces Eid Banner) */}
+      <div className="px-2 sm:px-0">
+          <div 
+            onClick={() => {
+                window.history.pushState({}, '', '/register');
+                setView('register');
+            }}
+            className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl shadow-lg p-5 md:p-6 flex flex-col sm:flex-row items-center justify-between gap-5 cursor-pointer hover:shadow-xl hover:shadow-emerald-900/20 hover:-translate-y-1 transition-all duration-300 border border-slate-700/80 group"
+          >
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+              <div className="bg-emerald-500/10 p-3 rounded-2xl border border-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors shrink-0">
+                <UserPlus className="w-8 h-8 text-emerald-400" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Registrations Open</span>
+                </div>
+                <h3 className="text-lg md:text-xl font-extrabold text-white tracking-tight">Play in the Elite Cup 2026</h3>
+                <p className="text-xs md:text-sm text-slate-400 mt-0.5">Secure your spot in the ultimate showdown.</p>
+              </div>
+            </div>
+            
+            <button className="w-full sm:w-auto whitespace-nowrap px-6 py-3.5 sm:py-3 bg-emerald-500 text-white font-bold text-sm rounded-xl group-hover:bg-emerald-400 transition-colors shadow-md">
+              Register Now
+            </button>
+          </div>
       </div>
 
-      {/* 3. LIVE MATCHES (Added a pulsing section header) */}
+      {/* --- EID BANNER (Commented Out) --- */}
+      {/* <div className="px-2 sm:px-0">
+          <div className="relative overflow-hidden rounded-2xl shadow-lg border border-slate-200/50 group">
+            <img 
+              src="/eidbanner.png" 
+              alt="Eid Mubarak" 
+              className="w-full h-48 md:h-56 lg:h-[350px] xl:h-[400px] object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-indigo-950/90 via-indigo-950/20 to-transparent pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 w-full p-4 md:p-6 flex flex-col items-center md:items-start text-center md:text-left z-10">
+                <p className="text-sm md:text-base font-semibold text-white tracking-wide drop-shadow-md">
+                    Wishing you joy, peace, and great cricket from the ZBSM Community.
+                </p>
+            </div>
+          </div>
+      </div>
+      */}
+
+      {/* 3. LIVE MATCHES */}
       {liveMatches.length > 0 && (
-        <div>
-          {/* New Live Header */}
+        <div className="px-2 sm:px-0">
           <div className="flex items-center gap-2.5 mb-4 px-1">
              <span className="relative flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -111,10 +138,8 @@ return (
         </div>
       )}
 
-      {/* SCHEDULED (The rest of your code remains exactly the same below here) */}
-
       {/* SCHEDULED */}
-      <div>
+      <div className="px-2 sm:px-0">
         <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center tracking-tight">
           <Calendar className="w-5 h-5 mr-2 text-blue-600" /> Upcoming Fixtures
         </h3>
@@ -155,7 +180,7 @@ return (
       </div>
 
       {/* TOURNAMENTS */}
-      <div>
+      <div className="px-2 sm:px-0">
        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center tracking-tight">
          <Trophy className="w-5 h-5 mr-2 text-amber-500" /> Tournaments
        </h3>
@@ -179,7 +204,7 @@ return (
       </div>
 
       {/* RECENT RESULTS */}
-      <div>
+      <div className="px-2 sm:px-0">
         <h3 className="text-lg font-bold text-slate-800 mb-4 tracking-tight">Recent Results</h3>
         <div className="space-y-3">
             {completedMatches.length === 0 && (
