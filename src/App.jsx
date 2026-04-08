@@ -86,6 +86,7 @@ export default function App() {
       if (path === '/gallery') { setView('gallery'); return; }
       if (path === '/login') { setView('login'); return; }
       if (path === '/register') { setView('register'); return; }
+      if (path === '/admin-registrations') { setView('admin-registrations'); return; } // <-- FIXED HERE
 
       if (matches.length === 0 && tournaments.length === 0) return;
 
