@@ -50,31 +50,32 @@ export default function AdminRegistrationDash({ setView }) {
     }
   };
 
-  // --- SMS SENDING FUNCTION ---
+  // --- BULKSMSBD API INTEGRATION ---
   const sendApprovalSMS = async (mobileNumber, playerName, serialNumber) => {
-      // NOTE: Replace this URL and token with your actual provider (e.g., BulkSMSBD or AamarSMS)
       const message = `Congratulations ${playerName}! Your registration for ZBSM Elite Cup 2026 is approved. Your Player ID is ZBSM-${serialNumber}.`;
       
-      console.log(`[SMS TRIGGERED] Sending to ${mobileNumber}: "${message}"`);
+      // Formatting number to include 88 country code as usually required by BD gateways
+      const formattedNumber = `88${mobileNumber}`;
+      const encodedMessage = encodeURIComponent(message);
       
-      /* --- UNCOMMENT AND FILL THIS OUT WHEN YOU BUY AN SMS PACKAGE ---
+      const apiKey = 'oyuMRsMnU5HcNzYzlpBc';
+      // 👉 IMPORTANT: Get this from the 'Sender ID' menu in BulkSMSBD 👈
+      const senderId = 'YOUR_SENDER_ID_HERE'; 
+
+      // Using HTTPS to prevent browser Mixed Content blocks
+      const apiUrl = `https://bulksmsbd.net/api/smsapi?api_key=${apiKey}&type=text&number=${formattedNumber}&senderid=${senderId}&message=${encodedMessage}`;
+
       try {
-          const response = await fetch('YOUR_SMS_PROVIDER_API_URL', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                  api_key: 'YOUR_API_KEY',
-                  sender_id: 'YOUR_SENDER_ID',
-                  number: mobileNumber,
-                  message: message
-              })
-          });
-          const result = await response.json();
-          console.log("SMS Response:", result);
+          console.log(`[SMS] Triggering API for ${formattedNumber}...`);
+          const response = await fetch(apiUrl, { method: 'GET' });
+          const result = await response.text(); 
+          console.log("[SMS API Response]:", result);
+          return true;
       } catch (error) {
-          console.error("Failed to send SMS:", error);
+          console.error("[SMS ERROR] Failed to send:", error);
+          alert("Firebase updated, but SMS failed. The browser might be blocking the request (CORS). Check browser console.");
+          return false;
       }
-      -------------------------------------------------------------- */
   };
 
   // --- ACTION HANDLERS ---
@@ -217,7 +218,7 @@ export default function AdminRegistrationDash({ setView }) {
           </div>
       </div>
 
-      {/* Data Table (Wide for all fields) */}
+      {/* Data Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse whitespace-nowrap">
