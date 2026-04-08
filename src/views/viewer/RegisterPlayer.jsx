@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { User, Image as ImageIcon, Phone, CalendarDays, Award, Target, Info, CreditCard, Send, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { User, Image as ImageIcon, Phone, CalendarDays, Award, Target, Info, CreditCard, Send, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { collection, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, APP_ID } from '../../config/firebase';
@@ -18,7 +18,16 @@ export default function RegisterPlayer({ setView }) {
 
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState({ type: null, text: '' });
+  const [toast, setToast] = useState({ show: false, type: null, text: '' });
+
+  // Custom Toast Function
+  const showToast = (type, text) => {
+    setToast({ show: true, type, text });
+    // Auto-hide after 4 seconds
+    setTimeout(() => {
+      setToast({ show: false, type: null, text: '' });
+    }, 4000);
+  };
 
   // Generate batch dropdown options from 1990 to 2026
   const batches = Array.from({ length: 2026 - 1990 + 1 }, (_, i) => 2026 - i);
@@ -28,11 +37,11 @@ export default function RegisterPlayer({ setView }) {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        setSubmitMessage({ type: 'error', text: 'Picture must be smaller than 5MB.' });
+        showToast('error', 'Picture must be smaller than 5MB.');
         return;
       }
       if (!file.type.startsWith('image/')) {
-        setSubmitMessage({ type: 'error', text: 'Please upload an image file (e.g., .jpg, .png).' });
+        showToast('error', 'Please upload an image file (e.g., .jpg, .png).');
         return;
       }
       setImageFile(file);
@@ -44,11 +53,18 @@ export default function RegisterPlayer({ setView }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitMessage({ type: null, text: '' });
 
+    // 1. Basic empty field validation
     if (!name || !mobileNumber || !batch || !role || !imageFile || !paymentTxid) {
-      setSubmitMessage({ type: 'error', text: 'Please fill in all required fields and upload a picture.' });
+      showToast('error', 'Please fill in all required fields and upload a picture.');
       return;
+    }
+
+    // 2. Strict Mobile Number Validation (Starts with 01, exactly 11 digits)
+    const phoneRegex = /^01\d{9}$/;
+    if (!phoneRegex.test(mobileNumber)) {
+        showToast('error', 'Mobile number must start with 01 and be exactly 11 digits.');
+        return;
     }
 
     setIsSubmitting(true);
@@ -73,7 +89,7 @@ export default function RegisterPlayer({ setView }) {
 
       await addDoc(collection(db, 'artifacts', APP_ID, 'private', 'registrations'), registrationData);
 
-      setSubmitMessage({ type: 'success', text: 'Registration submitted successfully! Please wait for admin approval.' });
+      showToast('success', 'Registration submitted successfully! Waiting for admin approval.');
       
       // Clear form
       setName(''); setMobileNumber(''); setBatch(''); setRole(''); setPaymentTxid(''); setImageFile(null); setImagePreview(null);
@@ -82,15 +98,26 @@ export default function RegisterPlayer({ setView }) {
 
     } catch (error) {
       console.error('Registration Error:', error);
-      setSubmitMessage({ type: 'error', text: 'Failed to submit registration. Please try again.' });
+      // This will now show the exact Firebase error if it fails again!
+      showToast('error', `Failed: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-3xl mx-auto pb-16 pt-4 animate-fadeIn">
+    <div className="max-w-3xl mx-auto pb-16 pt-4 animate-fadeIn relative">
       
+      {/* CUSTOM FLOATING TOAST NOTIFICATION */}
+      <div className={`fixed top-24 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-500 ease-in-out ${toast.show ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10 pointer-events-none'}`}>
+          <div className={`px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-3 text-sm font-bold border ${
+              toast.type === 'error' ? 'bg-red-600 text-white border-red-700' : 'bg-emerald-600 text-white border-emerald-700'
+          }`}>
+              {toast.type === 'error' ? <XCircle className="w-5 h-5 shrink-0" /> : <CheckCircle className="w-5 h-5 shrink-0" />}
+              {toast.text}
+          </div>
+      </div>
+
       {/* Tournament Header */}
       <div className="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-3xl p-8 mb-8 text-white shadow-xl">
         <div className="flex items-center gap-5">
@@ -108,14 +135,6 @@ export default function RegisterPlayer({ setView }) {
       {/* Form */}
       <form onSubmit={handleSubmit} className="bg-white p-6 md:p-10 rounded-3xl shadow-lg border border-slate-100 space-y-8">
         
-        {submitMessage.text && (
-            <div className={`p-4 rounded-xl text-sm font-semibold flex items-center gap-3 border ${
-                submitMessage.type === 'error' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-            }`}>
-              {submitMessage.text}
-            </div>
-        )}
-
         {/* Player Info Section */}
         <section>
           <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
@@ -178,10 +197,11 @@ export default function RegisterPlayer({ setView }) {
           </div>
           
           <div className="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100 mb-6 flex items-start gap-4">
-              {/* FIXED: Swapped MessageSquareCheck to Info */}
               <Info className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
               <div>
-                  <p className="text-sm text-slate-700 leading-relaxed">Send the registration fee to the number below via <b>bKash</b> or <b>Nagad</b> (Personal). Then, enter the Transaction ID (TXID) or the phone number you sent it from.</p>
+                  <p className="text-sm text-slate-700 leading-relaxed">
+                    Send the registration fee of <strong className="text-emerald-700 font-extrabold text-base">500tk</strong> to the number below via <b>bKash</b> or <b>Nagad</b> (Personal). Then, enter the Transaction ID (TXID) or the phone number you sent it from.
+                  </p>
                   <div className="mt-3 inline-block bg-white px-4 py-2 rounded-xl border border-emerald-200 shadow-sm font-mono font-bold text-emerald-700 text-lg">
                       01700770376
                   </div>
