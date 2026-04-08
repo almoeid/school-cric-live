@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Users, UserCheck, Clock, CheckCircle, XCircle, 
-  Search, ShieldCheck, ChevronLeft, Lock, Smartphone
+  Search, ShieldCheck, Lock, Smartphone, Filter, Trash2 
 } from 'lucide-react';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db, APP_ID } from '../../config/firebase';
 
 export default function AdminRegistrationDash({ setView }) {
@@ -14,12 +14,17 @@ export default function AdminRegistrationDash({ setView }) {
 
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // --- FILTERS ---
   const [filter, setFilter] = useState('all'); 
+  const [roleFilter, setRoleFilter] = useState('all'); 
   const [searchTerm, setSearchTerm] = useState('');
+
+  const roles = ["Batsman", "Bowler", "Allrounder", "Batting Allrounder", "Bowling Allrounder"];
 
   // 1. Fetch data in real-time
   useEffect(() => {
-    if (!isAuthenticated) return; // Only fetch if logged in
+    if (!isAuthenticated) return; 
 
     const q = query(
       collection(db, 'artifacts', APP_ID, 'private', 'data', 'registrations'),
@@ -53,16 +58,12 @@ export default function AdminRegistrationDash({ setView }) {
   // --- BULKSMSBD API INTEGRATION ---
   const sendApprovalSMS = async (mobileNumber, playerName, serialNumber) => {
       const message = `Congratulations ${playerName}! Your registration for ZBSM Elite Cup 2026 is approved. Your Player ID is ZBSM-${serialNumber}.`;
-      
-      // Formatting number to include 88 country code as usually required by BD gateways
       const formattedNumber = `88${mobileNumber}`;
       const encodedMessage = encodeURIComponent(message);
       
       const apiKey = 'oyuMRsMnU5HcNzYzlpBc';
-      // 👉 IMPORTANT: Get this from the 'Sender ID' menu in BulkSMSBD 👈
-      const senderId = 'YOUR_SENDER_ID_HERE'; 
+      const senderId = 'YOUR_SENDER_ID_HERE'; // Replace with your approved Sender ID
 
-      // Using HTTPS to prevent browser Mixed Content blocks
       const apiUrl = `https://bulksmsbd.net/api/smsapi?api_key=${apiKey}&type=text&number=${formattedNumber}&senderid=${senderId}&message=${encodedMessage}`;
 
       try {
@@ -83,7 +84,6 @@ export default function AdminRegistrationDash({ setView }) {
     if (!window.confirm(`Approve ${reg.name} and send SMS?`)) return;
 
     try {
-      // Find the highest serial number currently assigned to approve the next one serially
       const approvedRegs = registrations.filter(r => r.status === 'approved' && r.serialNumber);
       const nextSerial = approvedRegs.length > 0 
           ? Math.max(...approvedRegs.map(r => r.serialNumber)) + 1 
@@ -97,7 +97,6 @@ export default function AdminRegistrationDash({ setView }) {
         approvedAt: Date.now() 
       });
 
-      // Trigger the SMS
       await sendApprovalSMS(reg.mobileNumber, reg.name, nextSerial);
 
     } catch (error) {
@@ -114,6 +113,37 @@ export default function AdminRegistrationDash({ setView }) {
     } catch (error) {
       console.error("Error rejecting:", error);
     }
+  };
+
+  // --- DELETE HANDLER WITH AUTO-SERIAL FIX ---
+  const handleDelete = async (reg) => {
+      if (!window.confirm(`WARNING: Are you sure you want to permanently DELETE ${reg.name}? This cannot be undone.`)) return;
+
+      try {
+          const regRef = doc(db, 'artifacts', APP_ID, 'private', 'data', 'registrations', reg.id);
+          
+          // 1. Delete the record
+          await deleteDoc(regRef);
+
+          // 2. Fix the serial numbers for everyone else if an approved player was deleted
+          if (reg.status === 'approved' && reg.serialNumber) {
+              const deletedSerial = reg.serialNumber;
+              
+              // Find everyone who had a HIGHER serial number
+              const playersToUpdate = registrations.filter(r => r.status === 'approved' && r.serialNumber > deletedSerial);
+              
+              // Shift their serial number down by 1
+              for (const player of playersToUpdate) {
+                  const updateRef = doc(db, 'artifacts', APP_ID, 'private', 'data', 'registrations', player.id);
+                  await updateDoc(updateRef, {
+                      serialNumber: player.serialNumber - 1
+                  });
+              }
+          }
+      } catch (error) {
+          console.error("Error deleting:", error);
+          alert("Failed to delete record. Check console.");
+      }
   };
 
   // --- RENDER LOGIN SCREEN ---
@@ -155,13 +185,15 @@ export default function AdminRegistrationDash({ setView }) {
   };
 
   const filteredRegistrations = registrations.filter(reg => {
-    const matchesFilter = filter === 'all' || reg.status === filter;
+    const matchesStatus = filter === 'all' || reg.status === filter;
+    const matchesRole = roleFilter === 'all' || reg.role === roleFilter;
     const matchesSearch = 
       reg.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
       reg.mobileNumber.includes(searchTerm) ||
       reg.paymentTxid.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (reg.jerseyName && reg.jerseyName.toLowerCase().includes(searchTerm.toLowerCase()));
-    return matchesFilter && matchesSearch;
+    
+    return matchesStatus && matchesRole && matchesSearch;
   });
 
   if (loading) return <div className="p-10 text-center font-bold text-slate-500 animate-pulse">Loading Secured Dashboard...</div>;
@@ -169,59 +201,69 @@ export default function AdminRegistrationDash({ setView }) {
   return (
     <div className="max-w-[95%] mx-auto pb-12 animate-fadeIn">
       
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8 pt-4">
-        <div className="flex items-center gap-4">
-            <button onClick={() => setView('home')} className="p-2 bg-white rounded-full shadow-sm hover:bg-slate-50 transition border border-slate-100">
-                <ChevronLeft className="w-5 h-5 text-slate-600" />
-            </button>
-            <div>
-                <h1 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
-                    <ShieldCheck className="w-7 h-7 text-emerald-500" /> Registration Desk
-                </h1>
-                <p className="text-sm text-slate-500 font-medium mt-1">Approve players, assign serials, and send SMS.</p>
-            </div>
+      <div className="flex items-start sm:items-center justify-between mb-6 pt-4">
+        <div>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-800 flex items-center gap-2">
+                <ShieldCheck className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-500 shrink-0" /> Registration Desk
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">Approve players, assign serials, and send SMS.</p>
         </div>
-        <button onClick={() => setIsAuthenticated(false)} className="text-sm font-bold text-red-500 bg-red-50 px-4 py-2 rounded-lg hover:bg-red-100 transition">
+        <button onClick={() => setIsAuthenticated(false)} className="text-xs sm:text-sm font-bold text-red-500 bg-red-50 px-3 sm:px-4 py-2 rounded-lg hover:bg-red-100 transition shrink-0">
             Lock 
         </button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
         <StatCard title="Total Requests" count={stats.total} icon={Users} color="blue" />
-        <StatCard title="Pending Review" count={stats.pending} icon={Clock} color="amber" />
-        <StatCard title="Approved (Serials Assigned)" count={stats.approved} icon={UserCheck} color="emerald" />
+        <StatCard title="Pending" count={stats.pending} icon={Clock} color="amber" />
+        <StatCard title="Approved" count={stats.approved} icon={UserCheck} color="emerald" />
       </div>
 
-      {/* Controls */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col lg:flex-row justify-between gap-4 mb-6">
-          <div className="flex bg-slate-100 p-1 rounded-xl w-fit">
-              {['all', 'pending', 'approved', 'rejected'].map(f => (
-                  <button 
-                      key={f} onClick={() => setFilter(f)}
-                      className={`px-4 py-1.5 rounded-lg text-sm font-bold capitalize transition-all ${filter === f ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                  >
-                      {f}
-                  </button>
-              ))}
-          </div>
-          
-          <div className="relative w-full lg:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input 
-                  type="text" 
-                  placeholder="Search name, phone, TXID..." 
-                  value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:bg-white transition"
-              />
+      {/* Filter & Search Bar */}
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6 flex flex-col gap-4">
+          <div className="flex flex-col lg:flex-row justify-between gap-4">
+              <div className="flex overflow-x-auto bg-slate-100 p-1 rounded-xl w-full lg:w-fit custom-scrollbar">
+                  {['all', 'pending', 'approved', 'rejected'].map(f => (
+                      <button 
+                          key={f} onClick={() => setFilter(f)}
+                          className={`px-4 py-2 lg:py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap flex-1 lg:flex-none ${filter === f ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                      >
+                          {f}
+                      </button>
+                  ))}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                  <div className="relative w-full sm:w-48 shrink-0">
+                      <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                      <select
+                          value={roleFilter}
+                          onChange={(e) => setRoleFilter(e.target.value)}
+                          className="w-full pl-9 pr-8 py-2.5 lg:py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400 appearance-none transition"
+                      >
+                          <option value="all">All Roles</option>
+                          {roles.map(r => <option key={r} value={r}>{r}</option>)}
+                      </select>
+                  </div>
+
+                  <div className="relative w-full sm:w-64">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                      <input 
+                          type="text" 
+                          placeholder="Search name, phone, TXID..." 
+                          value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full pl-9 pr-4 py-2.5 lg:py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:bg-white transition"
+                      />
+                  </div>
+              </div>
           </div>
       </div>
 
       {/* Data Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse whitespace-nowrap">
+          <table className="w-full text-left border-collapse whitespace-nowrap min-w-[800px]">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100 text-[10px] uppercase tracking-wider text-slate-500 font-bold">
                 <th className="p-4"># Serial</th>
@@ -235,7 +277,7 @@ export default function AdminRegistrationDash({ setView }) {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredRegistrations.length === 0 && (
-                  <tr><td colSpan="7" className="p-10 text-center text-slate-400 font-medium">No registrations match this filter.</td></tr>
+                  <tr><td colSpan="7" className="p-10 text-center text-slate-400 font-medium">No registrations match your filters.</td></tr>
               )}
               {filteredRegistrations.map(reg => (
                 <tr key={reg.id} className="hover:bg-slate-50/50 transition">
@@ -301,7 +343,7 @@ export default function AdminRegistrationDash({ setView }) {
                       </span>
                   </td>
 
-                  {/* Actions */}
+                  {/* Actions - Added Delete Button */}
                   <td className="p-4 text-right">
                       {reg.status === 'pending' ? (
                           <div className="flex items-center justify-end gap-2">
@@ -313,9 +355,14 @@ export default function AdminRegistrationDash({ setView }) {
                               </button>
                           </div>
                       ) : (
-                          <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
-                              Processed
-                          </span>
+                          <div className="flex items-center justify-end gap-3">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                  Processed
+                              </span>
+                              <button onClick={() => handleDelete(reg)} className="p-1.5 bg-slate-50 text-slate-400 hover:bg-red-500 hover:text-white rounded-lg transition border border-transparent hover:border-red-600" title="Permanently Delete">
+                                  <Trash2 className="w-4 h-4" />
+                              </button>
+                          </div>
                       )}
                   </td>
                 </tr>
@@ -337,13 +384,13 @@ function StatCard({ title, count, icon: Icon, color }) {
     };
 
     return (
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+        <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
             <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">{title}</p>
-                <h3 className="text-3xl font-extrabold text-slate-800">{count}</h3>
+                <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">{title}</p>
+                <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-800">{count}</h3>
             </div>
-            <div className={`p-3 rounded-xl border ${colorClasses[color]}`}>
-                <Icon className="w-6 h-6" />
+            <div className={`p-2.5 sm:p-3 rounded-xl border ${colorClasses[color]}`}>
+                <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
         </div>
     );
