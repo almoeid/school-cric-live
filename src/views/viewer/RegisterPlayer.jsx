@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { 
   User, Image as ImageIcon, Phone, CalendarDays, Award, Target, Info, 
-  CreditCard, Send, Loader2, CheckCircle, XCircle, PhoneCall, Hash, Copy 
+  CreditCard, Send, Loader2, CheckCircle, XCircle, PhoneCall, Hash, Copy, Shirt 
 } from 'lucide-react';
 import { collection, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -17,6 +17,7 @@ export default function RegisterPlayer({ setView }) {
   const [role, setRole] = useState('');
   const [jerseyName, setJerseyName] = useState('');
   const [jerseyNumber, setJerseyNumber] = useState('');
+  const [jerseySize, setJerseySize] = useState(''); // NEW: Jersey Size State
   const [paymentTxid, setPaymentTxid] = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -25,15 +26,21 @@ export default function RegisterPlayer({ setView }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [toast, setToast] = useState({ show: false, type: null, text: '' });
-  const [copied, setCopied] = useState(false); // NEW: Copy state
+  const [copied, setCopied] = useState(false);
 
   const showToast = (type, text) => {
     setToast({ show: true, type, text });
     setTimeout(() => setToast({ show: false, type: null, text: '' }), 4000);
   };
 
-  const batches = Array.from({ length: 2026 - 1990 + 1 }, (_, i) => 2026 - i);
+  // --- Dynamic Options ---
+  const years = Array.from({ length: 2026 - 1990 + 1 }, (_, i) => 2026 - i);
+  const batches = ["School Batch", "Madrasa", ...years]; // Added special batches
   const roles = ["Batsman", "Bowler", "Allrounder", "Batting Allrounder", "Bowling Allrounder"];
+  const jerseySizes = ["M", "L", "XL", "XXL", "XXXL"];
+
+  // --- Dynamic Fee Calculation ---
+  const feeAmount = batch === 'School Batch' ? '200' : '500';
 
   // --- Strict Input Handlers ---
   const handleMobileChange = (e) => {
@@ -75,7 +82,8 @@ export default function RegisterPlayer({ setView }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!name || !mobileNumber || !batch || !role || !jerseyName || !jerseyNumber || !imageFile || !paymentTxid) {
+    // Updated validation to include jerseySize
+    if (!name || !mobileNumber || !batch || !role || !jerseyName || !jerseyNumber || !jerseySize || !imageFile || !paymentTxid) {
       showToast('error', 'Please fill in all required fields and upload a picture.');
       return;
     }
@@ -99,6 +107,7 @@ export default function RegisterPlayer({ setView }) {
         role,
         jerseyName,
         jerseyNumber,
+        jerseySize, // Saved to Firebase
         paymentTxid,
         imageUrl,
         status: 'pending',
@@ -203,7 +212,7 @@ export default function RegisterPlayer({ setView }) {
             <InputGroup label="Batch" icon={CalendarDays}>
                 <select value={batch} onChange={(e) => setBatch(e.target.value)} required className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all appearance-none">
                     <option value="" disabled>Select Batch</option>
-                    {batches.map(year => <option key={year} value={year}>{year}</option>)}
+                    {batches.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
             </InputGroup>
 
@@ -218,9 +227,19 @@ export default function RegisterPlayer({ setView }) {
               <input type="text" value={jerseyName} onChange={(e) => setJerseyName(e.target.value.toUpperCase())} required placeholder="e.g. MUNNA" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all uppercase" />
             </InputGroup>
 
-            <InputGroup label="Jersey Number" icon={Hash}>
-              <input type="tel" value={jerseyNumber} onChange={handleJerseyNumberChange} required placeholder="e.g. 10" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all font-mono" />
-            </InputGroup>
+            {/* Added a grid here to split Number and Size on desktop */}
+            <div className="grid grid-cols-2 gap-4">
+              <InputGroup label="Jersey No." icon={Hash}>
+                <input type="tel" value={jerseyNumber} onChange={handleJerseyNumberChange} required placeholder="e.g. 10" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all font-mono" />
+              </InputGroup>
+
+              <InputGroup label="Size" icon={Shirt}>
+                  <select value={jerseySize} onChange={(e) => setJerseySize(e.target.value)} required className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all appearance-none">
+                      <option value="" disabled>Size</option>
+                      {jerseySizes.map(size => <option key={size} value={size}>{size}</option>)}
+                  </select>
+              </InputGroup>
+            </div>
 
             <div className="md:col-span-2">
                 <InputGroup label="Player Style Picture (Portrait)" icon={ImageIcon}>
@@ -257,10 +276,9 @@ export default function RegisterPlayer({ setView }) {
               <Info className="w-6 h-6 text-emerald-500 shrink-0 hidden sm:block mt-0.5" />
               <div>
                   <p className="text-sm text-slate-700 leading-relaxed font-medium">
-                    রেজিস্ট্রেশন ফি <strong className="text-emerald-700 font-extrabold text-base">500tk</strong> নিচের নম্বরে <b>bKash</b> অথবা <b>Nagad</b> (Personal) এর মাধ্যমে Send Money করুন। এরপর, Transaction ID (TXID) অথবা যে নম্বর থেকে টাকা পাঠিয়েছেন তা নিচের বক্সে লিখুন।
+                    রেজিস্ট্রেশন ফি <strong className="text-emerald-700 font-extrabold text-base transition-all">{feeAmount}tk</strong> নিচের নম্বরে <b>bKash</b> অথবা <b>Nagad</b> (Personal) এর মাধ্যমে Send Money করুন। এরপর, Transaction ID (TXID) অথবা যে নম্বর থেকে টাকা পাঠিয়েছেন তা নিচের বক্সে লিখুন।
                   </p>
                   
-                  {/* NEW: Number display with Copy Button */}
                   <div className="mt-4 flex items-center gap-2">
                       <div className="bg-white px-5 py-2.5 rounded-xl border border-emerald-200 shadow-sm font-mono font-extrabold text-emerald-700 text-lg md:text-xl tracking-wider">
                           01701597310
