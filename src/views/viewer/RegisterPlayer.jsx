@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { 
   User, Image as ImageIcon, Phone, CalendarDays, Award, Target, Info, 
-  CreditCard, Send, Loader2, CheckCircle, XCircle, PhoneCall, Hash 
+  CreditCard, Send, Loader2, CheckCircle, XCircle, PhoneCall, Hash, Copy 
 } from 'lucide-react';
 import { collection, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -23,18 +23,28 @@ export default function RegisterPlayer({ setView }) {
 
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [toast, setToast] = useState({ show: false, type: null, text: '' });
+  const [copied, setCopied] = useState(false); // NEW: Copy state
 
-  // Custom Toast Function
   const showToast = (type, text) => {
     setToast({ show: true, type, text });
-    setTimeout(() => {
-      setToast({ show: false, type: null, text: '' });
-    }, 4000);
+    setTimeout(() => setToast({ show: false, type: null, text: '' }), 4000);
   };
 
   const batches = Array.from({ length: 2026 - 1990 + 1 }, (_, i) => 2026 - i);
   const roles = ["Batsman", "Bowler", "Allrounder", "Batting Allrounder", "Bowling Allrounder"];
+
+  // --- Strict Input Handlers ---
+  const handleMobileChange = (e) => {
+    const val = e.target.value.replace(/\D/g, ''); 
+    if (val.length <= 11) setMobileNumber(val);
+  };
+
+  const handleJerseyNumberChange = (e) => {
+    const val = e.target.value.replace(/\D/g, ''); 
+    if (val.length <= 3) setJerseyNumber(val);
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -54,37 +64,34 @@ export default function RegisterPlayer({ setView }) {
     }
   };
 
+  // --- Copy to Clipboard Handler ---
+  const handleCopyNumber = () => {
+    navigator.clipboard.writeText('01701597310');
+    setCopied(true);
+    showToast('success', 'Number copied to clipboard!');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 1. Basic empty field validation
     if (!name || !mobileNumber || !batch || !role || !jerseyName || !jerseyNumber || !imageFile || !paymentTxid) {
       showToast('error', 'Please fill in all required fields and upload a picture.');
       return;
     }
 
-    // 2. Strict Mobile Number Validation (Starts with 01, exactly 11 digits)
-    const phoneRegex = /^01\d{9}$/;
-    if (!phoneRegex.test(mobileNumber)) {
+    if (mobileNumber.length !== 11 || !mobileNumber.startsWith('01')) {
         showToast('error', 'Mobile number must start with 01 and be exactly 11 digits.');
-        return;
-    }
-
-    // 3. Jersey Number Validation (Max 3 digits)
-    if (jerseyNumber.length > 3 || isNaN(jerseyNumber)) {
-        showToast('error', 'Jersey number must be a maximum of 3 digits.');
         return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // 1. Upload Image to Firebase Storage
       const storageRef = ref(storage, `${APP_ID}/player_registrations/${Date.now()}_${imageFile.name}`);
       const uploadSnapshot = await uploadBytes(storageRef, imageFile);
       const imageUrl = await getDownloadURL(uploadSnapshot.ref);
 
-      // 2. Save Data to Firestore (FIXED ERROR: 5 segments now)
       const registrationData = {
         name,
         mobileNumber,
@@ -100,27 +107,48 @@ export default function RegisterPlayer({ setView }) {
 
       await addDoc(collection(db, 'artifacts', APP_ID, 'private', 'data', 'registrations'), registrationData);
 
-      showToast('success', 'Registration submitted successfully! Waiting for admin approval.');
-      
-      // Clear form
-      setName(''); setMobileNumber(''); setBatch(''); setRole(''); 
-      setJerseyName(''); setJerseyNumber(''); setPaymentTxid(''); 
-      setImageFile(null); setImagePreview(null);
-      
-      setTimeout(() => setView('home'), 3000);
+      setIsSuccess(true);
 
     } catch (error) {
       console.error('Registration Error:', error);
       showToast('error', `Failed: ${error.message}`);
-    } finally {
       setIsSubmitting(false);
-    }
+    } 
   };
 
+  // --- SUCCESS UI RENDER ---
+  if (isSuccess) {
+    return (
+      <div className="max-w-2xl mx-auto pb-16 pt-10 px-4 text-center animate-fadeIn">
+        <div className="bg-white p-8 md:p-12 rounded-3xl shadow-xl border border-emerald-100 flex flex-col items-center relative overflow-hidden">
+           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-gradient-to-b from-emerald-50 to-white"></div>
+           
+           <div className="w-24 h-24 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-emerald-500/30 relative z-10 animate-bounce">
+               <CheckCircle className="w-12 h-12 text-white" />
+           </div>
+           
+           <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 mb-3 relative z-10">Registration Successful!</h2>
+           
+           <p className="text-slate-600 mb-8 font-medium max-w-md mx-auto leading-relaxed relative z-10">
+               Your application for the <b>ZBSM Elite Cup 2026</b> has been submitted securely. Please wait while our admins verify your payment and approve your profile.
+           </p>
+           
+           <button 
+              onClick={() => setView('home')} 
+              className="bg-slate-900 text-white px-8 py-3.5 rounded-xl font-bold shadow-md hover:bg-slate-800 hover:-translate-y-0.5 transition-all w-full sm:w-auto relative z-10"
+           >
+              Back to Live Scores
+           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- MAIN FORM RENDER ---
   return (
-    <div className="max-w-3xl mx-auto pb-16 pt-4 animate-fadeIn relative">
+    <div className="max-w-3xl mx-auto pb-16 pt-4 px-2 sm:px-0 animate-fadeIn relative">
       
-      {/* CUSTOM FLOATING TOAST NOTIFICATION */}
+      {/* Toast Notification */}
       <div className={`fixed top-24 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-500 ease-in-out ${toast.show ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10 pointer-events-none'}`}>
           <div className={`px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-3 text-sm font-bold border ${
               toast.type === 'error' ? 'bg-red-600 text-white border-red-700' : 'bg-emerald-600 text-white border-emerald-700'
@@ -131,30 +159,30 @@ export default function RegisterPlayer({ setView }) {
       </div>
 
       {/* Tournament Header */}
-      <div className="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-3xl p-8 mb-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-center gap-5">
-           <div className="bg-white p-4 rounded-2xl shadow-inner shrink-0">
-             <Target className="w-8 h-8 md:w-10 md:h-10 text-emerald-600" />
+      <div className="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-3xl p-6 md:p-8 mb-6 md:mb-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex items-start md:items-center gap-4 md:gap-5">
+           <div className="bg-white p-3 md:p-4 rounded-2xl shadow-inner shrink-0">
+             <Target className="w-7 h-7 md:w-10 md:h-10 text-emerald-600" />
            </div>
            <div>
              <span className="bg-emerald-500/50 text-[10px] md:text-xs font-bold px-3 py-1 rounded-full text-white uppercase tracking-wider border border-emerald-400/50">Registration Open</span>
-             <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight mt-2">ZBSM Elite Cup 2026</h1>
-             <p className="text-emerald-100 mt-1 md:mt-2 text-sm md:text-base font-medium">Join the battle and prove your mettle on the field.</p>
+             <h1 className="text-xl md:text-4xl font-extrabold tracking-tight mt-2 leading-tight">ZBSM Elite Cup 2026</h1>
+             <p className="text-emerald-100 mt-1 md:mt-2 text-xs md:text-base font-medium">Join the battle and prove your mettle on the field.</p>
            </div>
         </div>
         
         {/* Support Hotline Button */}
-        <a href="tel:01701597310" className="flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 transition-colors px-5 py-3 rounded-xl border border-white/30 backdrop-blur-sm shrink-0">
+        <a href="tel:01701597310" className="flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 transition-colors px-4 py-3 md:px-5 rounded-xl border border-white/30 backdrop-blur-sm shrink-0 w-full md:w-auto">
             <PhoneCall className="w-5 h-5" />
             <div className="text-left">
                 <p className="text-[10px] font-bold uppercase tracking-wider opacity-80">Support Hotline</p>
-                <p className="text-sm font-extrabold font-mono tracking-tight">01701597310</p>
+                <p className="text-sm md:text-base font-extrabold font-mono tracking-tight">01701597310</p>
             </div>
         </a>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="bg-white p-6 md:p-10 rounded-3xl shadow-lg border border-slate-100 space-y-8">
+      <form onSubmit={handleSubmit} className="bg-white p-5 md:p-10 rounded-3xl shadow-lg border border-slate-100 space-y-8">
         
         {/* Player Info Section */}
         <section>
@@ -163,13 +191,13 @@ export default function RegisterPlayer({ setView }) {
              <h2 className="text-lg md:text-xl font-bold text-slate-800">Player Details</h2>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
             <InputGroup label="Full Name" icon={User}>
               <input type="text" value={name} onChange={(e) => setName(e.target.value)} required placeholder="e.g. Munna Kumar" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all" />
             </InputGroup>
 
             <InputGroup label="Mobile Number" icon={Phone}>
-              <input type="tel" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} required placeholder="017xxxxxxxx" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all" />
+              <input type="tel" value={mobileNumber} onChange={handleMobileChange} required placeholder="017xxxxxxxx" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all font-mono" />
             </InputGroup>
 
             <InputGroup label="Batch" icon={CalendarDays}>
@@ -191,23 +219,23 @@ export default function RegisterPlayer({ setView }) {
             </InputGroup>
 
             <InputGroup label="Jersey Number" icon={Hash}>
-              <input type="number" min="0" max="999" value={jerseyNumber} onChange={(e) => setJerseyNumber(e.target.value)} required placeholder="e.g. 10" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all" />
+              <input type="tel" value={jerseyNumber} onChange={handleJerseyNumberChange} required placeholder="e.g. 10" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all font-mono" />
             </InputGroup>
 
             <div className="md:col-span-2">
                 <InputGroup label="Player Style Picture (Portrait)" icon={ImageIcon}>
                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 border-2 border-dashed border-slate-200 rounded-xl p-5 hover:border-emerald-400 transition-all bg-slate-50">
                         {imagePreview ? (
-                            <img src={imagePreview} alt="Preview" className="w-24 h-24 rounded-xl object-cover shadow-sm border border-slate-200" />
+                            <img src={imagePreview} alt="Preview" className="w-24 h-24 rounded-xl object-cover shadow-sm border border-slate-200 shrink-0" />
                         ) : (
-                            <div className="w-24 h-24 rounded-xl bg-white flex items-center justify-center text-slate-300 border border-slate-200 shadow-sm">
+                            <div className="w-24 h-24 rounded-xl bg-white flex items-center justify-center text-slate-300 border border-slate-200 shadow-sm shrink-0">
                                 <ImageIcon className="w-8 h-8" />
                             </div>
                         )}
                         <div>
                             <p className="text-sm font-semibold text-slate-700">Upload Image</p>
                             <p className="text-xs text-slate-500 mt-0.5">PNG, JPG, or WEBP. Max 5MB.</p>
-                            <button type="button" onClick={() => fileInputRef.current.click()} className="mt-3 text-xs bg-emerald-100 text-emerald-700 px-4 py-1.5 rounded-lg font-bold hover:bg-emerald-200 transition-colors">
+                            <button type="button" onClick={() => fileInputRef.current.click()} className="mt-3 text-xs bg-emerald-100 text-emerald-700 px-4 py-2 rounded-lg font-bold hover:bg-emerald-200 transition-colors w-full sm:w-auto">
                                 {imagePreview ? 'Change Image' : 'Select File'}
                             </button>
                             <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
@@ -225,28 +253,40 @@ export default function RegisterPlayer({ setView }) {
              <h2 className="text-lg md:text-xl font-bold text-slate-800">Registration Fee</h2>
           </div>
           
-          <div className="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100 mb-6 flex items-start gap-4">
-              <Info className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+          <div className="bg-emerald-50/50 p-4 md:p-5 rounded-2xl border border-emerald-100 mb-6 flex flex-col sm:flex-row sm:items-start gap-4">
+              <Info className="w-6 h-6 text-emerald-500 shrink-0 hidden sm:block mt-0.5" />
               <div>
-                  <p className="text-sm text-slate-700 leading-relaxed">
-                    Send the registration fee of <strong className="text-emerald-700 font-extrabold text-base">500tk</strong> to the number below via <b>bKash</b> or <b>Nagad</b> (Personal). Then, enter the Transaction ID (TXID) or the phone number you sent it from.
+                  <p className="text-sm text-slate-700 leading-relaxed font-medium">
+                    রেজিস্ট্রেশন ফি <strong className="text-emerald-700 font-extrabold text-base">500tk</strong> নিচের নম্বরে <b>bKash</b> অথবা <b>Nagad</b> (Personal) এর মাধ্যমে Send Money করুন। এরপর, Transaction ID (TXID) অথবা যে নম্বর থেকে টাকা পাঠিয়েছেন তা নিচের বক্সে লিখুন।
                   </p>
-                  <div className="mt-3 inline-block bg-white px-4 py-2 rounded-xl border border-emerald-200 shadow-sm font-mono font-bold text-emerald-700 text-lg">
-                      01701597310
+                  
+                  {/* NEW: Number display with Copy Button */}
+                  <div className="mt-4 flex items-center gap-2">
+                      <div className="bg-white px-5 py-2.5 rounded-xl border border-emerald-200 shadow-sm font-mono font-extrabold text-emerald-700 text-lg md:text-xl tracking-wider">
+                          01701597310
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={handleCopyNumber}
+                        className="p-3 bg-white border border-emerald-200 shadow-sm rounded-xl text-emerald-600 hover:bg-emerald-50 transition-colors"
+                        title="Copy Number"
+                      >
+                        {copied ? <CheckCircle className="w-5 h-5 text-emerald-500" /> : <Copy className="w-5 h-5" />}
+                      </button>
                   </div>
               </div>
           </div>
 
           <InputGroup label="Enter bKash/Nagad Number or TXID" icon={Phone}>
-              <input type="text" value={paymentTxid} onChange={(e) => setPaymentTxid(e.target.value)} required placeholder="e.g. 017xxxxxxxx or 9X8Y7Z6W" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all font-mono" />
+              <input type="text" value={paymentTxid} onChange={(e) => setPaymentTxid(e.target.value)} required placeholder="e.g. 017xxxxxxxx or 9X8Y7Z6W" className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all font-mono text-lg" />
           </InputGroup>
         </section>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-4 pt-4">
-           <button type="button" onClick={() => setView('home')} className="px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100 transition-colors">Cancel</button>
-           <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 px-8 py-2.5 rounded-xl font-bold text-sm bg-emerald-500 text-white shadow-md hover:bg-emerald-600 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed transition-all">
-             {isSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</> : <><Send className="w-4 h-4" /> Submit</>}
+        <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 md:gap-4 pt-4">
+           <button type="button" onClick={() => setView('home')} className="w-full sm:w-auto px-6 py-3.5 sm:py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100 transition-colors">Cancel</button>
+           <button type="submit" disabled={isSubmitting} className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 sm:py-2.5 rounded-xl font-bold text-sm bg-emerald-500 text-white shadow-md hover:bg-emerald-600 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed transition-all">
+             {isSubmitting ? <><Loader2 className="w-5 h-5 animate-spin" /> Submitting...</> : <><Send className="w-5 h-5" /> Submit</>}
            </button>
         </div>
       </form>
@@ -257,8 +297,8 @@ export default function RegisterPlayer({ setView }) {
 function InputGroup({ label, icon: Icon, children }) {
   return (
     <div className="w-full">
-      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
-         <Icon className="w-3.5 h-3.5 text-slate-400" />
+      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+         <Icon className="w-3.5 h-3.5 text-emerald-500" />
          {label}
       </label>
       {children}
