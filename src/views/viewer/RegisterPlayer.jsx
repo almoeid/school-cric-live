@@ -1,5 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { User, Image as ImageIcon, Phone, CalendarDays, Award, Target, Info, CreditCard, Send, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { 
+  User, Image as ImageIcon, Phone, CalendarDays, Award, Target, Info, 
+  CreditCard, Send, Loader2, CheckCircle, XCircle, PhoneCall, Hash 
+} from 'lucide-react';
 import { collection, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, APP_ID } from '../../config/firebase';
@@ -12,6 +15,8 @@ export default function RegisterPlayer({ setView }) {
   const [mobileNumber, setMobileNumber] = useState('');
   const [batch, setBatch] = useState('');
   const [role, setRole] = useState('');
+  const [jerseyName, setJerseyName] = useState('');
+  const [jerseyNumber, setJerseyNumber] = useState('');
   const [paymentTxid, setPaymentTxid] = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -23,13 +28,11 @@ export default function RegisterPlayer({ setView }) {
   // Custom Toast Function
   const showToast = (type, text) => {
     setToast({ show: true, type, text });
-    // Auto-hide after 4 seconds
     setTimeout(() => {
       setToast({ show: false, type: null, text: '' });
     }, 4000);
   };
 
-  // Generate batch dropdown options from 1990 to 2026
   const batches = Array.from({ length: 2026 - 1990 + 1 }, (_, i) => 2026 - i);
   const roles = ["Batsman", "Bowler", "Allrounder", "Batting Allrounder", "Bowling Allrounder"];
 
@@ -55,7 +58,7 @@ export default function RegisterPlayer({ setView }) {
     e.preventDefault();
 
     // 1. Basic empty field validation
-    if (!name || !mobileNumber || !batch || !role || !imageFile || !paymentTxid) {
+    if (!name || !mobileNumber || !batch || !role || !jerseyName || !jerseyNumber || !imageFile || !paymentTxid) {
       showToast('error', 'Please fill in all required fields and upload a picture.');
       return;
     }
@@ -67,6 +70,12 @@ export default function RegisterPlayer({ setView }) {
         return;
     }
 
+    // 3. Jersey Number Validation (Max 3 digits)
+    if (jerseyNumber.length > 3 || isNaN(jerseyNumber)) {
+        showToast('error', 'Jersey number must be a maximum of 3 digits.');
+        return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -75,30 +84,33 @@ export default function RegisterPlayer({ setView }) {
       const uploadSnapshot = await uploadBytes(storageRef, imageFile);
       const imageUrl = await getDownloadURL(uploadSnapshot.ref);
 
-      // 2. Save Data to Firestore
+      // 2. Save Data to Firestore (FIXED ERROR: 5 segments now)
       const registrationData = {
         name,
         mobileNumber,
         batch,
         role,
+        jerseyName,
+        jerseyNumber,
         paymentTxid,
         imageUrl,
         status: 'pending',
         timestamp: Date.now(),
       };
 
-      await addDoc(collection(db, 'artifacts', APP_ID, 'private', 'registrations'), registrationData);
+      await addDoc(collection(db, 'artifacts', APP_ID, 'private', 'data', 'registrations'), registrationData);
 
       showToast('success', 'Registration submitted successfully! Waiting for admin approval.');
       
       // Clear form
-      setName(''); setMobileNumber(''); setBatch(''); setRole(''); setPaymentTxid(''); setImageFile(null); setImagePreview(null);
+      setName(''); setMobileNumber(''); setBatch(''); setRole(''); 
+      setJerseyName(''); setJerseyNumber(''); setPaymentTxid(''); 
+      setImageFile(null); setImagePreview(null);
       
       setTimeout(() => setView('home'), 3000);
 
     } catch (error) {
       console.error('Registration Error:', error);
-      // This will now show the exact Firebase error if it fails again!
       showToast('error', `Failed: ${error.message}`);
     } finally {
       setIsSubmitting(false);
@@ -119,7 +131,7 @@ export default function RegisterPlayer({ setView }) {
       </div>
 
       {/* Tournament Header */}
-      <div className="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-3xl p-8 mb-8 text-white shadow-xl">
+      <div className="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-3xl p-8 mb-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center gap-5">
            <div className="bg-white p-4 rounded-2xl shadow-inner shrink-0">
              <Target className="w-8 h-8 md:w-10 md:h-10 text-emerald-600" />
@@ -130,6 +142,15 @@ export default function RegisterPlayer({ setView }) {
              <p className="text-emerald-100 mt-1 md:mt-2 text-sm md:text-base font-medium">Join the battle and prove your mettle on the field.</p>
            </div>
         </div>
+        
+        {/* Support Hotline Button */}
+        <a href="tel:01701597310" className="flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 transition-colors px-5 py-3 rounded-xl border border-white/30 backdrop-blur-sm shrink-0">
+            <PhoneCall className="w-5 h-5" />
+            <div className="text-left">
+                <p className="text-[10px] font-bold uppercase tracking-wider opacity-80">Support Hotline</p>
+                <p className="text-sm font-extrabold font-mono tracking-tight">01701597310</p>
+            </div>
+        </a>
       </div>
 
       {/* Form */}
@@ -163,6 +184,14 @@ export default function RegisterPlayer({ setView }) {
                     <option value="" disabled>Select Role</option>
                     {roles.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
+            </InputGroup>
+
+            <InputGroup label="Jersey Name" icon={User}>
+              <input type="text" value={jerseyName} onChange={(e) => setJerseyName(e.target.value.toUpperCase())} required placeholder="e.g. MUNNA" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all uppercase" />
+            </InputGroup>
+
+            <InputGroup label="Jersey Number" icon={Hash}>
+              <input type="number" min="0" max="999" value={jerseyNumber} onChange={(e) => setJerseyNumber(e.target.value)} required placeholder="e.g. 10" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all" />
             </InputGroup>
 
             <div className="md:col-span-2">
@@ -203,7 +232,7 @@ export default function RegisterPlayer({ setView }) {
                     Send the registration fee of <strong className="text-emerald-700 font-extrabold text-base">500tk</strong> to the number below via <b>bKash</b> or <b>Nagad</b> (Personal). Then, enter the Transaction ID (TXID) or the phone number you sent it from.
                   </p>
                   <div className="mt-3 inline-block bg-white px-4 py-2 rounded-xl border border-emerald-200 shadow-sm font-mono font-bold text-emerald-700 text-lg">
-                      01700770376
+                      01701597310
                   </div>
               </div>
           </div>
