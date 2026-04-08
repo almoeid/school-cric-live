@@ -314,10 +314,17 @@ export default function AdminRegistrationDash({ setView }) {
                       </p>
                   </td>
 
-                  {/* Jersey Info */}
+                  {/* Jersey Info with SIZE */}
                   <td className="p-4">
                       <p className="text-sm font-extrabold font-mono text-slate-800 tracking-wider">{reg.jerseyName}</p>
-                      <p className="text-xs text-slate-500 font-bold mt-0.5">No. <span className="text-slate-800">{reg.jerseyNumber}</span></p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-xs text-slate-500 font-bold">No. <span className="text-slate-800">{reg.jerseyNumber}</span></p>
+                          {reg.jerseySize && (
+                              <span className="text-[10px] font-extrabold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                                  {reg.jerseySize}
+                              </span>
+                          )}
+                      </div>
                   </td>
 
                   {/* Payment & Contact */}
@@ -343,7 +350,7 @@ export default function AdminRegistrationDash({ setView }) {
                       </span>
                   </td>
 
-                  {/* Actions - Added Delete Button */}
+                  {/* Actions */}
                   <td className="p-4 text-right">
                       {reg.status === 'pending' ? (
                           <div className="flex items-center justify-end gap-2">
