@@ -1,7 +1,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { Activity, Lock, Shield } from 'lucide-react';
+import { Activity, Lock, Shield, UserPlus } from 'lucide-react'; // Added UserPlus
 
 import { auth, db, APP_ID } from './config/firebase';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -17,8 +17,10 @@ const LoginView = React.lazy(() => import('./views/auth/Login'));
 const PlayerCareer = React.lazy(() => import('./views/viewer/PlayerCareer'));
 const RulesView = React.lazy(() => import('./views/viewer/RulesView'));
 const AboutView = React.lazy(() => import('./views/viewer/AboutView'));
-// NEW: Import Gallery View
 const GalleryView = React.lazy(() => import('./views/viewer/GalleryView'));
+// NEW: Import Register View
+const RegisterPlayer = React.lazy(() => import('./views/viewer/RegisterPlayer'));
+const AdminRegistrationDash = React.lazy(() => import('./views/admin/AdminRegistrationDash'));
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -79,27 +81,14 @@ export default function App() {
 
   // --- 3. ROUTING LOGIC ---
   useEffect(() => {
-      // 1. Check Pathname for static pages (/rules, /aboutus, /login)
       const path = window.location.pathname;
-      if (path === '/rules') {
-          setView('rules');
-          return;
-      }
-      if (path === '/aboutus' || path === '/about') { // Updated to handle both /aboutus and /about
-          setView('about');
-          return;
-      }
-      // NEW: Gallery Route
-      if (path === '/gallery') {
-          setView('gallery');
-          return;
-      }
-      if (path === '/login') {
-          setView('login');
-          return;
-      }
+      if (path === '/rules') { setView('rules'); return; }
+      if (path === '/aboutus' || path === '/about') { setView('about'); return; }
+      if (path === '/gallery') { setView('gallery'); return; }
+      if (path === '/login') { setView('login'); return; }
+      // NEW: Register Route
+      if (path === '/register') { setView('register'); return; }
 
-      // 2. Check Query Params for dynamic content
       if (matches.length === 0 && tournaments.length === 0) return;
 
       const params = new URLSearchParams(window.location.search);
@@ -150,6 +139,12 @@ export default function App() {
              <Activity className="text-green-400" /> <span>ZBSMCric<span className="text-green-400">.Live</span></span>
           </div>
           <div className="flex space-x-4 items-center">
+             
+             {/* NEW: Registration Button */}
+             <button onClick={() => setView('register')} className="hidden sm:flex items-center gap-1 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition mr-2">
+                 <UserPlus className="w-4 h-4" /> Register
+             </button>
+
              {(user && !user.isAnonymous) && (
                  <button onClick={() => setView('admin-dash')} className="text-xs font-bold bg-green-600 px-3 py-1.5 rounded-full hover:bg-green-700 transition">
                      ADMIN DASH
@@ -178,8 +173,10 @@ export default function App() {
             {/* INFO PAGES */}
             {view === 'rules' && <RulesView setView={setView} />}
             {view === 'about' && <AboutView setView={setView} />}
-            {/* NEW VIEW */}
             {view === 'gallery' && <GalleryView setView={setView} />}
+            
+            {/* NEW REGISTRATION VIEW */}
+            {view === 'register' && <RegisterPlayer setView={setView} />}
 
             {view === 'login' && (
                 <LoginView 
@@ -226,8 +223,23 @@ export default function App() {
                 />
             )}
 
+          {view === 'admin-registrations' && (
+    <AdminRegistrationDash setView={setView} />
+)}
+
         </Suspense>
       </div>
+      
+      {/* Mobile-only register floating button (optional, but good for UX) */}
+      {view === 'home' && (
+          <button 
+              onClick={() => setView('register')} 
+              className="sm:hidden fixed bottom-6 right-6 bg-emerald-600 text-white p-4 rounded-full shadow-xl hover:bg-emerald-700 z-50 flex items-center justify-center"
+          >
+              <UserPlus className="w-6 h-6" />
+          </button>
+      )}
+
       <Watermark />
     </div>
   );
