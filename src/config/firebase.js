@@ -7,6 +7,7 @@ import {
   signOut 
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage"; // NEW IMPORT
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_API_KEY,
@@ -18,7 +19,6 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_MEASUREMENT_ID
 };
 
-// --- CRITICAL DEBUG CHECK ---
 if (!firebaseConfig.apiKey) {
   console.error("🚨 MISSING API KEY: Check .env file in root folder!");
 }
@@ -27,9 +27,9 @@ const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const storage = getStorage(app); // NEW EXPORT
 export const APP_ID = 'zbsm-crick-live-v1'; 
 
-// Export Auth Helpers
 export { 
   signInAnonymously, 
   signInWithEmailAndPassword, 
