@@ -1,7 +1,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { Activity, Lock, Shield, UserPlus } from 'lucide-react'; // Added UserPlus
+import { Activity, Lock, Shield, UserPlus } from 'lucide-react';
 
 import { auth, db, APP_ID } from './config/firebase';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -18,7 +18,6 @@ const PlayerCareer = React.lazy(() => import('./views/viewer/PlayerCareer'));
 const RulesView = React.lazy(() => import('./views/viewer/RulesView'));
 const AboutView = React.lazy(() => import('./views/viewer/AboutView'));
 const GalleryView = React.lazy(() => import('./views/viewer/GalleryView'));
-// NEW: Import Register View
 const RegisterPlayer = React.lazy(() => import('./views/viewer/RegisterPlayer'));
 const AdminRegistrationDash = React.lazy(() => import('./views/admin/AdminRegistrationDash'));
 
@@ -86,7 +85,6 @@ export default function App() {
       if (path === '/aboutus' || path === '/about') { setView('about'); return; }
       if (path === '/gallery') { setView('gallery'); return; }
       if (path === '/login') { setView('login'); return; }
-      // NEW: Register Route
       if (path === '/register') { setView('register'); return; }
 
       if (matches.length === 0 && tournaments.length === 0) return;
@@ -121,6 +119,11 @@ export default function App() {
       window.history.pushState({}, '', '/');
   };
 
+  const goToRegister = () => {
+      window.history.pushState({}, '', '/register');
+      setView('register');
+  };
+
   const handleLoginClick = () => {
       if (user && !user.isAnonymous) {
           setView('admin-dash');
@@ -140,8 +143,8 @@ export default function App() {
           </div>
           <div className="flex space-x-4 items-center">
              
-             {/* NEW: Registration Button */}
-             <button onClick={() => setView('register')} className="hidden sm:flex items-center gap-1 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition mr-2">
+             {/* Registration Button */}
+             <button onClick={goToRegister} className="hidden sm:flex items-center gap-1 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition mr-2">
                  <UserPlus className="w-4 h-4" /> Register
              </button>
 
@@ -175,7 +178,7 @@ export default function App() {
             {view === 'about' && <AboutView setView={setView} />}
             {view === 'gallery' && <GalleryView setView={setView} />}
             
-            {/* NEW REGISTRATION VIEW */}
+            {/* REGISTRATION VIEW */}
             {view === 'register' && <RegisterPlayer setView={setView} />}
 
             {view === 'login' && (
@@ -223,17 +226,18 @@ export default function App() {
                 />
             )}
 
-          {view === 'admin-registrations' && (
-    <AdminRegistrationDash setView={setView} />
-)}
+            {/* ADMIN REGISTRATION DESK */}
+            {view === 'admin-registrations' && (
+                <AdminRegistrationDash setView={setView} />
+            )}
 
         </Suspense>
       </div>
       
-      {/* Mobile-only register floating button (optional, but good for UX) */}
+      {/* Mobile-only register floating button */}
       {view === 'home' && (
           <button 
-              onClick={() => setView('register')} 
+              onClick={goToRegister} 
               className="sm:hidden fixed bottom-6 right-6 bg-emerald-600 text-white p-4 rounded-full shadow-xl hover:bg-emerald-700 z-50 flex items-center justify-center"
           >
               <UserPlus className="w-6 h-6" />
