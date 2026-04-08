@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { User, Image as ImageIcon, Phone, CalendarDays, Award, Target, MessageSquareCheck, CreditCard, Send, Loader2 } from 'lucide-react';
+import { User, Image as ImageIcon, Phone, CalendarDays, Award, Target, Info, CreditCard, Send, Loader2 } from 'lucide-react';
 import { collection, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, APP_ID } from '../../config/firebase';
@@ -178,7 +178,8 @@ export default function RegisterPlayer({ setView }) {
           </div>
           
           <div className="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100 mb-6 flex items-start gap-4">
-              <MessageSquareCheck className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+              {/* FIXED: Swapped MessageSquareCheck to Info */}
+              <Info className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
               <div>
                   <p className="text-sm text-slate-700 leading-relaxed">Send the registration fee to the number below via <b>bKash</b> or <b>Nagad</b> (Personal). Then, enter the Transaction ID (TXID) or the phone number you sent it from.</p>
                   <div className="mt-3 inline-block bg-white px-4 py-2 rounded-xl border border-emerald-200 shadow-sm font-mono font-bold text-emerald-700 text-lg">
