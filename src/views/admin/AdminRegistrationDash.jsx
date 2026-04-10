@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Users, UserCheck, Clock, CheckCircle, XCircle, 
-  Search, ShieldCheck, Lock, Smartphone, Filter, Trash2 
+  Search, ShieldCheck, Lock, Smartphone, Filter, Trash2, Edit, MessageSquare, X
 } from 'lucide-react';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db, APP_ID } from '../../config/firebase';
@@ -20,7 +20,15 @@ export default function AdminRegistrationDash({ setView }) {
   const [roleFilter, setRoleFilter] = useState('all'); 
   const [searchTerm, setSearchTerm] = useState('');
 
+  // --- EDIT MODAL STATE ---
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState(null);
+
+  // Dropdown Options
   const roles = ["Batsman", "Bowler", "Allrounder", "Batting Allrounder", "Bowling Allrounder"];
+  const years = Array.from({ length: 2026 - 1990 + 1 }, (_, i) => 2026 - i);
+  const batches = ["School Batch", "Madrasa", ...years];
+  const jerseySizes = ["M", "L", "XL", "XXL", "XXXL"];
 
   // 1. Fetch data in real-time
   useEffect(() => {
@@ -55,33 +63,20 @@ export default function AdminRegistrationDash({ setView }) {
     }
   };
 
-  // --- BULKSMSBD API INTEGRATION ---
-  const sendApprovalSMS = async (mobileNumber, playerName, serialNumber) => {
-      const message = `Congratulations ${playerName}! Your registration for ZBSM Elite Cup 2026 is approved. Your Player ID is ZBSM-${serialNumber}.`;
-      const formattedNumber = `88${mobileNumber}`;
-      const encodedMessage = encodeURIComponent(message);
-      
-      const apiKey = 'oyuMRsMnU5HcNzYzlpBc';
-      const senderId = 'YOUR_SENDER_ID_HERE'; // Replace with your approved Sender ID
+  // --- SMS HANDLERS ---
+  const generateSMS = (playerName, serialNumber) => {
+      return `Congratulations ${playerName}! Your registration for ZBSM Elite Cup 2026 is approved. Your Player ID is ZBSM-${serialNumber}.`;
+  };
 
-      const apiUrl = `https://bulksmsbd.net/api/smsapi?api_key=${apiKey}&type=text&number=${formattedNumber}&senderid=${senderId}&message=${encodedMessage}`;
-
-      try {
-          console.log(`[SMS] Triggering API for ${formattedNumber}...`);
-          const response = await fetch(apiUrl, { method: 'GET' });
-          const result = await response.text(); 
-          console.log("[SMS API Response]:", result);
-          return true;
-      } catch (error) {
-          console.error("[SMS ERROR] Failed to send:", error);
-          alert("Firebase updated, but SMS failed. The browser might be blocking the request (CORS). Check browser console.");
-          return false;
-      }
+  const handleCopySMS = (reg) => {
+      const message = generateSMS(reg.name, reg.serialNumber);
+      navigator.clipboard.writeText(message);
+      alert(`SMS Copied to Clipboard!\n\n"${message}"`);
   };
 
   // --- ACTION HANDLERS ---
   const handleApprove = async (reg) => {
-    if (!window.confirm(`Approve ${reg.name} and send SMS?`)) return;
+    if (!window.confirm(`Approve ${reg.name} and assign a serial number?`)) return;
 
     try {
       const approvedRegs = registrations.filter(r => r.status === 'approved' && r.serialNumber);
@@ -97,7 +92,10 @@ export default function AdminRegistrationDash({ setView }) {
         approvedAt: Date.now() 
       });
 
-      await sendApprovalSMS(reg.mobileNumber, reg.name, nextSerial);
+      // Auto-Copy SMS upon approval
+      const message = generateSMS(reg.name, nextSerial);
+      navigator.clipboard.writeText(message);
+      alert(`Player Approved!\n\nThe following SMS has been automatically copied to your clipboard. You can now paste it into your messaging app:\n\n"${message}"`);
 
     } catch (error) {
       console.error("Error approving:", error);
@@ -115,24 +113,18 @@ export default function AdminRegistrationDash({ setView }) {
     }
   };
 
-  // --- DELETE HANDLER WITH AUTO-SERIAL FIX ---
   const handleDelete = async (reg) => {
       if (!window.confirm(`WARNING: Are you sure you want to permanently DELETE ${reg.name}? This cannot be undone.`)) return;
 
       try {
           const regRef = doc(db, 'artifacts', APP_ID, 'private', 'data', 'registrations', reg.id);
-          
-          // 1. Delete the record
           await deleteDoc(regRef);
 
-          // 2. Fix the serial numbers for everyone else if an approved player was deleted
+          // Fix the serial numbers for everyone else
           if (reg.status === 'approved' && reg.serialNumber) {
               const deletedSerial = reg.serialNumber;
-              
-              // Find everyone who had a HIGHER serial number
               const playersToUpdate = registrations.filter(r => r.status === 'approved' && r.serialNumber > deletedSerial);
               
-              // Shift their serial number down by 1
               for (const player of playersToUpdate) {
                   const updateRef = doc(db, 'artifacts', APP_ID, 'private', 'data', 'registrations', player.id);
                   await updateDoc(updateRef, {
@@ -143,6 +135,35 @@ export default function AdminRegistrationDash({ setView }) {
       } catch (error) {
           console.error("Error deleting:", error);
           alert("Failed to delete record. Check console.");
+      }
+  };
+
+  // --- EDIT HANDLERS ---
+  const openEditModal = (reg) => {
+      setEditForm({ ...reg });
+      setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async (e) => {
+      e.preventDefault();
+      try {
+          const regRef = doc(db, 'artifacts', APP_ID, 'private', 'data', 'registrations', editForm.id);
+          await updateDoc(regRef, {
+              name: editForm.name,
+              mobileNumber: editForm.mobileNumber,
+              batch: editForm.batch,
+              role: editForm.role,
+              jerseyName: editForm.jerseyName,
+              jerseyNumber: editForm.jerseyNumber,
+              jerseySize: editForm.jerseySize || '',
+              paymentTxid: editForm.paymentTxid,
+              updatedAt: Date.now()
+          });
+          setShowEditModal(false);
+          setEditForm(null);
+      } catch (error) {
+          console.error("Error saving edits:", error);
+          alert("Failed to save changes.");
       }
   };
 
@@ -168,9 +189,6 @@ export default function AdminRegistrationDash({ setView }) {
                   
                   <button type="submit" className="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 transition shadow-md">
                       Unlock Dashboard
-                  </button>
-                  <button type="button" onClick={() => setView('home')} className="mt-4 text-xs font-bold text-slate-400 hover:text-slate-600 uppercase tracking-widest">
-                      Cancel
                   </button>
               </form>
           </div>
@@ -199,8 +217,74 @@ export default function AdminRegistrationDash({ setView }) {
   if (loading) return <div className="p-10 text-center font-bold text-slate-500 animate-pulse">Loading Secured Dashboard...</div>;
 
   return (
-    <div className="max-w-[95%] mx-auto pb-12 animate-fadeIn">
+    <div className="max-w-[95%] mx-auto pb-12 animate-fadeIn relative">
       
+      {/* --- EDIT MODAL OVERLAY --- */}
+      {showEditModal && editForm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fadeIn">
+              <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative">
+                  <div className="sticky top-0 bg-white/95 backdrop-blur-sm border-b border-slate-100 p-5 flex items-center justify-between z-10 rounded-t-3xl">
+                      <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                          <Edit className="w-5 h-5 text-blue-500" /> Edit Player
+                      </h2>
+                      <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-red-50 hover:text-red-500 rounded-full transition-colors">
+                          <X className="w-5 h-5" />
+                      </button>
+                  </div>
+                  
+                  <form onSubmit={handleSaveEdit} className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-500 uppercase">Full Name</label>
+                          <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-400 outline-none" required />
+                      </div>
+                      <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-500 uppercase">Mobile Number</label>
+                          <input type="tel" value={editForm.mobileNumber} onChange={e => setEditForm({...editForm, mobileNumber: e.target.value})} className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-400 outline-none font-mono" required />
+                      </div>
+                      <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-500 uppercase">Batch</label>
+                          <select value={editForm.batch} onChange={e => setEditForm({...editForm, batch: e.target.value})} className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-400 outline-none">
+                              {batches.map(b => <option key={b} value={b}>{b}</option>)}
+                          </select>
+                      </div>
+                      <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-500 uppercase">Role</label>
+                          <select value={editForm.role} onChange={e => setEditForm({...editForm, role: e.target.value})} className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-400 outline-none">
+                              {roles.map(r => <option key={r} value={r}>{r}</option>)}
+                          </select>
+                      </div>
+                      <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-500 uppercase">Jersey Name</label>
+                          <input type="text" value={editForm.jerseyName} onChange={e => setEditForm({...editForm, jerseyName: e.target.value.toUpperCase()})} className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-400 outline-none uppercase" required />
+                      </div>
+                      <div className="flex gap-3">
+                          <div className="space-y-1 flex-1">
+                              <label className="text-xs font-bold text-slate-500 uppercase">Jersey No.</label>
+                              <input type="tel" value={editForm.jerseyNumber} onChange={e => setEditForm({...editForm, jerseyNumber: e.target.value})} className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-400 outline-none font-mono" required />
+                          </div>
+                          <div className="space-y-1 flex-1">
+                              <label className="text-xs font-bold text-slate-500 uppercase">Size</label>
+                              <select value={editForm.jerseySize} onChange={e => setEditForm({...editForm, jerseySize: e.target.value})} className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-400 outline-none">
+                                  {jerseySizes.map(s => <option key={s} value={s}>{s}</option>)}
+                              </select>
+                          </div>
+                      </div>
+                      <div className="space-y-1 sm:col-span-2">
+                          <label className="text-xs font-bold text-slate-500 uppercase">Payment TXID / Number</label>
+                          <input type="text" value={editForm.paymentTxid} onChange={e => setEditForm({...editForm, paymentTxid: e.target.value})} className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-400 outline-none font-mono" required />
+                      </div>
+                      
+                      <div className="sm:col-span-2 pt-4 border-t border-slate-100 flex justify-end gap-3">
+                          <button type="button" onClick={() => setShowEditModal(false)} className="px-5 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100">Cancel</button>
+                          <button type="submit" className="px-6 py-2.5 rounded-xl font-bold text-sm bg-blue-500 text-white shadow-md hover:bg-blue-600">Save Changes</button>
+                      </div>
+                  </form>
+              </div>
+          </div>
+      )}
+      {/* --- END MODAL --- */}
+
+
       <div className="flex items-start sm:items-center justify-between mb-6 pt-4">
         <div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-800 flex items-center gap-2">
@@ -213,14 +297,12 @@ export default function AdminRegistrationDash({ setView }) {
         </button>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
         <StatCard title="Total Requests" count={stats.total} icon={Users} color="blue" />
         <StatCard title="Pending" count={stats.pending} icon={Clock} color="amber" />
         <StatCard title="Approved" count={stats.approved} icon={UserCheck} color="emerald" />
       </div>
 
-      {/* Filter & Search Bar */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6 flex flex-col gap-4">
           <div className="flex flex-col lg:flex-row justify-between gap-4">
               <div className="flex overflow-x-auto bg-slate-100 p-1 rounded-xl w-full lg:w-fit custom-scrollbar">
@@ -260,10 +342,9 @@ export default function AdminRegistrationDash({ setView }) {
           </div>
       </div>
 
-      {/* Data Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse whitespace-nowrap min-w-[800px]">
+          <table className="w-full text-left border-collapse whitespace-nowrap min-w-[900px]">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100 text-[10px] uppercase tracking-wider text-slate-500 font-bold">
                 <th className="p-4"># Serial</th>
@@ -282,7 +363,6 @@ export default function AdminRegistrationDash({ setView }) {
               {filteredRegistrations.map(reg => (
                 <tr key={reg.id} className="hover:bg-slate-50/50 transition">
                   
-                  {/* Serial Number */}
                   <td className="p-4">
                       {reg.serialNumber ? (
                           <span className="font-mono font-extrabold text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-100">
@@ -293,7 +373,6 @@ export default function AdminRegistrationDash({ setView }) {
                       )}
                   </td>
 
-                  {/* Player & Time */}
                   <td className="p-4 flex items-center gap-3">
                       <a href={reg.imageUrl} target="_blank" rel="noreferrer">
                         <img src={reg.imageUrl || '/api/placeholder/40/40'} alt={reg.name} className="w-12 h-12 rounded-xl object-cover bg-slate-200 border border-slate-200 shadow-sm hover:scale-110 transition-transform" title="Click to view full image" />
@@ -306,7 +385,6 @@ export default function AdminRegistrationDash({ setView }) {
                       </div>
                   </td>
                   
-                  {/* Cricket Profile */}
                   <td className="p-4">
                       <p className="text-sm font-bold text-slate-700">{reg.role}</p>
                       <p className="text-[10px] font-extrabold text-blue-600 bg-blue-50 px-2 py-0.5 rounded inline-block mt-1 uppercase tracking-widest">
@@ -314,7 +392,6 @@ export default function AdminRegistrationDash({ setView }) {
                       </p>
                   </td>
 
-                  {/* Jersey Info with SIZE */}
                   <td className="p-4">
                       <p className="text-sm font-extrabold font-mono text-slate-800 tracking-wider">{reg.jerseyName}</p>
                       <div className="flex items-center gap-2 mt-0.5">
@@ -327,7 +404,6 @@ export default function AdminRegistrationDash({ setView }) {
                       </div>
                   </td>
 
-                  {/* Payment & Contact */}
                   <td className="p-4">
                       <div className="flex items-center gap-1 mb-1 text-slate-600">
                           <Smartphone className="w-3.5 h-3.5" />
@@ -339,7 +415,6 @@ export default function AdminRegistrationDash({ setView }) {
                       </div>
                   </td>
 
-                  {/* Status */}
                   <td className="p-4 text-center">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest border ${
                           reg.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-200 shadow-sm' :
@@ -350,27 +425,38 @@ export default function AdminRegistrationDash({ setView }) {
                       </span>
                   </td>
 
-                  {/* Actions */}
-                  <td className="p-4 text-right">
-                      {reg.status === 'pending' ? (
-                          <div className="flex items-center justify-end gap-2">
-                              <button onClick={() => handleApprove(reg)} className="flex items-center gap-1 px-3 py-1.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-500 hover:text-white rounded-lg font-bold text-xs transition" title="Approve & Send SMS">
-                                  <CheckCircle className="w-3.5 h-3.5" /> Approve
-                              </button>
-                              <button onClick={() => handleReject(reg.id)} className="p-1.5 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition" title="Reject">
-                                  <XCircle className="w-4 h-4" />
-                              </button>
-                          </div>
-                      ) : (
-                          <div className="flex items-center justify-end gap-3">
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                  Processed
-                              </span>
-                              <button onClick={() => handleDelete(reg)} className="p-1.5 bg-slate-50 text-slate-400 hover:bg-red-500 hover:text-white rounded-lg transition border border-transparent hover:border-red-600" title="Permanently Delete">
-                                  <Trash2 className="w-4 h-4" />
-                              </button>
-                          </div>
-                      )}
+                  {/* Actions Column */}
+                  <td className="p-4">
+                      <div className="flex items-center justify-end gap-2">
+                          
+                          {/* Edit Button (Available to all) */}
+                          <button onClick={() => openEditModal(reg)} className="p-1.5 bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white rounded-lg transition" title="Edit Player">
+                              <Edit className="w-4 h-4" />
+                          </button>
+
+                          {reg.status === 'pending' ? (
+                              <>
+                                  <button onClick={() => handleApprove(reg)} className="flex items-center gap-1 px-3 py-1.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-500 hover:text-white rounded-lg font-bold text-xs transition" title="Approve Player">
+                                      <CheckCircle className="w-3.5 h-3.5" /> Approve
+                                  </button>
+                                  <button onClick={() => handleReject(reg.id)} className="p-1.5 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition" title="Reject">
+                                      <XCircle className="w-4 h-4" />
+                                  </button>
+                              </>
+                          ) : (
+                              <>
+                                  {/* Copy SMS Button (Only for approved) */}
+                                  {reg.status === 'approved' && (
+                                      <button onClick={() => handleCopySMS(reg)} className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-700 hover:text-white rounded-lg font-bold text-xs transition" title="Copy SMS Message">
+                                          <MessageSquare className="w-3.5 h-3.5" /> Copy SMS
+                                      </button>
+                                  )}
+                                  <button onClick={() => handleDelete(reg)} className="p-1.5 bg-slate-50 text-slate-400 hover:bg-red-500 hover:text-white rounded-lg transition border border-transparent hover:border-red-600" title="Permanently Delete">
+                                      <Trash2 className="w-4 h-4" />
+                                  </button>
+                              </>
+                          )}
+                      </div>
                   </td>
                 </tr>
               ))}
@@ -382,7 +468,6 @@ export default function AdminRegistrationDash({ setView }) {
   );
 }
 
-// Helper component for stats
 function StatCard({ title, count, icon: Icon, color }) {
     const colorClasses = {
         blue: 'bg-blue-50 text-blue-600 border-blue-100',
