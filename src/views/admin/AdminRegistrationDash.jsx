@@ -373,13 +373,15 @@ export default function AdminRegistrationDash({ setView }) {
                       )}
                   </td>
 
+{/* Player & Time */}
                   <td className="p-4 flex items-center gap-3">
-                      <a href={reg.imageUrl} target="_blank" rel="noreferrer">
-                        <img src={reg.imageUrl || '/api/placeholder/40/40'} alt={reg.name} className="w-12 h-12 rounded-xl object-cover bg-slate-200 border border-slate-200 shadow-sm hover:scale-110 transition-transform" title="Click to view full image" />
+                      {/* FIX: Added "shrink-0 block" to the <a> tag so it never gets squished */}
+                      <a href={reg.imageUrl} target="_blank" rel="noreferrer" className="shrink-0 block">
+                        <img src={reg.imageUrl || '/api/placeholder/40/40'} alt={reg.name} className="w-12 h-12 rounded-xl object-cover object-top bg-slate-200 border border-slate-200 shadow-sm hover:scale-110 transition-transform" title="Click to view full image" />
                       </a>
-                      <div>
-                          <p className="font-bold text-slate-800 text-sm">{reg.name}</p>
-                          <p className="text-[10px] text-slate-400 font-medium mt-0.5 uppercase tracking-wider">
+                      <div className="min-w-0">
+                          <p className="font-bold text-slate-800 text-sm truncate">{reg.name}</p>
+                          <p className="text-[10px] text-slate-400 font-medium mt-0.5 uppercase tracking-wider truncate">
                               {new Date(reg.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' })}
                           </p>
                       </div>
