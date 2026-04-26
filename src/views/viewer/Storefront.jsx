@@ -7,12 +7,12 @@ import { collection, addDoc } from 'firebase/firestore';
 import { db, APP_ID } from '../../config/firebase';
 
 // --- MOCK DATABASE OF PRODUCTS ---
-// When you get the other 8 jerseys, just add them to this array!
+// Add new jerseys to this array to automatically expand the store!
 const storeProducts = [
   {
-    id: 'de',
+    id: 'DurontoEkadosh',
     name: 'Duronto Ekadosh',
-    type: 'Official Fan Edition Match Jersey',
+    type: 'Player Edition Match Jersey for Fan',
     fabric: 'Thai Mesh (Premium)',
     customization: 'Name & Number Included',
     price: 419,
@@ -22,7 +22,6 @@ const storeProducts = [
 ];
 
 export default function Storefront({ setView }) {
-  // Navigation State
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   // Form State
@@ -42,7 +41,6 @@ export default function Storefront({ setView }) {
   const jerseySizes = ["M", "L", "XL", "XXL", "XXXL"];
 
   // --- ROUTING EFFECT ---
-  // Checks if the user clicked a direct link like /store?item=de
   useEffect(() => {
       const params = new URLSearchParams(window.location.search);
       const itemId = params.get('item');
@@ -55,7 +53,7 @@ export default function Storefront({ setView }) {
   const handleProductClick = (product) => {
       setSelectedProduct(product);
       window.history.pushState({}, '', `/store?item=${product.id}`);
-      window.scrollTo(0, 0); // Scroll to top for mobile
+      window.scrollTo(0, 0); 
   };
 
   const goBackToStore = () => {
@@ -120,7 +118,6 @@ export default function Storefront({ setView }) {
       await addDoc(collection(db, 'artifacts', APP_ID, 'private', 'data', 'orders'), orderData);
       setIsSuccess(true);
       
-      // Clear form
       setCustomerName(''); setMobileNumber(''); setJerseyName(''); setJerseyNumber(''); setJerseySize(''); setPaymentTxid('');
 
     } catch (error) {
@@ -168,7 +165,6 @@ export default function Storefront({ setView }) {
           </div>
       </div>
 
-      {/* CONDITIONAL RENDER: Grid vs Detail Form */}
       {!selectedProduct ? (
         
         /* --- 1. STORE CATALOG GRID --- */
@@ -177,7 +173,7 @@ export default function Storefront({ setView }) {
             <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl p-6 md:p-8 mb-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <span className="bg-emerald-500/30 text-[10px] md:text-xs font-bold px-3 py-1 rounded-full text-emerald-300 uppercase tracking-wider border border-emerald-500/30">Official Merchandise</span>
-                    <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight mt-3">ZBSM Fan Store</h1>
+                    <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight mt-3">ZBSM Elite Cup 2026 Merchandise</h1>
                     <p className="text-slate-300 mt-1 md:mt-2 text-sm md:text-base font-medium">Support your team. Wear the colors. Own the game.</p>
                 </div>
             </div>
@@ -187,18 +183,17 @@ export default function Storefront({ setView }) {
                 {storeProducts.map(p => (
                     <div key={p.id} onClick={() => handleProductClick(p)} className="group cursor-pointer bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:border-emerald-200 hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col">
                         
-                        {/* Perfect 4:5 Image Box */}
                         <div className="aspect-[4/5] bg-slate-100 relative overflow-hidden flex items-center justify-center">
                             <img 
                                 src={p.image} 
                                 alt={p.name} 
                                 className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700 ease-out" 
-                                onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/400x500?text=Jersey+Coming+Soon"; }} // Fallback if image isn't uploaded yet
+                                onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/400x500?text=Jersey+Coming+Soon"; }} 
                             />
-                            <div className="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider shadow-sm">Prebook</div>
+                            {/* FIX: Moved badge to bottom-left */}
+                            <div className="absolute bottom-3 left-3 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider shadow-sm z-10">Prebook</div>
                         </div>
                         
-                        {/* Info Block */}
                         <div className="p-4 flex flex-col flex-grow">
                             <h3 className="font-extrabold text-slate-800 text-sm md:text-base leading-tight group-hover:text-emerald-600 transition-colors">{p.name}</h3>
                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">{p.type}</p>
@@ -231,24 +226,25 @@ export default function Storefront({ setView }) {
                 <div className="lg:col-span-2 space-y-6">
                     <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
                         
-                        {/* Display Image in 4:5 ratio on the detail page too */}
                         <div className="aspect-[4/5] bg-slate-100 flex items-center justify-center border-b border-slate-100 relative">
                             <img src={selectedProduct.image} alt={selectedProduct.name} className="w-full h-full object-cover object-top" />
-                            <div className="absolute top-4 left-4 bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider shadow-md">Prebook Only</div>
+                            {/* FIX: Moved badge to bottom-left */}
+                            <div className="absolute bottom-4 left-4 bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider shadow-md z-10">Prebook Only</div>
                         </div>
                         
                         <div className="p-6 md:p-8">
                             <h3 className="font-extrabold text-2xl text-slate-800 mb-1">{selectedProduct.name}</h3>
-                            <p className="text-xs font-bold text-emerald-500 uppercase tracking-wider mb-6">{selectedProduct.type}</p>
+                            <p className="text-[11px] font-bold text-emerald-500 uppercase tracking-wider mb-6">{selectedProduct.type}</p>
                             
-                            <div className="space-y-3 mb-6 bg-slate-50 p-4 rounded-2xl">
-                                <div className="flex justify-between items-center text-sm border-b border-slate-200 pb-2">
-                                    <span className="text-slate-500 font-medium">Fabric</span>
-                                    <span className="font-bold text-slate-700">{selectedProduct.fabric}</span>
+                            <div className="space-y-4 mb-6 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                                <div className="flex justify-between items-start sm:items-center text-sm border-b border-slate-200 pb-3">
+                                    <span className="text-slate-500 font-medium shrink-0 mr-4">Fabric</span>
+                                    <span className="font-bold text-slate-700 text-right leading-tight">{selectedProduct.fabric}</span>
                                 </div>
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-slate-500 font-medium">Customization</span>
-                                    <span className="font-bold text-slate-700">{selectedProduct.customization}</span>
+                                {/* FIX: Adjusted wrapping structure for long text on mobile */}
+                                <div className="flex justify-between items-start sm:items-center text-sm pt-1">
+                                    <span className="text-slate-500 font-medium shrink-0 mr-4">Customization</span>
+                                    <span className="font-bold text-slate-700 text-right leading-tight">{selectedProduct.customization}</span>
                                 </div>
                             </div>
 
@@ -316,7 +312,7 @@ export default function Storefront({ setView }) {
                                   Send exactly <b>{selectedProduct.price} TK</b> via bKash or Nagad (Personal) to the number below to secure your prebook.
                               </p>
                               <div className="flex items-center gap-2">
-                                  <div className="bg-white px-4 py-2.5 rounded-xl border border-emerald-200 shadow-sm font-mono font-extrabold text-emerald-700 text-xl tracking-wider">
+                                  <div className="bg-white px-4 py-2.5 rounded-xl border border-emerald-200 shadow-sm font-mono font-extrabold text-emerald-700 text-lg md:text-xl tracking-wider">
                                       {selectedProduct.paymentNumber}
                                   </div>
                                   <button type="button" onClick={handleCopyNumber} className="p-3 bg-white border border-emerald-200 shadow-sm rounded-xl text-emerald-600 hover:bg-emerald-100 transition-colors" title="Copy Number">
@@ -345,7 +341,6 @@ export default function Storefront({ setView }) {
   );
 }
 
-// Reusable Label/Input wrapper
 function InputGroup({ label, icon: Icon, children }) {
   return (
     <div className="w-full">
