@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   Calendar, Clock, Trophy, ChevronRight, Activity, 
-  BookOpen, Info, Heart, Image as ImageIcon, Moon, UserPlus // <-- Added UserPlus here
+  BookOpen, Info, Heart, Image as ImageIcon, Moon, UserPlus, ShoppingBag // <-- Added ShoppingBag here
 } from 'lucide-react';
 import LiveBadge from '../../components/LiveBadge';
 import TeamLogo from '../../components/TeamLogo';
@@ -64,6 +64,38 @@ return (
             
             <button className="w-full sm:w-auto whitespace-nowrap px-6 py-3.5 sm:py-3 bg-emerald-500 text-white font-bold text-sm rounded-xl group-hover:bg-emerald-400 transition-colors shadow-md">
               Register Now
+            </button>
+          </div>
+      </div>
+
+      {/* 2.5 STORE CTA CARD (Newly Added) */}
+      <div className="px-2 sm:px-0">
+          <div 
+            onClick={() => {
+                window.history.pushState({}, '', '/store');
+                setView('store');
+            }}
+            className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl shadow-lg p-5 md:p-6 flex flex-col sm:flex-row items-center justify-between gap-5 cursor-pointer hover:shadow-xl hover:shadow-blue-900/20 hover:-translate-y-1 transition-all duration-300 border border-slate-700/80 group"
+          >
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+              <div className="bg-blue-500/10 p-3 rounded-2xl border border-blue-500/20 group-hover:bg-blue-500/20 transition-colors shrink-0">
+                <ShoppingBag className="w-8 h-8 text-blue-400" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400">Official Merchandise</span>
+                </div>
+                <h3 className="text-lg md:text-xl font-extrabold text-white tracking-tight">ZBSM Store</h3>
+                <p className="text-xs md:text-sm text-slate-400 mt-0.5">Prebook your official match jersey now.</p>
+              </div>
+            </div>
+            
+            <button className="w-full sm:w-auto whitespace-nowrap px-6 py-3.5 sm:py-3 bg-blue-500 text-white font-bold text-sm rounded-xl group-hover:bg-blue-400 transition-colors shadow-md">
+              Shop Now
             </button>
           </div>
       </div>
