@@ -142,7 +142,7 @@ export default function Storefront({ setView }) {
            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl mb-8 flex items-start gap-3 text-left w-full">
                <MapPin className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                <p className="text-sm font-semibold text-amber-800">
-                   Remember to collect your jersey from Al Moeid or the ZBSM Ground approximately 10 days before Eid!
+                   Remember to collect your jersey from As Evan or the ZBSM Ground approximately 10 days before Eid!
                </p>
            </div>
            <button onClick={goBackToStore} className="bg-slate-900 text-white px-8 py-3.5 rounded-xl font-bold shadow-md hover:bg-slate-800 transition-all w-full sm:w-auto">
@@ -261,7 +261,7 @@ export default function Storefront({ setView }) {
                         <div>
                             <h4 className="text-sm font-extrabold text-amber-900 mb-1">Delivery Notice</h4>
                             <p className="text-xs font-semibold text-amber-800/80 leading-relaxed">
-                                Jerseys will be ready approximately <b>10 days before Eid</b>. Collection is direct from <b>Al Moeid</b> or the <b>ZBSM Ground</b>. No home delivery available.
+                                Jerseys will be ready approximately <b>10 days before Eid</b>. Collection is direct from <b>As Evan</b> or the <b>ZBSM Ground</b>. No home delivery available.
                             </p>
                         </div>
                     </div>
