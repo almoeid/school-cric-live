@@ -20,6 +20,8 @@ const AboutView = React.lazy(() => import('./views/viewer/AboutView'));
 const GalleryView = React.lazy(() => import('./views/viewer/GalleryView'));
 const RegisterPlayer = React.lazy(() => import('./views/viewer/RegisterPlayer'));
 const AdminRegistrationDash = React.lazy(() => import('./views/admin/AdminRegistrationDash'));
+const Storefront = React.lazy(() => import('./views/viewer/Storefront'));
+const AdminStoreDash = React.lazy(() => import('./views/admin/AdminStoreDash'));
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -87,6 +89,8 @@ export default function App() {
       if (path === '/login') { setView('login'); return; }
       if (path === '/register') { setView('register'); return; }
       if (path === '/admin-registrations') { setView('admin-registrations'); return; } // <-- FIXED HERE
+      if (path === '/store') { setView('store'); return; }
+      if (path === '/admin-store') { setView('admin-store'); return; }
 
       if (matches.length === 0 && tournaments.length === 0) return;
 
@@ -178,6 +182,8 @@ export default function App() {
             {view === 'rules' && <RulesView setView={setView} />}
             {view === 'about' && <AboutView setView={setView} />}
             {view === 'gallery' && <GalleryView setView={setView} />}
+            {view === 'store' && <Storefront setView={setView} />}
+            {view === 'admin-store' && <AdminStoreDash setView={setView} />}
             
             {/* REGISTRATION VIEW */}
             {view === 'register' && <RegisterPlayer setView={setView} />}
