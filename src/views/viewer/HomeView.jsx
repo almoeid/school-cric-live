@@ -28,60 +28,92 @@ export default function HomeView({ matches, tournaments, setCurrentMatch, setSel
 return (
     <div className="space-y-8 max-w-5xl mx-auto pb-6 pt-4">
       
-      {/* UNIFIED HERO BANNER WITH ACTIONS */}
+      {/* 1. ELITE CUP BANNER (Clean Branding) */}
       <div className="px-2 sm:px-0">
-          <div className="bg-gradient-to-br from-slate-900 via-[#0a0f1c] to-slate-900 rounded-3xl shadow-2xl p-6 sm:p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 border border-slate-800/80 relative overflow-hidden">
+          <div className="bg-slate-900 rounded-3xl shadow-xl p-6 md:p-8 flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-6 border border-slate-800 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 blur-[80px] rounded-full pointer-events-none"></div>
               
-              {/* Background Glow Effect */}
-              <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 blur-[120px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/3"></div>
-
-              <div className="text-center md:text-left flex-1 relative z-10 w-full">
-                  <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
-                      <span className="inline-flex items-center gap-1.5 py-1 px-3 rounded-full bg-blue-500/10 text-blue-400 text-[10px] md:text-xs font-bold uppercase tracking-widest border border-blue-500/20 shadow-sm">
-                          <Trophy className="w-3.5 h-3.5" /> The Biggest Event of 2026
-                      </span>
-                  </div>
-                  
-                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight mb-4 leading-tight">
-                      ZBSM <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">Elite Cup</span>
-                  </h1>
-                  
-                  <p className="text-sm md:text-base text-slate-400 font-medium max-w-lg mx-auto md:mx-0 leading-relaxed mb-8">
-                      Experience the thrill of the ultimate cricket showdown. Track live scores, prebook official merchandise, and secure your spot on the field.
+              <img src="/elitecuplogo.png" alt="ZBSM Elite Cup" className="w-24 h-24 sm:w-32 sm:h-32 object-contain relative z-10 drop-shadow-2xl" />
+              
+              <div className="text-center sm:text-left relative z-10">
+                  <span className="text-blue-400 font-bold text-[10px] sm:text-xs tracking-widest uppercase mb-1 block">
+                      The Biggest Event of 2026
+                  </span>
+                  <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                      ZBSM Elite Cup
+                  </h2>
+                  <p className="text-slate-400 text-sm mt-2 max-w-md">
+                      Experience the thrill of the ultimate cricket showdown. Track live scores, stats, and support your teams.
                   </p>
-
-                  {/* Integrated Action Buttons */}
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-4 justify-center md:justify-start">
-                      <button 
-                          onClick={() => { window.history.pushState({}, '', '/register'); setView('register'); }} 
-                          className="flex items-center justify-center gap-2 px-6 py-3.5 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-400 transition-all duration-200 shadow-lg shadow-emerald-500/20 hover:-translate-y-0.5 w-full sm:w-auto"
-                      >
-                          <UserPlus className="w-5 h-5" /> Register Player
-                      </button>
-                      
-                      <button 
-                          onClick={() => { window.history.pushState({}, '', '/store'); setView('store'); }} 
-                          className="flex items-center justify-center gap-2 px-6 py-3.5 bg-slate-800/80 text-white border border-slate-700 rounded-xl font-bold hover:bg-slate-800 hover:border-slate-500 transition-all duration-200 shadow-lg hover:-translate-y-0.5 w-full sm:w-auto group backdrop-blur-sm"
-                      >
-                          <ShoppingBag className="w-5 h-5 text-blue-400 group-hover:text-blue-300 transition-colors" /> Official Store
-                      </button>
-                  </div>
-              </div>
-              
-              <div className="shrink-0 relative z-10 w-40 h-40 md:w-56 md:h-56 mt-4 md:mt-0">
-                  {/* Glowing backdrop specifically for the logo */}
-                  <div className="absolute inset-0 bg-blue-500/20 blur-2xl rounded-full scale-110"></div>
-                  {/* FIXED: .png extension */}
-                  <img 
-                      src="/elitecuplogo.png" 
-                      alt="ZBSM Elite Cup 2026" 
-                      className="relative w-full h-full object-contain drop-shadow-2xl"
-                  />
               </div>
           </div>
       </div>
 
-      {/* 3. LIVE MATCHES */}
+      {/* 2. REGISTRATION CTA CARD (Emerald) */}
+      <div className="px-2 sm:px-0">
+          <div 
+            onClick={() => {
+                window.history.pushState({}, '', '/register');
+                setView('register');
+            }}
+            className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl shadow-lg p-5 md:p-6 flex flex-col sm:flex-row items-center justify-between gap-5 cursor-pointer hover:shadow-xl hover:shadow-emerald-900/20 hover:-translate-y-1 transition-all duration-300 border border-slate-700/80 group"
+          >
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+              <div className="bg-emerald-500/10 p-3 rounded-2xl border border-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors shrink-0">
+                <UserPlus className="w-8 h-8 text-emerald-400" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Registrations Open</span>
+                </div>
+                <h3 className="text-lg md:text-xl font-extrabold text-white tracking-tight">Play in the Elite Cup 2026</h3>
+                <p className="text-xs md:text-sm text-slate-400 mt-0.5">Secure your spot in the ultimate showdown.</p>
+              </div>
+            </div>
+            
+            <button className="w-full sm:w-auto whitespace-nowrap px-6 py-3.5 sm:py-3 bg-emerald-500 text-white font-bold text-sm rounded-xl group-hover:bg-emerald-400 transition-colors shadow-md">
+              Register Now
+            </button>
+          </div>
+      </div>
+
+      {/* 3. STORE CTA CARD (Blue) */}
+      <div className="px-2 sm:px-0">
+          <div 
+            onClick={() => {
+                window.history.pushState({}, '', '/store');
+                setView('store');
+            }}
+            className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl shadow-lg p-5 md:p-6 flex flex-col sm:flex-row items-center justify-between gap-5 cursor-pointer hover:shadow-xl hover:shadow-blue-900/20 hover:-translate-y-1 transition-all duration-300 border border-slate-700/80 group"
+          >
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+              <div className="bg-blue-500/10 p-3 rounded-2xl border border-blue-500/20 group-hover:bg-blue-500/20 transition-colors shrink-0">
+                <ShoppingBag className="w-8 h-8 text-blue-400" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400">Official Merchandise</span>
+                </div>
+                <h3 className="text-lg md:text-xl font-extrabold text-white tracking-tight">ZBSM Store</h3>
+                <p className="text-xs md:text-sm text-slate-400 mt-0.5">Prebook your official match jersey now.</p>
+              </div>
+            </div>
+            
+            <button className="w-full sm:w-auto whitespace-nowrap px-6 py-3.5 sm:py-3 bg-blue-500 text-white font-bold text-sm rounded-xl group-hover:bg-blue-400 transition-colors shadow-md">
+              Shop Now
+            </button>
+          </div>
+      </div>
+
+      {/* 4. LIVE MATCHES */}
       {liveMatches.length > 0 && (
         <div className="px-2 sm:px-0">
           <div className="flex items-center gap-2.5 mb-4 px-1">
