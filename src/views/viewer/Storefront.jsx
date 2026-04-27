@@ -7,7 +7,7 @@ import { collection, addDoc } from 'firebase/firestore';
 import { db, APP_ID } from '../../config/firebase';
 
 // --- MOCK DATABASE OF PRODUCTS ---
-// Add new jerseys to this array to automatically expand the store!
+// FIXED: Notice how they are both inside ONE list now, separated by a comma!
 const storeProducts = [
   {
     id: 'DurontoEkadosh',
@@ -19,7 +19,6 @@ const storeProducts = [
     image: '/DE.jpg',
     paymentNumber: '01793216517'
   },
-const storeProducts = [
   {
     id: 'PrimeRiders',
     name: 'Prime Riders',
@@ -201,7 +200,6 @@ export default function Storefront({ setView }) {
                                 className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700 ease-out" 
                                 onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/400x500?text=Jersey+Coming+Soon"; }} 
                             />
-                            {/* FIX: Moved badge to bottom-left */}
                             <div className="absolute bottom-3 left-3 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider shadow-sm z-10">Prebook</div>
                         </div>
                         
@@ -239,7 +237,6 @@ export default function Storefront({ setView }) {
                         
                         <div className="aspect-[4/5] bg-slate-100 flex items-center justify-center border-b border-slate-100 relative">
                             <img src={selectedProduct.image} alt={selectedProduct.name} className="w-full h-full object-cover object-top" />
-                            {/* FIX: Moved badge to bottom-left */}
                             <div className="absolute bottom-4 left-4 bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider shadow-md z-10">Prebook Only</div>
                         </div>
                         
@@ -252,7 +249,6 @@ export default function Storefront({ setView }) {
                                     <span className="text-slate-500 font-medium shrink-0 mr-4">Fabric</span>
                                     <span className="font-bold text-slate-700 text-right leading-tight">{selectedProduct.fabric}</span>
                                 </div>
-                                {/* FIX: Adjusted wrapping structure for long text on mobile */}
                                 <div className="flex justify-between items-start sm:items-center text-sm pt-1">
                                     <span className="text-slate-500 font-medium shrink-0 mr-4">Customization</span>
                                     <span className="font-bold text-slate-700 text-right leading-tight">{selectedProduct.customization}</span>
