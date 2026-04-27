@@ -84,8 +84,9 @@ export default function RegisterPlayer({ setView }) {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        showToast('error', 'Picture must be smaller than 5MB.');
+      // Increased max file size from 5MB to 10MB
+      if (file.size > 10 * 1024 * 1024) {
+        showToast('error', 'Picture must be smaller than 10MB.');
         return;
       }
       if (!file.type.startsWith('image/')) {
@@ -217,7 +218,7 @@ export default function RegisterPlayer({ setView }) {
              <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight mt-1 leading-tight">ZBSM Elite Cup 2026</h1>
              <p className="text-emerald-100 mt-1.5 text-xs md:text-sm font-medium">Join the battle and prove your mettle on the field.</p>
              
-             {/* NEW: Professional Boxed Timer Layout */}
+             {/* Professional Boxed Timer Layout */}
              {isClosed ? (
                 <div className="mt-4 inline-flex items-center gap-2 bg-red-500/20 text-red-100 px-4 py-2.5 rounded-xl font-bold border border-red-500/30 text-sm shadow-sm backdrop-blur-sm">
                     <XCircle className="w-4 h-4" /> Registration Closed
@@ -314,7 +315,7 @@ export default function RegisterPlayer({ setView }) {
                         )}
                         <div>
                             <p className="text-sm font-semibold text-slate-700">Upload Image</p>
-                            <p className="text-xs text-slate-500 mt-0.5">PNG, JPG, or WEBP. Max 5MB.</p>
+                            <p className="text-xs text-slate-500 mt-0.5">PNG, JPG, or WEBP. Max 10MB.</p>
                             <button type="button" onClick={() => fileInputRef.current.click()} className="mt-3 text-xs bg-emerald-100 text-emerald-700 px-4 py-2 rounded-lg font-bold hover:bg-emerald-200 transition-colors w-full sm:w-auto">
                                 {imagePreview ? 'Change Image' : 'Select File'}
                             </button>
