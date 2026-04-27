@@ -18,6 +18,17 @@ const storeProducts = [
     price: 419,
     image: '/DE.jpg',
     paymentNumber: '01793216517'
+  },
+const storeProducts = [
+  {
+    id: 'PrimeRiders',
+    name: 'Prime Riders',
+    type: 'Player Edition Match Jersey for Fan',
+    fabric: 'Thai Mesh (Premium)',
+    customization: 'Name & Number Included',
+    price: 419,
+    image: '/PR.jpg',
+    paymentNumber: '01793216517'
   }
 ];
 
