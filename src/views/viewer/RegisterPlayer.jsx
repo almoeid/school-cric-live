@@ -17,7 +17,7 @@ export default function RegisterPlayer({ setView }) {
   const [role, setRole] = useState('');
   const [jerseyName, setJerseyName] = useState('');
   const [jerseyNumber, setJerseyNumber] = useState('');
-  const [jerseySize, setJerseySize] = useState(''); // NEW: Jersey Size State
+  const [jerseySize, setJerseySize] = useState('');
   const [paymentTxid, setPaymentTxid] = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -27,16 +27,18 @@ export default function RegisterPlayer({ setView }) {
   const [isSuccess, setIsSuccess] = useState(false);
   const [toast, setToast] = useState({ show: false, type: null, text: '' });
   const [copied, setCopied] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(''); // NEW: Countdown state
+  
+  // NEW: Advanced Countdown State
+  const [timeLeft, setTimeLeft] = useState({ days: '00', hours: '00', minutes: '00', seconds: '00' });
+  const [isClosed, setIsClosed] = useState(false);
 
   const showToast = (type, text) => {
     setToast({ show: true, type, text });
     setTimeout(() => setToast({ show: false, type: null, text: '' }), 4000);
   };
 
-  // --- Real-time Countdown Timer (Ends May 1, 2026 8:00 PM BST) ---
+  // --- Real-time Advanced Countdown Timer (Ends May 1, 2026 8:00 PM BST) ---
   useEffect(() => {
-    // Bangladesh Time is UTC+6
     const targetDate = new Date('2026-05-01T20:00:00+06:00').getTime();
 
     const updateCountdown = () => {
@@ -44,16 +46,17 @@ export default function RegisterPlayer({ setView }) {
       const difference = targetDate - now;
 
       if (difference <= 0) {
-        setTimeLeft('Registration Closed');
+        setIsClosed(true);
         return;
       }
 
-      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+      // Format with leading zeros for a professional look (e.g., 03 instead of 3)
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000).toString().padStart(2, '0');
 
-      setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+      setTimeLeft({ days, hours, minutes, seconds });
     };
 
     updateCountdown();
@@ -61,16 +64,13 @@ export default function RegisterPlayer({ setView }) {
     return () => clearInterval(timer);
   }, []);
 
-  // --- Dynamic Options ---
   const years = Array.from({ length: 2026 - 1990 + 1 }, (_, i) => 2026 - i);
-  const batches = ["School Batch", "Madrasa", ...years]; // Added special batches
+  const batches = ["School Batch", "Madrasa", ...years]; 
   const roles = ["Batsman", "Bowler", "Allrounder", "Batting Allrounder", "Bowling Allrounder"];
   const jerseySizes = ["M", "L", "XL", "XXL", "XXXL"];
 
-  // --- Dynamic Fee Calculation (Updated to include 2026 batch) ---
   const feeAmount = (batch === 'School Batch' || String(batch) === '2026') ? '200' : '500';
 
-  // --- Strict Input Handlers ---
   const handleMobileChange = (e) => {
     const val = e.target.value.replace(/\D/g, ''); 
     if (val.length <= 11) setMobileNumber(val);
@@ -99,7 +99,6 @@ export default function RegisterPlayer({ setView }) {
     }
   };
 
-  // --- Copy to Clipboard Handler ---
   const handleCopyNumber = () => {
     navigator.clipboard.writeText('01701597310');
     setCopied(true);
@@ -110,7 +109,6 @@ export default function RegisterPlayer({ setView }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Updated validation to include jerseySize
     if (!name || !mobileNumber || !batch || !role || !jerseyName || !jerseyNumber || !jerseySize || !imageFile || !paymentTxid) {
       showToast('error', 'Please fill in all required fields and upload a picture.');
       return;
@@ -135,7 +133,7 @@ export default function RegisterPlayer({ setView }) {
         role,
         jerseyName,
         jerseyNumber,
-        jerseySize, // Saved to Firebase
+        jerseySize, 
         paymentTxid,
         imageUrl,
         status: 'pending',
@@ -153,7 +151,6 @@ export default function RegisterPlayer({ setView }) {
     } 
   };
 
-  // --- SUCCESS UI RENDER ---
   if (isSuccess) {
     return (
       <div className="max-w-2xl mx-auto pb-16 pt-10 px-4 text-center animate-fadeIn">
@@ -181,7 +178,14 @@ export default function RegisterPlayer({ setView }) {
     );
   }
 
-  // --- MAIN FORM RENDER ---
+  // Helper component for the new timer layout
+  const TimeBox = ({ value, label }) => (
+    <div className="flex flex-col items-center min-w-[36px] sm:min-w-[40px]">
+        <span className="text-base sm:text-lg font-extrabold text-white leading-none">{value}</span>
+        <span className="text-[8px] sm:text-[9px] uppercase tracking-widest text-emerald-200/80 mt-1">{label}</span>
+    </div>
+  );
+
   return (
     <div className="max-w-3xl mx-auto pb-16 pt-4 px-2 sm:px-0 animate-fadeIn relative">
       
@@ -196,26 +200,50 @@ export default function RegisterPlayer({ setView }) {
       </div>
 
       {/* Tournament Header */}
-      <div className="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-3xl p-6 md:p-8 mb-6 md:mb-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-start md:items-center gap-4 md:gap-5">
-           <div className="bg-white p-3 md:p-4 rounded-2xl shadow-inner shrink-0">
+      <div className="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-3xl p-6 md:p-8 mb-6 md:mb-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+        
+        {/* Subtle background decoration */}
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white opacity-5 rounded-full blur-2xl pointer-events-none"></div>
+
+        <div className="flex items-start md:items-center gap-4 md:gap-5 z-10 w-full md:w-auto">
+           <div className="bg-white p-3 md:p-4 rounded-2xl shadow-inner shrink-0 mt-1 md:mt-0">
              <Target className="w-7 h-7 md:w-10 md:h-10 text-emerald-600" />
            </div>
-           <div>
-             <div className="flex flex-wrap items-center gap-2 md:gap-3">
-               <span className="bg-emerald-500/50 text-[10px] md:text-xs font-bold px-3 py-1 rounded-full text-white uppercase tracking-wider border border-emerald-400/50">Registration Open</span>
-               {/* NEW: Countdown Timer UI */}
-               <span className="flex items-center gap-1.5 bg-red-500/80 text-[10px] md:text-xs font-bold px-3 py-1 rounded-full text-white tracking-wider border border-red-400/50 shadow-sm animate-pulse">
-                  <Clock className="w-3 h-3" /> Ends in: {timeLeft}
-               </span>
-             </div>
-             <h1 className="text-xl md:text-4xl font-extrabold tracking-tight mt-2 leading-tight">ZBSM Elite Cup 2026</h1>
-             <p className="text-emerald-100 mt-1 md:mt-2 text-xs md:text-base font-medium">Join the battle and prove your mettle on the field.</p>
+           
+           <div className="flex-1">
+             <span className="inline-block bg-emerald-500/50 text-[10px] md:text-xs font-bold px-3 py-1 rounded-full text-white uppercase tracking-wider border border-emerald-400/50 mb-1">
+               Registration Open
+             </span>
+             <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight mt-1 leading-tight">ZBSM Elite Cup 2026</h1>
+             <p className="text-emerald-100 mt-1.5 text-xs md:text-sm font-medium">Join the battle and prove your mettle on the field.</p>
+             
+             {/* NEW: Professional Boxed Timer Layout */}
+             {isClosed ? (
+                <div className="mt-4 inline-flex items-center gap-2 bg-red-500/20 text-red-100 px-4 py-2.5 rounded-xl font-bold border border-red-500/30 text-sm shadow-sm backdrop-blur-sm">
+                    <XCircle className="w-4 h-4" /> Registration Closed
+                </div>
+             ) : (
+                <div className="mt-4 flex flex-wrap items-center gap-3 bg-slate-900/20 w-fit px-4 py-2.5 rounded-2xl border border-white/10 backdrop-blur-sm shadow-inner">
+                    <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-bold uppercase tracking-widest text-emerald-200">
+                        <Clock className="w-3.5 h-3.5 animate-pulse" /> Ends In
+                    </div>
+                    <div className="w-px h-6 bg-white/20 hidden sm:block"></div>
+                    <div className="flex items-center gap-1 font-mono">
+                        <TimeBox value={timeLeft.days} label="Days" />
+                        <span className="text-emerald-300/50 font-bold mb-3">:</span>
+                        <TimeBox value={timeLeft.hours} label="Hrs" />
+                        <span className="text-emerald-300/50 font-bold mb-3">:</span>
+                        <TimeBox value={timeLeft.minutes} label="Min" />
+                        <span className="text-emerald-300/50 font-bold mb-3">:</span>
+                        <TimeBox value={timeLeft.seconds} label="Sec" />
+                    </div>
+                </div>
+             )}
            </div>
         </div>
         
         {/* Support Hotline Button */}
-        <a href="tel:01701597310" className="flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 transition-colors px-4 py-3 md:px-5 rounded-xl border border-white/30 backdrop-blur-sm shrink-0 w-full md:w-auto">
+        <a href="tel:01701597310" className="flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 transition-colors px-4 py-3 md:px-5 rounded-xl border border-white/30 backdrop-blur-sm shrink-0 w-full md:w-auto z-10">
             <PhoneCall className="w-5 h-5" />
             <div className="text-left">
                 <p className="text-[10px] font-bold uppercase tracking-wider opacity-80">Support Hotline</p>
@@ -261,7 +289,6 @@ export default function RegisterPlayer({ setView }) {
               <input type="text" value={jerseyName} onChange={(e) => setJerseyName(e.target.value.toUpperCase())} required placeholder="e.g. MUNNA" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all uppercase" />
             </InputGroup>
 
-            {/* Added a grid here to split Number and Size on desktop */}
             <div className="grid grid-cols-2 gap-4">
               <InputGroup label="Jersey No." icon={Hash}>
                 <input type="tel" value={jerseyNumber} onChange={handleJerseyNumberChange} required placeholder="e.g. 10" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all font-mono" />
@@ -337,7 +364,7 @@ export default function RegisterPlayer({ setView }) {
         {/* Actions */}
         <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 md:gap-4 pt-4">
            <button type="button" onClick={() => setView('home')} className="w-full sm:w-auto px-6 py-3.5 sm:py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100 transition-colors">Cancel</button>
-           <button type="submit" disabled={isSubmitting || timeLeft === 'Registration Closed'} className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 sm:py-2.5 rounded-xl font-bold text-sm bg-emerald-500 text-white shadow-md hover:bg-emerald-600 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed transition-all">
+           <button type="submit" disabled={isSubmitting || isClosed} className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 sm:py-2.5 rounded-xl font-bold text-sm bg-emerald-500 text-white shadow-md hover:bg-emerald-600 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed transition-all">
              {isSubmitting ? <><Loader2 className="w-5 h-5 animate-spin" /> Submitting...</> : <><Send className="w-5 h-5" /> Submit</>}
            </button>
         </div>
