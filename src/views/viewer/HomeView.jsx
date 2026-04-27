@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   Calendar, Clock, Trophy, ChevronRight, Activity, 
-  BookOpen, Info, Heart, Image as ImageIcon, Moon, UserPlus, ShoppingBag // <-- Added ShoppingBag here
+  BookOpen, Info, Heart, Image as ImageIcon, Moon, UserPlus, ShoppingBag
 } from 'lucide-react';
 import LiveBadge from '../../components/LiveBadge';
 import TeamLogo from '../../components/TeamLogo';
@@ -29,14 +29,46 @@ export default function HomeView({ matches, tournaments, setCurrentMatch, setSel
 return (
     <div className="space-y-8 max-w-5xl mx-auto pb-6 pt-2">
       
-      {/* 1. BREAKING NEWS */}
-      <div className="w-full drop-shadow-sm px-2 sm:px-0">
+      {/* 1. BREAKING NEWS (Commented out as requested) */}
+      {/* <div className="w-full drop-shadow-sm px-2 sm:px-0">
         <NewsTicker 
           news="Batch 2014 kicked off their ZBSM School League 2026 campaign in style, claiming a dominant 52-run victory in their opening match with an all-round performance! BREAKING: Batch 21 secured a strong 32-run win over Batch 2018 in the ZBSM School League, posting the tournament’s highest score of 163/3, with Munna Kumar smashing a brilliant 76 off just 26 balls to earn Man of the Match!" 
         />
       </div>
+      */}
 
-      {/* 2. REGISTRATION CTA CARD (Replaces Eid Banner) */}
+      {/* NEW: ELITE CUP HERO BANNER */}
+      <div className="px-2 sm:px-0">
+          <div className="bg-gradient-to-r from-black via-slate-900 to-slate-800 rounded-3xl shadow-2xl p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 border border-slate-800 relative overflow-hidden">
+              
+              {/* Background Glow */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-blue-500/10 blur-[100px] pointer-events-none"></div>
+
+              <div className="text-center md:text-left flex-1 relative z-10">
+                  <span className="inline-flex items-center gap-1.5 py-1 px-3 rounded-full bg-blue-500/20 text-blue-400 text-[10px] md:text-xs font-bold uppercase tracking-widest border border-blue-500/30 mb-4 shadow-sm">
+                      <Trophy className="w-3.5 h-3.5" /> The Biggest Event of 2026
+                  </span>
+                  <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight mb-4 leading-tight">
+                      ZBSM <span className="text-blue-400">Elite Cup</span>
+                  </h1>
+                  <p className="text-sm md:text-base text-slate-300 font-medium max-w-md mx-auto md:mx-0 leading-relaxed">
+                      Experience the thrill of the ultimate cricket showdown. Track live scores, player stats, and support your favorite teams.
+                  </p>
+              </div>
+              
+              <div className="shrink-0 relative z-10">
+                  {/* Glowing backdrop specifically for the logo */}
+                  <div className="absolute inset-0 bg-blue-500/30 blur-2xl rounded-full scale-110"></div>
+                  <img 
+                      src="/elitecuplogo.jpg" 
+                      alt="ZBSM Elite Cup 2026" 
+                      className="relative w-40 h-40 md:w-56 md:h-56 object-cover rounded-full shadow-2xl border-4 border-slate-800/50"
+                  />
+              </div>
+          </div>
+      </div>
+
+      {/* 2. REGISTRATION CTA CARD */}
       <div className="px-2 sm:px-0">
           <div 
             onClick={() => {
@@ -68,7 +100,7 @@ return (
           </div>
       </div>
 
-      {/* 2.5 STORE CTA CARD (Newly Added) */}
+      {/* 2.5 STORE CTA CARD */}
       <div className="px-2 sm:px-0">
           <div 
             onClick={() => {
@@ -99,24 +131,6 @@ return (
             </button>
           </div>
       </div>
-
-      {/* --- EID BANNER (Commented Out) --- */}
-      {/* <div className="px-2 sm:px-0">
-          <div className="relative overflow-hidden rounded-2xl shadow-lg border border-slate-200/50 group">
-            <img 
-              src="/eidbanner.png" 
-              alt="Eid Mubarak" 
-              className="w-full h-48 md:h-56 lg:h-[350px] xl:h-[400px] object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-indigo-950/90 via-indigo-950/20 to-transparent pointer-events-none"></div>
-            <div className="absolute bottom-0 left-0 w-full p-4 md:p-6 flex flex-col items-center md:items-start text-center md:text-left z-10">
-                <p className="text-sm md:text-base font-semibold text-white tracking-wide drop-shadow-md">
-                    Wishing you joy, peace, and great cricket from the ZBSM Community.
-                </p>
-            </div>
-          </div>
-      </div>
-      */}
 
       {/* 3. LIVE MATCHES */}
       {liveMatches.length > 0 && (
