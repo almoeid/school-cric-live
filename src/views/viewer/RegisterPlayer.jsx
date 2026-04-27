@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   User, Image as ImageIcon, Phone, CalendarDays, Award, Target, Info, 
-  CreditCard, Send, Loader2, CheckCircle, XCircle, PhoneCall, Hash, Copy, Shirt 
+  CreditCard, Send, Loader2, CheckCircle, XCircle, PhoneCall, Hash, Copy, Shirt, Clock 
 } from 'lucide-react';
 import { collection, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -27,11 +27,39 @@ export default function RegisterPlayer({ setView }) {
   const [isSuccess, setIsSuccess] = useState(false);
   const [toast, setToast] = useState({ show: false, type: null, text: '' });
   const [copied, setCopied] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(''); // NEW: Countdown state
 
   const showToast = (type, text) => {
     setToast({ show: true, type, text });
     setTimeout(() => setToast({ show: false, type: null, text: '' }), 4000);
   };
+
+  // --- Real-time Countdown Timer (Ends May 1, 2026 8:00 PM BST) ---
+  useEffect(() => {
+    // Bangladesh Time is UTC+6
+    const targetDate = new Date('2026-05-01T20:00:00+06:00').getTime();
+
+    const updateCountdown = () => {
+      const now = new Date().getTime();
+      const difference = targetDate - now;
+
+      if (difference <= 0) {
+        setTimeLeft('Registration Closed');
+        return;
+      }
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+      setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+    };
+
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // --- Dynamic Options ---
   const years = Array.from({ length: 2026 - 1990 + 1 }, (_, i) => 2026 - i);
@@ -39,8 +67,8 @@ export default function RegisterPlayer({ setView }) {
   const roles = ["Batsman", "Bowler", "Allrounder", "Batting Allrounder", "Bowling Allrounder"];
   const jerseySizes = ["M", "L", "XL", "XXL", "XXXL"];
 
-  // --- Dynamic Fee Calculation ---
-  const feeAmount = batch === 'School Batch' ? '200' : '500';
+  // --- Dynamic Fee Calculation (Updated to include 2026 batch) ---
+  const feeAmount = (batch === 'School Batch' || String(batch) === '2026') ? '200' : '500';
 
   // --- Strict Input Handlers ---
   const handleMobileChange = (e) => {
@@ -174,7 +202,13 @@ export default function RegisterPlayer({ setView }) {
              <Target className="w-7 h-7 md:w-10 md:h-10 text-emerald-600" />
            </div>
            <div>
-             <span className="bg-emerald-500/50 text-[10px] md:text-xs font-bold px-3 py-1 rounded-full text-white uppercase tracking-wider border border-emerald-400/50">Registration Open</span>
+             <div className="flex flex-wrap items-center gap-2 md:gap-3">
+               <span className="bg-emerald-500/50 text-[10px] md:text-xs font-bold px-3 py-1 rounded-full text-white uppercase tracking-wider border border-emerald-400/50">Registration Open</span>
+               {/* NEW: Countdown Timer UI */}
+               <span className="flex items-center gap-1.5 bg-red-500/80 text-[10px] md:text-xs font-bold px-3 py-1 rounded-full text-white tracking-wider border border-red-400/50 shadow-sm animate-pulse">
+                  <Clock className="w-3 h-3" /> Ends in: {timeLeft}
+               </span>
+             </div>
              <h1 className="text-xl md:text-4xl font-extrabold tracking-tight mt-2 leading-tight">ZBSM Elite Cup 2026</h1>
              <p className="text-emerald-100 mt-1 md:mt-2 text-xs md:text-base font-medium">Join the battle and prove your mettle on the field.</p>
            </div>
@@ -303,7 +337,7 @@ export default function RegisterPlayer({ setView }) {
         {/* Actions */}
         <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 md:gap-4 pt-4">
            <button type="button" onClick={() => setView('home')} className="w-full sm:w-auto px-6 py-3.5 sm:py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100 transition-colors">Cancel</button>
-           <button type="submit" disabled={isSubmitting} className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 sm:py-2.5 rounded-xl font-bold text-sm bg-emerald-500 text-white shadow-md hover:bg-emerald-600 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed transition-all">
+           <button type="submit" disabled={isSubmitting || timeLeft === 'Registration Closed'} className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 sm:py-2.5 rounded-xl font-bold text-sm bg-emerald-500 text-white shadow-md hover:bg-emerald-600 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed transition-all">
              {isSubmitting ? <><Loader2 className="w-5 h-5 animate-spin" /> Submitting...</> : <><Send className="w-5 h-5" /> Submit</>}
            </button>
         </div>
