@@ -1,13 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   User, Image as ImageIcon, Phone, CalendarDays, Award, Target, Info, 
-  CreditCard, Send, Loader2, CheckCircle, XCircle, PhoneCall, Hash, Copy, Shirt, Clock 
+  CreditCard, Send, Loader2, CheckCircle, XCircle, PhoneCall, Hash, Copy, Shirt, Clock, Lock 
 } from 'lucide-react';
 import { collection, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, APP_ID } from '../../config/firebase';
 
 export default function RegisterPlayer({ setView }) {
+  // --- MANUAL MASTER SWITCH ---
+  // Change this to `false` to manually lock the form at any time.
+  const IS_REGISTRATION_OPEN = false; 
+
   const fileInputRef = useRef(null);
 
   // Form state
@@ -28,7 +32,7 @@ export default function RegisterPlayer({ setView }) {
   const [toast, setToast] = useState({ show: false, type: null, text: '' });
   const [copied, setCopied] = useState(false);
   
-  // NEW: Advanced Countdown State
+  // Advanced Countdown State
   const [timeLeft, setTimeLeft] = useState({ days: '00', hours: '00', minutes: '00', seconds: '00' });
   const [isClosed, setIsClosed] = useState(false);
 
@@ -37,9 +41,9 @@ export default function RegisterPlayer({ setView }) {
     setTimeout(() => setToast({ show: false, type: null, text: '' }), 4000);
   };
 
-  // --- Real-time Advanced Countdown Timer (Ends May 1, 2026 8:00 PM BST) ---
+  // --- Real-time Advanced Countdown Timer (Ends May 1, 2026 00:00 BST - Midnight after April 30) ---
   useEffect(() => {
-    const targetDate = new Date('2026-05-01T20:00:00+06:00').getTime();
+    const targetDate = new Date('2026-05-01T00:00:00+06:00').getTime();
 
     const updateCountdown = () => {
       const now = new Date().getTime();
@@ -84,7 +88,6 @@ export default function RegisterPlayer({ setView }) {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Increased max file size from 5MB to 10MB
       if (file.size > 10 * 1024 * 1024) {
         showToast('error', 'Picture must be smaller than 10MB.');
         return;
@@ -109,6 +112,11 @@ export default function RegisterPlayer({ setView }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!IS_REGISTRATION_OPEN || isClosed) {
+      showToast('error', 'Registration is closed.');
+      return;
+    }
 
     if (!name || !mobileNumber || !batch || !role || !jerseyName || !jerseyNumber || !jerseySize || !imageFile || !paymentTxid) {
       showToast('error', 'Please fill in all required fields and upload a picture.');
@@ -179,7 +187,6 @@ export default function RegisterPlayer({ setView }) {
     );
   }
 
-  // Helper component for the new timer layout
   const TimeBox = ({ value, label }) => (
     <div className="flex flex-col items-center min-w-[36px] sm:min-w-[40px]">
         <span className="text-base sm:text-lg font-extrabold text-white leading-none">{value}</span>
@@ -203,7 +210,6 @@ export default function RegisterPlayer({ setView }) {
       {/* Tournament Header */}
       <div className="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-3xl p-6 md:p-8 mb-6 md:mb-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
         
-        {/* Subtle background decoration */}
         <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white opacity-5 rounded-full blur-2xl pointer-events-none"></div>
 
         <div className="flex items-start md:items-center gap-4 md:gap-5 z-10 w-full md:w-auto">
@@ -212,16 +218,16 @@ export default function RegisterPlayer({ setView }) {
            </div>
            
            <div className="flex-1">
-             <span className="inline-block bg-emerald-500/50 text-[10px] md:text-xs font-bold px-3 py-1 rounded-full text-white uppercase tracking-wider border border-emerald-400/50 mb-1">
-               Registration Open
+             <span className={`inline-block text-[10px] md:text-xs font-bold px-3 py-1 rounded-full text-white uppercase tracking-wider border mb-1 ${(!IS_REGISTRATION_OPEN || isClosed) ? 'bg-slate-500/50 border-slate-400/50' : 'bg-emerald-500/50 border-emerald-400/50'}`}>
+               {(!IS_REGISTRATION_OPEN || isClosed) ? 'Registration Closed' : 'Registration Open'}
              </span>
              <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight mt-1 leading-tight">ZBSM Elite Cup 2026</h1>
              <p className="text-emerald-100 mt-1.5 text-xs md:text-sm font-medium">Join the battle and prove your mettle on the field.</p>
              
              {/* Professional Boxed Timer Layout */}
-             {isClosed ? (
+             {(!IS_REGISTRATION_OPEN || isClosed) ? (
                 <div className="mt-4 inline-flex items-center gap-2 bg-red-500/20 text-red-100 px-4 py-2.5 rounded-xl font-bold border border-red-500/30 text-sm shadow-sm backdrop-blur-sm">
-                    <XCircle className="w-4 h-4" /> Registration Closed
+                    <Lock className="w-4 h-4" /> Form Locked
                 </div>
              ) : (
                 <div className="mt-4 flex flex-wrap items-center gap-3 bg-slate-900/20 w-fit px-4 py-2.5 rounded-2xl border border-white/10 backdrop-blur-sm shadow-inner">
@@ -243,7 +249,6 @@ export default function RegisterPlayer({ setView }) {
            </div>
         </div>
         
-        {/* Support Hotline Button */}
         <a href="tel:01701597310" className="flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 transition-colors px-4 py-3 md:px-5 rounded-xl border border-white/30 backdrop-blur-sm shrink-0 w-full md:w-auto z-10">
             <PhoneCall className="w-5 h-5" />
             <div className="text-left">
@@ -253,123 +258,137 @@ export default function RegisterPlayer({ setView }) {
         </a>
       </div>
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="bg-white p-5 md:p-10 rounded-3xl shadow-lg border border-slate-100 space-y-8">
-        
-        {/* Player Info Section */}
-        <section>
-          <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
-             <User className="w-5 h-5 text-emerald-500" />
-             <h2 className="text-lg md:text-xl font-bold text-slate-800">Player Details</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
-            <InputGroup label="Full Name" icon={User}>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} required placeholder="e.g. Munna Kumar" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all" />
-            </InputGroup>
-
-            <InputGroup label="Mobile Number" icon={Phone}>
-              <input type="tel" value={mobileNumber} onChange={handleMobileChange} required placeholder="017xxxxxxxx" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all font-mono" />
-            </InputGroup>
-
-            <InputGroup label="Batch" icon={CalendarDays}>
-                <select value={batch} onChange={(e) => setBatch(e.target.value)} required className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all appearance-none">
-                    <option value="" disabled>Select Batch</option>
-                    {batches.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                </select>
-            </InputGroup>
-
-            <InputGroup label="Playing Role" icon={Award}>
-                <select value={role} onChange={(e) => setRole(e.target.value)} required className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all appearance-none">
-                    <option value="" disabled>Select Role</option>
-                    {roles.map(r => <option key={r} value={r}>{r}</option>)}
-                </select>
-            </InputGroup>
-
-            <InputGroup label="Jersey Name" icon={User}>
-              <input type="text" value={jerseyName} onChange={(e) => setJerseyName(e.target.value.toUpperCase())} required placeholder="e.g. MUNNA" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all uppercase" />
-            </InputGroup>
-
-            <div className="grid grid-cols-2 gap-4">
-              <InputGroup label="Jersey No." icon={Hash}>
-                <input type="tel" value={jerseyNumber} onChange={handleJerseyNumberChange} required placeholder="e.g. 10" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all font-mono" />
-              </InputGroup>
-
-              <InputGroup label="Size" icon={Shirt}>
-                  <select value={jerseySize} onChange={(e) => setJerseySize(e.target.value)} required className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all appearance-none">
-                      <option value="" disabled>Size</option>
-                      {jerseySizes.map(size => <option key={size} value={size}>{size}</option>)}
-                  </select>
-              </InputGroup>
-            </div>
-
-            <div className="md:col-span-2">
-                <InputGroup label="Player Style Picture (Portrait)" icon={ImageIcon}>
-                   <div className="flex flex-col sm:flex-row sm:items-center gap-4 border-2 border-dashed border-slate-200 rounded-xl p-5 hover:border-emerald-400 transition-all bg-slate-50">
-                        {imagePreview ? (
-                            <img src={imagePreview} alt="Preview" className="w-24 h-24 rounded-xl object-cover shadow-sm border border-slate-200 shrink-0" />
-                        ) : (
-                            <div className="w-24 h-24 rounded-xl bg-white flex items-center justify-center text-slate-300 border border-slate-200 shadow-sm shrink-0">
-                                <ImageIcon className="w-8 h-8" />
-                            </div>
-                        )}
-                        <div>
-                            <p className="text-sm font-semibold text-slate-700">Upload Image</p>
-                            <p className="text-xs text-slate-500 mt-0.5">PNG, JPG, or WEBP. Max 10MB.</p>
-                            <button type="button" onClick={() => fileInputRef.current.click()} className="mt-3 text-xs bg-emerald-100 text-emerald-700 px-4 py-2 rounded-lg font-bold hover:bg-emerald-200 transition-colors w-full sm:w-auto">
-                                {imagePreview ? 'Change Image' : 'Select File'}
-                            </button>
-                            <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
-                        </div>
-                   </div>
-                </InputGroup>
-            </div>
-          </div>
-        </section>
-
-        {/* Payment Info Section */}
-        <section>
-          <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
-             <CreditCard className="w-5 h-5 text-emerald-500" />
-             <h2 className="text-lg md:text-xl font-bold text-slate-800">Registration Fee</h2>
-          </div>
-          
-          <div className="bg-emerald-50/50 p-4 md:p-5 rounded-2xl border border-emerald-100 mb-6 flex flex-col sm:flex-row sm:items-start gap-4">
-              <Info className="w-6 h-6 text-emerald-500 shrink-0 hidden sm:block mt-0.5" />
-              <div>
-                  <p className="text-sm text-slate-700 leading-relaxed font-medium">
-                    রেজিস্ট্রেশন ফি <strong className="text-emerald-700 font-extrabold text-base transition-all">{feeAmount}tk</strong> নিচের নম্বরে <b>bKash</b> অথবা <b>Nagad</b> (Personal) এর মাধ্যমে Send Money করুন। এরপর, Transaction ID (TXID) অথবা যে নম্বর থেকে টাকা পাঠিয়েছেন তা নিচের বক্সে লিখুন।
-                  </p>
-                  
-                  <div className="mt-4 flex items-center gap-2">
-                      <div className="bg-white px-5 py-2.5 rounded-xl border border-emerald-200 shadow-sm font-mono font-extrabold text-emerald-700 text-lg md:text-xl tracking-wider">
-                          01701597310
-                      </div>
-                      <button 
-                        type="button" 
-                        onClick={handleCopyNumber}
-                        className="p-3 bg-white border border-emerald-200 shadow-sm rounded-xl text-emerald-600 hover:bg-emerald-50 transition-colors"
-                        title="Copy Number"
-                      >
-                        {copied ? <CheckCircle className="w-5 h-5 text-emerald-500" /> : <Copy className="w-5 h-5" />}
-                      </button>
-                  </div>
-              </div>
-          </div>
-
-          <InputGroup label="Enter bKash/Nagad Number or TXID" icon={Phone}>
-              <input type="text" value={paymentTxid} onChange={(e) => setPaymentTxid(e.target.value)} required placeholder="e.g. 017xxxxxxxx or 9X8Y7Z6W" className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all font-mono text-lg" />
-          </InputGroup>
-        </section>
-
-        {/* Actions */}
-        <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 md:gap-4 pt-4">
-           <button type="button" onClick={() => setView('home')} className="w-full sm:w-auto px-6 py-3.5 sm:py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100 transition-colors">Cancel</button>
-           <button type="submit" disabled={isSubmitting || isClosed} className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 sm:py-2.5 rounded-xl font-bold text-sm bg-emerald-500 text-white shadow-md hover:bg-emerald-600 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed transition-all">
-             {isSubmitting ? <><Loader2 className="w-5 h-5 animate-spin" /> Submitting...</> : <><Send className="w-5 h-5" /> Submit</>}
+      {/* --- FORM OR CLOSED UI --- */}
+      {(!IS_REGISTRATION_OPEN || isClosed) ? (
+        <div className="bg-white p-10 md:p-14 rounded-3xl shadow-lg border border-slate-100 text-center flex flex-col items-center animate-fadeIn">
+           <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-5 border border-red-100 shadow-inner">
+               <Lock className="w-8 h-8 text-red-500" />
+           </div>
+           <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 mb-3">Registration is Closed</h2>
+           <p className="text-slate-500 font-medium max-w-md mx-auto mb-8 leading-relaxed">
+               We're sorry, but the player registration phase for the <b>ZBSM Elite Cup 2026</b> has officially ended. Thank you for your overwhelming interest!
+           </p>
+           <button onClick={() => setView('home')} className="px-8 py-3.5 bg-slate-900 text-white font-bold rounded-xl shadow-md hover:bg-slate-800 hover:-translate-y-0.5 transition-all">
+               Back to Live Scores
            </button>
         </div>
-      </form>
+      ) : (
+        <form onSubmit={handleSubmit} className="bg-white p-5 md:p-10 rounded-3xl shadow-lg border border-slate-100 space-y-8">
+          {/* Player Info Section */}
+          <section>
+            <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
+               <User className="w-5 h-5 text-emerald-500" />
+               <h2 className="text-lg md:text-xl font-bold text-slate-800">Player Details</h2>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+              <InputGroup label="Full Name" icon={User}>
+                <input type="text" value={name} onChange={(e) => setName(e.target.value)} required placeholder="e.g. Munna Kumar" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all" />
+              </InputGroup>
+
+              <InputGroup label="Mobile Number" icon={Phone}>
+                <input type="tel" value={mobileNumber} onChange={handleMobileChange} required placeholder="017xxxxxxxx" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all font-mono" />
+              </InputGroup>
+
+              <InputGroup label="Batch" icon={CalendarDays}>
+                  <select value={batch} onChange={(e) => setBatch(e.target.value)} required className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all appearance-none">
+                      <option value="" disabled>Select Batch</option>
+                      {batches.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                  </select>
+              </InputGroup>
+
+              <InputGroup label="Playing Role" icon={Award}>
+                  <select value={role} onChange={(e) => setRole(e.target.value)} required className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all appearance-none">
+                      <option value="" disabled>Select Role</option>
+                      {roles.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
+              </InputGroup>
+
+              <InputGroup label="Jersey Name" icon={User}>
+                <input type="text" value={jerseyName} onChange={(e) => setJerseyName(e.target.value.toUpperCase())} required placeholder="e.g. MUNNA" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all uppercase" />
+              </InputGroup>
+
+              <div className="grid grid-cols-2 gap-4">
+                <InputGroup label="Jersey No." icon={Hash}>
+                  <input type="tel" value={jerseyNumber} onChange={handleJerseyNumberChange} required placeholder="e.g. 10" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all font-mono" />
+                </InputGroup>
+
+                <InputGroup label="Size" icon={Shirt}>
+                    <select value={jerseySize} onChange={(e) => setJerseySize(e.target.value)} required className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all appearance-none">
+                        <option value="" disabled>Size</option>
+                        {jerseySizes.map(size => <option key={size} value={size}>{size}</option>)}
+                    </select>
+                </InputGroup>
+              </div>
+
+              <div className="md:col-span-2">
+                  <InputGroup label="Player Style Picture (Portrait)" icon={ImageIcon}>
+                     <div className="flex flex-col sm:flex-row sm:items-center gap-4 border-2 border-dashed border-slate-200 rounded-xl p-5 hover:border-emerald-400 transition-all bg-slate-50">
+                          {imagePreview ? (
+                              <img src={imagePreview} alt="Preview" className="w-24 h-24 rounded-xl object-cover shadow-sm border border-slate-200 shrink-0" />
+                          ) : (
+                              <div className="w-24 h-24 rounded-xl bg-white flex items-center justify-center text-slate-300 border border-slate-200 shadow-sm shrink-0">
+                                  <ImageIcon className="w-8 h-8" />
+                              </div>
+                          )}
+                          <div>
+                              <p className="text-sm font-semibold text-slate-700">Upload Image</p>
+                              <p className="text-xs text-slate-500 mt-0.5">PNG, JPG, or WEBP. Max 10MB.</p>
+                              <button type="button" onClick={() => fileInputRef.current.click()} className="mt-3 text-xs bg-emerald-100 text-emerald-700 px-4 py-2 rounded-lg font-bold hover:bg-emerald-200 transition-colors w-full sm:w-auto">
+                                  {imagePreview ? 'Change Image' : 'Select File'}
+                              </button>
+                              <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
+                          </div>
+                     </div>
+                  </InputGroup>
+              </div>
+            </div>
+          </section>
+
+          {/* Payment Info Section */}
+          <section>
+            <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
+               <CreditCard className="w-5 h-5 text-emerald-500" />
+               <h2 className="text-lg md:text-xl font-bold text-slate-800">Registration Fee</h2>
+            </div>
+            
+            <div className="bg-emerald-50/50 p-4 md:p-5 rounded-2xl border border-emerald-100 mb-6 flex flex-col sm:flex-row sm:items-start gap-4">
+                <Info className="w-6 h-6 text-emerald-500 shrink-0 hidden sm:block mt-0.5" />
+                <div>
+                    <p className="text-sm text-slate-700 leading-relaxed font-medium">
+                      রেজিস্ট্রেশন ফি <strong className="text-emerald-700 font-extrabold text-base transition-all">{feeAmount}tk</strong> নিচের নম্বরে <b>bKash</b> অথবা <b>Nagad</b> (Personal) এর মাধ্যমে Send Money করুন। এরপর, Transaction ID (TXID) অথবা যে নম্বর থেকে টাকা পাঠিয়েছেন তা নিচের বক্সে লিখুন।
+                    </p>
+                    
+                    <div className="mt-4 flex items-center gap-2">
+                        <div className="bg-white px-5 py-2.5 rounded-xl border border-emerald-200 shadow-sm font-mono font-extrabold text-emerald-700 text-lg md:text-xl tracking-wider">
+                            01701597310
+                        </div>
+                        <button 
+                          type="button" 
+                          onClick={handleCopyNumber}
+                          className="p-3 bg-white border border-emerald-200 shadow-sm rounded-xl text-emerald-600 hover:bg-emerald-50 transition-colors"
+                          title="Copy Number"
+                        >
+                          {copied ? <CheckCircle className="w-5 h-5 text-emerald-500" /> : <Copy className="w-5 h-5" />}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <InputGroup label="Enter bKash/Nagad Number or TXID" icon={Phone}>
+                <input type="text" value={paymentTxid} onChange={(e) => setPaymentTxid(e.target.value)} required placeholder="e.g. 017xxxxxxxx or 9X8Y7Z6W" className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all font-mono text-lg" />
+            </InputGroup>
+          </section>
+
+          {/* Actions */}
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 md:gap-4 pt-4">
+             <button type="button" onClick={() => setView('home')} className="w-full sm:w-auto px-6 py-3.5 sm:py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100 transition-colors">Cancel</button>
+             <button type="submit" disabled={isSubmitting} className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 sm:py-2.5 rounded-xl font-bold text-sm bg-emerald-500 text-white shadow-md hover:bg-emerald-600 hover:shadow-lg disabled:opacity-70 transition-all">
+               {isSubmitting ? <><Loader2 className="w-5 h-5 animate-spin" /> Submitting...</> : <><Send className="w-5 h-5" /> Submit</>}
+             </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }
