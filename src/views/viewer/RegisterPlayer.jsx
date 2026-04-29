@@ -10,7 +10,7 @@ import { db, storage, APP_ID } from '../../config/firebase';
 export default function RegisterPlayer({ setView }) {
   // --- MANUAL MASTER SWITCH ---
   // Change this to `false` to manually lock the form at any time.
-  const IS_REGISTRATION_OPEN = false; 
+  const IS_REGISTRATION_OPEN = true; 
 
   const fileInputRef = useRef(null);
 
