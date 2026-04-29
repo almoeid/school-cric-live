@@ -18,6 +18,7 @@ export default function AdminRegistrationDash({ setView }) {
   // --- FILTERS ---
   const [filter, setFilter] = useState('all'); 
   const [roleFilter, setRoleFilter] = useState('all'); 
+  const [batchFilter, setBatchFilter] = useState('all'); // NEW: Batch Filter State
   const [searchTerm, setSearchTerm] = useState('');
 
   // --- EDIT MODAL STATE ---
@@ -195,24 +196,30 @@ export default function AdminRegistrationDash({ setView }) {
       );
   }
 
-  // --- RENDER MAIN DASHBOARD ---
-  const stats = {
-    total: registrations.length,
-    pending: registrations.filter(r => r.status === 'pending').length,
-    approved: registrations.filter(r => r.status === 'approved').length,
-  };
-
-  const filteredRegistrations = registrations.filter(reg => {
-    const matchesStatus = filter === 'all' || reg.status === filter;
+  // --- FILTER & STATS LOGIC ---
+  
+  // 1. Filter base array for Role, Batch, and Search (but ignore Status for stats)
+  const baseFiltered = registrations.filter(reg => {
     const matchesRole = roleFilter === 'all' || reg.role === roleFilter;
+    const matchesBatch = batchFilter === 'all' || String(reg.batch) === String(batchFilter);
     const matchesSearch = 
       reg.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
       reg.mobileNumber.includes(searchTerm) ||
       reg.paymentTxid.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (reg.jerseyName && reg.jerseyName.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    return matchesStatus && matchesRole && matchesSearch;
+    return matchesRole && matchesBatch && matchesSearch;
   });
+
+  // 2. Dynamic Stats (Updates when you select a Batch, Role, or Search!)
+  const stats = {
+    total: baseFiltered.length,
+    pending: baseFiltered.filter(r => r.status === 'pending').length,
+    approved: baseFiltered.filter(r => r.status === 'approved').length,
+  };
+
+  // 3. Final array for the table (applies the Status tab filter)
+  const filteredRegistrations = baseFiltered.filter(reg => filter === 'all' || reg.status === filter);
 
   if (loading) return <div className="p-10 text-center font-bold text-slate-500 animate-pulse">Loading Secured Dashboard...</div>;
 
@@ -317,7 +324,22 @@ export default function AdminRegistrationDash({ setView }) {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-                  <div className="relative w-full sm:w-48 shrink-0">
+                  
+                  {/* NEW: Batch Filter Dropdown */}
+                  <div className="relative w-full sm:w-36 shrink-0">
+                      <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                      <select
+                          value={batchFilter}
+                          onChange={(e) => setBatchFilter(e.target.value)}
+                          className="w-full pl-9 pr-8 py-2.5 lg:py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400 appearance-none transition"
+                      >
+                          <option value="all">All Batches</option>
+                          {batches.map(b => <option key={b} value={b}>{b}</option>)}
+                      </select>
+                  </div>
+
+                  {/* Existing Role Filter */}
+                  <div className="relative w-full sm:w-40 shrink-0">
                       <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                       <select
                           value={roleFilter}
@@ -329,7 +351,7 @@ export default function AdminRegistrationDash({ setView }) {
                       </select>
                   </div>
 
-                  <div className="relative w-full sm:w-64">
+                  <div className="relative w-full sm:w-56">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                       <input 
                           type="text" 
@@ -373,9 +395,8 @@ export default function AdminRegistrationDash({ setView }) {
                       )}
                   </td>
 
-{/* Player & Time */}
+                  {/* Player & Time */}
                   <td className="p-4 flex items-center gap-3">
-                      {/* FIX: Added "shrink-0 block" to the <a> tag so it never gets squished */}
                       <a href={reg.imageUrl} target="_blank" rel="noreferrer" className="shrink-0 block">
                         <img src={reg.imageUrl || '/api/placeholder/40/40'} alt={reg.name} className="w-12 h-12 rounded-xl object-cover object-top bg-slate-200 border border-slate-200 shadow-sm hover:scale-110 transition-transform" title="Click to view full image" />
                       </a>
