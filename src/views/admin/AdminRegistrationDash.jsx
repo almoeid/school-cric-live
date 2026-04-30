@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Users, UserCheck, Clock, CheckCircle, XCircle, 
-  Search, ShieldCheck, Lock, Smartphone, Filter, Trash2, Edit, MessageSquare, X
+  Search, ShieldCheck, Lock, Smartphone, Filter, Trash2, Edit, MessageSquare, X,
+  UserPlus, Image as ImageIcon, Send, Loader2
 } from 'lucide-react';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db, APP_ID } from '../../config/firebase';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, addDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage, APP_ID } from '../../config/firebase';
 
 export default function AdminRegistrationDash({ setView }) {
   // --- HARDCODED PASSWORD STATE ---
@@ -18,12 +20,22 @@ export default function AdminRegistrationDash({ setView }) {
   // --- FILTERS ---
   const [filter, setFilter] = useState('all'); 
   const [roleFilter, setRoleFilter] = useState('all'); 
-  const [batchFilter, setBatchFilter] = useState('all'); // NEW: Batch Filter State
+  const [batchFilter, setBatchFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // --- EDIT MODAL STATE ---
+  // --- MODAL STATES ---
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState(null);
+
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addForm, setAddForm] = useState({
+      name: '', mobileNumber: '', batch: '', role: '', 
+      jerseyName: '', jerseyNumber: '', jerseySize: '', paymentTxid: ''
+  });
+  const [addImageFile, setAddImageFile] = useState(null);
+  const [addImagePreview, setAddImagePreview] = useState(null);
+  const [isAddSubmitting, setIsAddSubmitting] = useState(false);
+  const fileInputRef = useRef(null);
 
   // Dropdown Options
   const roles = ["Batsman", "Bowler", "Allrounder", "Batting Allrounder", "Bowling Allrounder"];
@@ -93,7 +105,6 @@ export default function AdminRegistrationDash({ setView }) {
         approvedAt: Date.now() 
       });
 
-      // Auto-Copy SMS upon approval
       const message = generateSMS(reg.name, nextSerial);
       navigator.clipboard.writeText(message);
       alert(`Player Approved!\n\nThe following SMS has been automatically copied to your clipboard. You can now paste it into your messaging app:\n\n"${message}"`);
@@ -168,6 +179,72 @@ export default function AdminRegistrationDash({ setView }) {
       }
   };
 
+  // --- MANUAL ADD HANDLERS ---
+  const handleAddImageChange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+          if (file.size > 10 * 1024 * 1024) {
+              alert('Picture must be smaller than 10MB.');
+              return;
+          }
+          setAddImageFile(file);
+          const reader = new FileReader();
+          reader.onloadend = () => setAddImagePreview(reader.result);
+          reader.readAsDataURL(file);
+      }
+  };
+
+  const handleAddSubmit = async (e) => {
+      e.preventDefault();
+
+      if (!addForm.name || !addForm.mobileNumber || !addForm.batch || !addForm.role || !addForm.jerseyName || !addForm.jerseyNumber || !addForm.jerseySize || !addImageFile || !addForm.paymentTxid) {
+          alert('Please fill in all required fields and upload a picture.');
+          return;
+      }
+
+      if (addForm.mobileNumber.length !== 11 || !addForm.mobileNumber.startsWith('01')) {
+          alert('Mobile number must start with 01 and be exactly 11 digits.');
+          return;
+      }
+
+      setIsAddSubmitting(true);
+
+      try {
+          const storageRef = ref(storage, `${APP_ID}/player_registrations/${Date.now()}_${addImageFile.name}`);
+          const uploadSnapshot = await uploadBytes(storageRef, addImageFile);
+          const imageUrl = await getDownloadURL(uploadSnapshot.ref);
+
+          const registrationData = {
+              name: addForm.name,
+              mobileNumber: addForm.mobileNumber,
+              batch: addForm.batch,
+              role: addForm.role,
+              jerseyName: addForm.jerseyName.toUpperCase(),
+              jerseyNumber: addForm.jerseyNumber,
+              jerseySize: addForm.jerseySize,
+              paymentTxid: addForm.paymentTxid,
+              imageUrl,
+              status: 'pending', // Adds as pending so you can formally approve and trigger SMS
+              timestamp: Date.now(),
+          };
+
+          await addDoc(collection(db, 'artifacts', APP_ID, 'private', 'data', 'registrations'), registrationData);
+
+          // Reset Form & Close Modal
+          setShowAddModal(false);
+          setAddForm({ name: '', mobileNumber: '', batch: '', role: '', jerseyName: '', jerseyNumber: '', jerseySize: '', paymentTxid: '' });
+          setAddImageFile(null);
+          setAddImagePreview(null);
+          alert('Player added successfully! They are now in the Pending list awaiting approval.');
+
+      } catch (error) {
+          console.error('Manual Registration Error:', error);
+          alert(`Failed: ${error.message}`);
+      } finally {
+          setIsAddSubmitting(false);
+      }
+  };
+
   // --- RENDER LOGIN SCREEN ---
   if (!isAuthenticated) {
       return (
@@ -197,8 +274,6 @@ export default function AdminRegistrationDash({ setView }) {
   }
 
   // --- FILTER & STATS LOGIC ---
-  
-  // 1. Filter base array for Role, Batch, and Search (but ignore Status for stats)
   const baseFiltered = registrations.filter(reg => {
     const matchesRole = roleFilter === 'all' || reg.role === roleFilter;
     const matchesBatch = batchFilter === 'all' || String(reg.batch) === String(batchFilter);
@@ -211,14 +286,12 @@ export default function AdminRegistrationDash({ setView }) {
     return matchesRole && matchesBatch && matchesSearch;
   });
 
-  // 2. Dynamic Stats (Updates when you select a Batch, Role, or Search!)
   const stats = {
     total: baseFiltered.length,
     pending: baseFiltered.filter(r => r.status === 'pending').length,
     approved: baseFiltered.filter(r => r.status === 'approved').length,
   };
 
-  // 3. Final array for the table (applies the Status tab filter)
   const filteredRegistrations = baseFiltered.filter(reg => filter === 'all' || reg.status === filter);
 
   if (loading) return <div className="p-10 text-center font-bold text-slate-500 animate-pulse">Loading Secured Dashboard...</div>;
@@ -226,6 +299,93 @@ export default function AdminRegistrationDash({ setView }) {
   return (
     <div className="max-w-[95%] mx-auto pb-12 animate-fadeIn relative">
       
+      {/* --- ADD PLAYER MODAL --- */}
+      {showAddModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fadeIn">
+              <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative">
+                  <div className="sticky top-0 bg-white/95 backdrop-blur-sm border-b border-slate-100 p-5 flex items-center justify-between z-10 rounded-t-3xl">
+                      <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                          <UserPlus className="w-5 h-5 text-emerald-500" /> Manual Registration
+                      </h2>
+                      <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-red-50 hover:text-red-500 rounded-full transition-colors">
+                          <X className="w-5 h-5" />
+                      </button>
+                  </div>
+                  
+                  <form onSubmit={handleAddSubmit} className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-500 uppercase">Full Name</label>
+                          <input type="text" value={addForm.name} onChange={e => setAddForm({...addForm, name: e.target.value})} className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none" required placeholder="e.g. Munna Kumar"/>
+                      </div>
+                      <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-500 uppercase">Mobile Number</label>
+                          <input type="tel" value={addForm.mobileNumber} onChange={e => setAddForm({...addForm, mobileNumber: e.target.value.replace(/\D/g, '')})} className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none font-mono" required placeholder="017xxxxxxxx" maxLength={11}/>
+                      </div>
+                      <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-500 uppercase">Batch</label>
+                          <select value={addForm.batch} onChange={e => setAddForm({...addForm, batch: e.target.value})} className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none" required>
+                              <option value="" disabled>Select Batch</option>
+                              {batches.map(b => <option key={b} value={b}>{b}</option>)}
+                          </select>
+                      </div>
+                      <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-500 uppercase">Role</label>
+                          <select value={addForm.role} onChange={e => setAddForm({...addForm, role: e.target.value})} className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none" required>
+                              <option value="" disabled>Select Role</option>
+                              {roles.map(r => <option key={r} value={r}>{r}</option>)}
+                          </select>
+                      </div>
+                      <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-500 uppercase">Jersey Name</label>
+                          <input type="text" value={addForm.jerseyName} onChange={e => setAddForm({...addForm, jerseyName: e.target.value.toUpperCase()})} className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none uppercase" required placeholder="e.g. MUNNA"/>
+                      </div>
+                      <div className="flex gap-3">
+                          <div className="space-y-1 flex-1">
+                              <label className="text-xs font-bold text-slate-500 uppercase">Jersey No.</label>
+                              <input type="tel" value={addForm.jerseyNumber} onChange={e => setAddForm({...addForm, jerseyNumber: e.target.value.replace(/\D/g, '')})} className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none font-mono" required placeholder="10" maxLength={3}/>
+                          </div>
+                          <div className="space-y-1 flex-1">
+                              <label className="text-xs font-bold text-slate-500 uppercase">Size</label>
+                              <select value={addForm.jerseySize} onChange={e => setAddForm({...addForm, jerseySize: e.target.value})} className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none" required>
+                                  <option value="" disabled>Size</option>
+                                  {jerseySizes.map(s => <option key={s} value={s}>{s}</option>)}
+                              </select>
+                          </div>
+                      </div>
+                      <div className="sm:col-span-2 space-y-1">
+                          <label className="text-xs font-bold text-slate-500 uppercase">Payment TXID / Cash Note</label>
+                          <input type="text" value={addForm.paymentTxid} onChange={e => setAddForm({...addForm, paymentTxid: e.target.value})} className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none font-mono" required placeholder="e.g. CASH or 9X8Y7Z6W"/>
+                      </div>
+                      <div className="sm:col-span-2 space-y-1">
+                          <label className="text-xs font-bold text-slate-500 uppercase">Player Picture (Portrait)</label>
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-4 border-2 border-dashed border-slate-200 rounded-xl p-4 hover:border-emerald-400 transition-all bg-slate-50 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                              {addImagePreview ? (
+                                  <img src={addImagePreview} alt="Preview" className="w-16 h-16 rounded-xl object-cover shadow-sm border border-slate-200 shrink-0" />
+                              ) : (
+                                  <div className="w-16 h-16 rounded-xl bg-white flex items-center justify-center text-slate-300 border border-slate-200 shadow-sm shrink-0">
+                                      <ImageIcon className="w-6 h-6" />
+                                  </div>
+                              )}
+                              <div>
+                                  <p className="text-sm font-semibold text-slate-700">{addImagePreview ? 'Change Image' : 'Upload Image'}</p>
+                                  <p className="text-xs text-slate-500 mt-0.5">PNG, JPG, or WEBP. Max 10MB.</p>
+                                  <input type="file" ref={fileInputRef} onChange={handleAddImageChange} accept="image/*" className="hidden" />
+                              </div>
+                          </div>
+                      </div>
+                      
+                      <div className="sm:col-span-2 pt-4 border-t border-slate-100 flex justify-end gap-3">
+                          <button type="button" onClick={() => setShowAddModal(false)} className="px-5 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100">Cancel</button>
+                          <button type="submit" disabled={isAddSubmitting} className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm bg-emerald-500 text-white shadow-md hover:bg-emerald-600 disabled:opacity-70">
+                              {isAddSubmitting ? <><Loader2 className="w-4 h-4 animate-spin"/> Saving...</> : <><UserPlus className="w-4 h-4"/> Add Player</>}
+                          </button>
+                      </div>
+                  </form>
+              </div>
+          </div>
+      )}
+      {/* --- END ADD MODAL --- */}
+
       {/* --- EDIT MODAL OVERLAY --- */}
       {showEditModal && editForm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fadeIn">
@@ -292,16 +452,22 @@ export default function AdminRegistrationDash({ setView }) {
       {/* --- END MODAL --- */}
 
 
-      <div className="flex items-start sm:items-center justify-between mb-6 pt-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 pt-4 gap-4">
         <div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-800 flex items-center gap-2">
                 <ShieldCheck className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-500 shrink-0" /> Registration Desk
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">Approve players, assign serials, and send SMS.</p>
         </div>
-        <button onClick={() => setIsAuthenticated(false)} className="text-xs sm:text-sm font-bold text-red-500 bg-red-50 px-3 sm:px-4 py-2 rounded-lg hover:bg-red-100 transition shrink-0">
-            Lock 
-        </button>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+            {/* NEW: Manual Add Button */}
+            <button onClick={() => setShowAddModal(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold text-white bg-emerald-500 px-4 py-2.5 rounded-xl hover:bg-emerald-600 transition shadow-md">
+                <UserPlus className="w-4 h-4" /> Add Player
+            </button>
+            <button onClick={() => setIsAuthenticated(false)} className="text-xs sm:text-sm font-bold text-red-500 bg-red-50 px-4 py-2.5 rounded-xl hover:bg-red-100 transition shrink-0">
+                Lock 
+            </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
@@ -325,7 +491,6 @@ export default function AdminRegistrationDash({ setView }) {
 
               <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
                   
-                  {/* NEW: Batch Filter Dropdown */}
                   <div className="relative w-full sm:w-36 shrink-0">
                       <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                       <select
@@ -338,7 +503,6 @@ export default function AdminRegistrationDash({ setView }) {
                       </select>
                   </div>
 
-                  {/* Existing Role Filter */}
                   <div className="relative w-full sm:w-40 shrink-0">
                       <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                       <select
@@ -395,7 +559,6 @@ export default function AdminRegistrationDash({ setView }) {
                       )}
                   </td>
 
-                  {/* Player & Time */}
                   <td className="p-4 flex items-center gap-3">
                       <a href={reg.imageUrl} target="_blank" rel="noreferrer" className="shrink-0 block">
                         <img src={reg.imageUrl || '/api/placeholder/40/40'} alt={reg.name} className="w-12 h-12 rounded-xl object-cover object-top bg-slate-200 border border-slate-200 shadow-sm hover:scale-110 transition-transform" title="Click to view full image" />
@@ -448,11 +611,9 @@ export default function AdminRegistrationDash({ setView }) {
                       </span>
                   </td>
 
-                  {/* Actions Column */}
                   <td className="p-4">
                       <div className="flex items-center justify-end gap-2">
                           
-                          {/* Edit Button (Available to all) */}
                           <button onClick={() => openEditModal(reg)} className="p-1.5 bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white rounded-lg transition" title="Edit Player">
                               <Edit className="w-4 h-4" />
                           </button>
@@ -468,7 +629,6 @@ export default function AdminRegistrationDash({ setView }) {
                               </>
                           ) : (
                               <>
-                                  {/* Copy SMS Button (Only for approved) */}
                                   {reg.status === 'approved' && (
                                       <button onClick={() => handleCopySMS(reg)} className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-700 hover:text-white rounded-lg font-bold text-xs transition" title="Copy SMS Message">
                                           <MessageSquare className="w-3.5 h-3.5" /> Copy SMS
