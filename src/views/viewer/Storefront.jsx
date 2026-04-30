@@ -28,7 +28,18 @@ const storeProducts = [
     price: 419,
     image: '/PR.jpg',
     paymentNumber: '01793216517'
+  },
+    {
+    id: 'EvergreenThirteen',
+    name: 'Evergreen Thirteen',
+    type: 'Player Edition Match Jersey for Fan',
+    fabric: 'Thai Mesh (Premium)',
+    customization: 'Name & Number Included',
+    price: 419,
+    image: '/ET.jpg',
+    paymentNumber: '01793216517'
   }
+  
 ];
 
 export default function Storefront({ setView }) {
