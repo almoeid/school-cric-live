@@ -49,34 +49,33 @@ return (
           </div>
       </div>
 
-      {/* 2. REGISTRATION CTA CARD (Emerald) */}
+      {/* 2. REGISTRATION CTA CARD (Closed State) */}
       <div className="px-2 sm:px-0">
           <div 
             onClick={() => {
                 window.history.pushState({}, '', '/register');
                 setView('register');
             }}
-            className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl shadow-lg p-5 md:p-6 flex flex-col sm:flex-row items-center justify-between gap-5 cursor-pointer hover:shadow-xl hover:shadow-emerald-900/20 hover:-translate-y-1 transition-all duration-300 border border-slate-700/80 group"
+            className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl shadow-lg p-5 md:p-6 flex flex-col sm:flex-row items-center justify-between gap-5 cursor-pointer hover:shadow-xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all duration-300 border border-slate-700/80 group"
           >
             <div className="flex items-center gap-4 w-full sm:w-auto">
-              <div className="bg-emerald-500/10 p-3 rounded-2xl border border-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors shrink-0">
-                <UserPlus className="w-8 h-8 text-emerald-400" />
+              <div className="bg-slate-800 p-3 rounded-2xl border border-slate-700 group-hover:bg-slate-700 transition-colors shrink-0">
+                <UserPlus className="w-8 h-8 text-slate-400" />
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
                     <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
                     </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Registrations Open</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-red-400">Registration Closed</span>
                 </div>
                 <h3 className="text-lg md:text-xl font-extrabold text-white tracking-tight">Play in the Elite Cup 2026</h3>
-                <p className="text-xs md:text-sm text-slate-400 mt-0.5">Secure your spot in the ultimate showdown.</p>
+                <p className="text-xs md:text-sm text-slate-400 mt-0.5">Player registration phase has officially ended.</p>
               </div>
             </div>
             
-            <button className="w-full sm:w-auto whitespace-nowrap px-6 py-3.5 sm:py-3 bg-emerald-500 text-white font-bold text-sm rounded-xl group-hover:bg-emerald-400 transition-colors shadow-md">
-              Register Now
+            <button className="w-full sm:w-auto whitespace-nowrap px-6 py-3.5 sm:py-3 bg-slate-700 text-slate-300 font-bold text-sm rounded-xl group-hover:bg-slate-600 transition-colors shadow-md">
+              Closed
             </button>
           </div>
       </div>
