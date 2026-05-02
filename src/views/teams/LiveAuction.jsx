@@ -25,8 +25,23 @@ export default function LiveAuction({ currentTeamId, currentTeamName }) {
   const [teamWallet, setTeamWallet] = useState({ purse: 150000, players: [] });
   const [timeLeft, setTimeLeft] = useState(0);
   const [isBidding, setIsSubmitting] = useState(false);
+  
+  // 🚨 NEW: Time Offset State 🚨
+  const [timeOffset, setTimeOffset] = useState(0);
 
   const myTeam = TEAMS_INFO[currentTeamId];
+
+  // 1. CLOCK SYNC ENGINE (Calculates the drift of the local device)
+  useEffect(() => {
+    fetch('https://worldtimeapi.org/api/timezone/Etc/UTC')
+      .then(response => response.json())
+      .then(data => {
+        const trueGlobalTime = new Date(data.utc_datetime).getTime();
+        const localDeviceTime = Date.now();
+        setTimeOffset(trueGlobalTime - localDeviceTime);
+      })
+      .catch(error => console.error("Could not sync with global clock:", error));
+  }, []);
 
   useEffect(() => {
     const auctionRef = doc(db, 'artifacts', APP_ID, 'auction', 'current');
@@ -45,18 +60,19 @@ export default function LiveAuction({ currentTeamId, currentTeamName }) {
     return () => { unsubAuction(); unsubWallet(); };
   }, [currentTeamId]);
 
+  // 🚨 PERFECT SYNCED TIMER (Uses Offset!) 🚨
   useEffect(() => {
     if (!auctionState || auctionState.status !== 'active') {
       setTimeLeft(0);
       return;
     }
     const interval = setInterval(() => {
-      const now = Date.now();
-      const remaining = Math.max(0, Math.floor((auctionState.endTime - now) / 1000));
+      const trueNow = Date.now() + timeOffset; 
+      const remaining = Math.max(0, Math.floor((auctionState.endTime - trueNow) / 1000));
       setTimeLeft(remaining);
     }, 100);
     return () => clearInterval(interval);
-  }, [auctionState]);
+  }, [auctionState, timeOffset]);
 
   const handleBid = async () => {
     if (!auctionState || auctionState.status !== 'active' || isBidding) return;
@@ -71,8 +87,11 @@ export default function LiveAuction({ currentTeamId, currentTeamName }) {
         
         const data = sfDoc.data();
         
+        // 🚨 GET TRUE TIME FOR BID VALIDATION 🚨
+        const trueNow = Date.now() + timeOffset;
+        
         if (data.status !== 'active') throw "Auction paused or ended.";
-        if (Date.now() > data.endTime) throw "Time is up!";
+        if (trueNow > data.endTime) throw "Time is up!";
         if (data.highestBidder === currentTeamId) throw "You already hold the highest bid!";
         if (data.bannedTeamId === currentTeamId) throw "You are banned from bidding on this player!";
 
@@ -86,8 +105,8 @@ export default function LiveAuction({ currentTeamId, currentTeamName }) {
         if (teamWallet.purse < newBid) throw "Insufficient purse!";
 
         let newEndTime = data.endTime;
-        if (data.endTime - Date.now() <= 5000) {
-          newEndTime = Date.now() + 10000; 
+        if (data.endTime - trueNow <= 5000) {
+          newEndTime = trueNow + 10000; 
         }
 
         transaction.update(auctionRef, {
@@ -195,7 +214,6 @@ export default function LiveAuction({ currentTeamId, currentTeamName }) {
             
             <div className="text-center sm:text-left flex-1 mt-2">
               <span className="inline-block px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-bold uppercase tracking-widest mb-3">Now Auctioning</span>
-              {/* 🚨 ADDED UPPERCASE HERE 🚨 */}
               <h2 className="text-3xl md:text-5xl font-black tracking-tight text-white mb-4 leading-tight uppercase">{player.name}</h2>
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                 <span className="px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300 text-xs font-bold uppercase tracking-wider bg-slate-800/80">{player.role}</span>
@@ -270,7 +288,6 @@ export default function LiveAuction({ currentTeamId, currentTeamName }) {
                         <div key={index} className="bg-white border border-slate-200 rounded-xl p-3 flex flex-col items-center text-center shadow-sm relative overflow-hidden group">
                             <span className="absolute top-1 left-1.5 text-[8px] font-black text-slate-300">#{index + 1}</span>
                             <img src={p.imageUrl || '/api/placeholder/40/40'} alt={p.name} className="w-10 h-10 rounded-full object-cover mb-2 border border-slate-100 shadow-sm" />
-                            {/* 🚨 ADDED UPPERCASE HERE 🚨 */}
                             <p className="text-xs font-bold text-slate-800 truncate w-full uppercase">{p.name}</p>
                             <p className="text-[10px] font-mono font-black text-emerald-600 mt-0.5">৳{p.price.toLocaleString()}</p>
                         </div>

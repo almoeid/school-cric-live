@@ -20,14 +20,29 @@ export default function BroadcastScreen() {
   const [teamWallets, setTeamWallets] = useState({});
   const [timeLeft, setTimeLeft] = useState(0);
   
-  // 🚨 NEW: Smooth Animation States for Overlay 🚨
+  // Overlay States
   const [dbOverlayTeam, setDbOverlayTeam] = useState(null);
   const [renderOverlay, setRenderOverlay] = useState(null);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
   const renderOverlayRef = useRef(null);
 
+  // Time & Audio Trackers
   const audioTracker = useRef({ soldId: null, lastBid: 0, activePlayerId: null });
+  const [timeOffset, setTimeOffset] = useState(0);
 
+  // 1. CLOCK SYNC ENGINE (Fixes the 22-second drift)
+  useEffect(() => {
+    fetch('https://worldtimeapi.org/api/timezone/Etc/UTC')
+      .then(response => response.json())
+      .then(data => {
+        const trueGlobalTime = new Date(data.utc_datetime).getTime();
+        const localDeviceTime = Date.now();
+        setTimeOffset(trueGlobalTime - localDeviceTime);
+      })
+      .catch(error => console.error("Could not sync with global clock:", error));
+  }, []);
+
+  // 2. REAL-TIME FIREBASE SYNC
   useEffect(() => {
     const unsubAuction = onSnapshot(doc(db, 'artifacts', APP_ID, 'auction', 'current'), (docSnap) => {
       if (docSnap.exists()) setAuctionState(docSnap.data());
@@ -46,7 +61,7 @@ export default function BroadcastScreen() {
     return () => { unsubAuction(); unsubWallets(); unsubOverlay(); };
   }, []);
 
-  // 🚨 NEW: Handle Overlay Enter and Exit Animations 🚨
+  // 3. OVERLAY ANIMATION ENGINE
   useEffect(() => {
       if (dbOverlayTeam) {
           setIsAnimatingOut(false);
@@ -58,11 +73,12 @@ export default function BroadcastScreen() {
               setRenderOverlay(null);
               renderOverlayRef.current = null;
               setIsAnimatingOut(false);
-          }, 400); // 400ms delay gives the animation time to finish before unmounting
+          }, 400); 
           return () => clearTimeout(timer);
       }
   }, [dbOverlayTeam]);
 
+  // 4. SMART AUDIO ENGINE
   useEffect(() => {
     if (!auctionState) return;
     
@@ -91,18 +107,21 @@ export default function BroadcastScreen() {
     }
   }, [auctionState]);
 
+  // 5. PERFECT SYNCED TIMER (Uses Offset!)
   useEffect(() => {
     if (!auctionState || auctionState.status !== 'active') {
       setTimeLeft(0);
       return;
     }
     const interval = setInterval(() => {
-      const remaining = Math.max(0, Math.floor((auctionState.endTime - Date.now()) / 1000));
+      const trueNow = Date.now() + timeOffset; 
+      const remaining = Math.max(0, Math.floor((auctionState.endTime - trueNow) / 1000));
       setTimeLeft(remaining);
     }, 100);
     return () => clearInterval(interval);
-  }, [auctionState]);
+  }, [auctionState, timeOffset]);
 
+  // 6. COMPUTE BROADCAST STATS
   const { topPlayer, recentTrades } = useMemo(() => {
       const allSold = [];
       let highest = null;
@@ -158,8 +177,6 @@ export default function BroadcastScreen() {
             50% { transform: scale(0.9); opacity: 1; }
             100% { transform: scale(1); opacity: 1; }
           }
-          
-          /* 🚨 NEW: Smooth Slide In/Out Keyframes for the Overlay 🚨 */
           @keyframes overlayEnter {
             0% { opacity: 0; transform: translateY(80px) scale(0.95); }
             100% { opacity: 1; transform: translateY(0) scale(1.1); }
@@ -179,8 +196,6 @@ export default function BroadcastScreen() {
           .animate-shimmer { animation: shimmer 2.5s infinite; }
           .animate-gradient-flow { animation: gradientFlow 4s ease infinite; background-size: 200% auto; }
           .animate-stamp { animation: stamp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-          
-          /* Using the new smooth keyframes */
           .animate-overlayEnter { animation: overlayEnter 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
           .animate-overlayExit { animation: overlayExit 0.4s cubic-bezier(0.8, 0, 0.8, 0.2) forwards; }
           .animate-fadeOutCustom { animation: fadeOutCustom 0.4s ease forwards; }
@@ -251,7 +266,7 @@ export default function BroadcastScreen() {
         </div>
       )}
 
-      {/* 🚨 ADMIN SQUAD OVERLAY WITH SMOOTH SLIDE IN & OUT 🚨 */}
+      {/* ADMIN SQUAD OVERLAY WITH SMOOTH SLIDE IN & OUT */}
       {renderOverlay && (
           <div className={`absolute inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-10 ${isAnimatingOut ? 'animate-fadeOutCustom' : 'animate-fadeIn'}`}>
               {(() => {
@@ -376,6 +391,7 @@ export default function BroadcastScreen() {
                                       ৳{auctionState.currentBid.toLocaleString()}
                                   </p>
                                   
+                                  {/* THE BILLION-DOLLAR LEADER UI */}
                                   {auctionState.highestBidderName ? (
                                       <div className="flex items-center gap-5 bg-emerald-950/40 px-8 py-5 rounded-[2rem] border border-emerald-500/30 w-fit relative overflow-hidden shadow-lg">
                                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-400/10 to-transparent -translate-x-full animate-shimmer"></div>
