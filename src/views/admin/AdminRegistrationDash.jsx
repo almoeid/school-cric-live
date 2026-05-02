@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Users, UserCheck, Clock, CheckCircle, XCircle, 
   Search, ShieldCheck, Lock, Smartphone, Filter, Trash2, Edit, MessageSquare, X,
-  UserPlus, Image as ImageIcon, Send, Loader2
+  UserPlus, Image as ImageIcon, Send, Loader2, Download, Sparkles
 } from 'lucide-react';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, APP_ID } from '../../config/firebase';
+import { cropToFace } from '../../utils/faceCropper';
 
 export default function AdminRegistrationDash({ setView }) {
   // --- HARDCODED PASSWORD STATE ---
@@ -36,6 +37,9 @@ export default function AdminRegistrationDash({ setView }) {
   const [addImagePreview, setAddImagePreview] = useState(null);
   const [isAddSubmitting, setIsAddSubmitting] = useState(false);
   const fileInputRef = useRef(null);
+
+  // --- SMART CROP STATE ---
+  const [croppingId, setCroppingId] = useState(null);
 
   // Dropdown Options
   const roles = ["Batsman", "Bowler", "Allrounder", "Batting Allrounder", "Bowling Allrounder"];
@@ -87,6 +91,93 @@ export default function AdminRegistrationDash({ setView }) {
       alert(`SMS Copied to Clipboard!\n\n"${message}"`);
   };
 
+  // --- EXPORT ROSTER ---
+  const handleExportRoster = () => {
+      const approvedPlayers = registrations
+          .filter(r => r.status === 'approved' && r.serialNumber)
+          .sort((a, b) => a.serialNumber - b.serialNumber)
+          .map(r => ({
+              id: `ZBSM-${String(r.serialNumber).padStart(2, '0')}`,
+              name: r.name,
+              role: r.role,
+              batch: String(r.batch),
+              basePrice: r.basePrice || 1000,
+              imageUrl: r.imageUrl,
+              status: 'pending'
+          }));
+
+      if (approvedPlayers.length === 0) {
+          alert('No approved players with serial numbers to export.');
+          return;
+      }
+
+      const dataStr = JSON.stringify(approvedPlayers, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'players.json';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+  };
+
+  // --- BASE PRICE HANDLER (inline quick edit) ---
+  const handleSetBasePrice = async (reg) => {
+      const current = reg.basePrice || 1000;
+      const input = window.prompt(`Set base price for ${reg.name} (in BDT):`, current);
+      if (input === null) return; // user cancelled
+
+      const newPrice = parseInt(input, 10);
+      if (isNaN(newPrice) || newPrice < 0) {
+          alert('Please enter a valid non-negative number.');
+          return;
+      }
+
+      try {
+          const regRef = doc(db, 'artifacts', APP_ID, 'private', 'data', 'registrations', reg.id);
+          await updateDoc(regRef, { basePrice: newPrice });
+      } catch (error) {
+          console.error('Failed to update base price:', error);
+          alert('Failed to update base price.');
+      }
+  };
+
+  // --- SMART CROP HANDLER ---
+  const handleSmartCrop = async (reg) => {
+      if (!reg.imageUrl) {
+          alert('No image to process for this player.');
+          return;
+      }
+
+      if (!window.confirm(`Auto-crop ${reg.name}'s image to a 500x500 face-zoomed portrait?\n\nThis will replace the current image. The first run loads a small face-detection model (~190KB).`)) {
+          return;
+      }
+
+      setCroppingId(reg.id);
+
+      try {
+          const blob = await cropToFace(reg.imageUrl, 500);
+
+          const storageRef = ref(storage, `${APP_ID}/player_registrations/cropped_${reg.id}_${Date.now()}.jpg`);
+          const uploadSnapshot = await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' });
+          const newImageUrl = await getDownloadURL(uploadSnapshot.ref);
+
+          const regRef = doc(db, 'artifacts', APP_ID, 'private', 'data', 'registrations', reg.id);
+          await updateDoc(regRef, {
+              imageUrl: newImageUrl,
+              imageCroppedAt: Date.now()
+          });
+
+      } catch (error) {
+          console.error('Smart crop failed:', error);
+          alert(`Smart crop failed: ${error.message}\n\nIf this is a CORS error, you may need to configure CORS on your Firebase Storage bucket.`);
+      } finally {
+          setCroppingId(null);
+      }
+  };
+
   // --- ACTION HANDLERS ---
   const handleApprove = async (reg) => {
     if (!window.confirm(`Approve ${reg.name} and assign a serial number?`)) return;
@@ -132,7 +223,6 @@ export default function AdminRegistrationDash({ setView }) {
           const regRef = doc(db, 'artifacts', APP_ID, 'private', 'data', 'registrations', reg.id);
           await deleteDoc(regRef);
 
-          // Fix the serial numbers for everyone else
           if (reg.status === 'approved' && reg.serialNumber) {
               const deletedSerial = reg.serialNumber;
               const playersToUpdate = registrations.filter(r => r.status === 'approved' && r.serialNumber > deletedSerial);
@@ -152,7 +242,7 @@ export default function AdminRegistrationDash({ setView }) {
 
   // --- EDIT HANDLERS ---
   const openEditModal = (reg) => {
-      setEditForm({ ...reg });
+      setEditForm({ ...reg, basePrice: reg.basePrice || 1000 });
       setShowEditModal(true);
   };
 
@@ -169,6 +259,7 @@ export default function AdminRegistrationDash({ setView }) {
               jerseyNumber: editForm.jerseyNumber,
               jerseySize: editForm.jerseySize || '',
               paymentTxid: editForm.paymentTxid,
+              basePrice: parseInt(editForm.basePrice, 10) || 1000,
               updatedAt: Date.now()
           });
           setShowEditModal(false);
@@ -210,8 +301,20 @@ export default function AdminRegistrationDash({ setView }) {
       setIsAddSubmitting(true);
 
       try {
-          const storageRef = ref(storage, `${APP_ID}/player_registrations/${Date.now()}_${addImageFile.name}`);
-          const uploadSnapshot = await uploadBytes(storageRef, addImageFile);
+          let fileToUpload = addImageFile;
+          let uploadName = addImageFile.name;
+          try {
+              const tempUrl = URL.createObjectURL(addImageFile);
+              const cropped = await cropToFace(tempUrl, 500);
+              URL.revokeObjectURL(tempUrl);
+              fileToUpload = cropped;
+              uploadName = `cropped_${Date.now()}.jpg`;
+          } catch (cropErr) {
+              console.warn('Auto-crop failed, uploading original:', cropErr.message);
+          }
+
+          const storageRef = ref(storage, `${APP_ID}/player_registrations/${Date.now()}_${uploadName}`);
+          const uploadSnapshot = await uploadBytes(storageRef, fileToUpload);
           const imageUrl = await getDownloadURL(uploadSnapshot.ref);
 
           const registrationData = {
@@ -224,13 +327,13 @@ export default function AdminRegistrationDash({ setView }) {
               jerseySize: addForm.jerseySize,
               paymentTxid: addForm.paymentTxid,
               imageUrl,
-              status: 'pending', // Adds as pending so you can formally approve and trigger SMS
+              basePrice: 1000, // default, can be edited later via inline price button
+              status: 'pending',
               timestamp: Date.now(),
           };
 
           await addDoc(collection(db, 'artifacts', APP_ID, 'private', 'data', 'registrations'), registrationData);
 
-          // Reset Form & Close Modal
           setShowAddModal(false);
           setAddForm({ name: '', mobileNumber: '', batch: '', role: '', jerseyName: '', jerseyNumber: '', jerseySize: '', paymentTxid: '' });
           setAddImageFile(null);
@@ -357,7 +460,7 @@ export default function AdminRegistrationDash({ setView }) {
                           <input type="text" value={addForm.paymentTxid} onChange={e => setAddForm({...addForm, paymentTxid: e.target.value})} className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-400 outline-none font-mono" required placeholder="e.g. CASH or 9X8Y7Z6W"/>
                       </div>
                       <div className="sm:col-span-2 space-y-1">
-                          <label className="text-xs font-bold text-slate-500 uppercase">Player Picture (Portrait)</label>
+                          <label className="text-xs font-bold text-slate-500 uppercase">Player Picture (Portrait) — auto face-cropped to 500×500</label>
                           <div className="flex flex-col sm:flex-row sm:items-center gap-4 border-2 border-dashed border-slate-200 rounded-xl p-4 hover:border-emerald-400 transition-all bg-slate-50 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                               {addImagePreview ? (
                                   <img src={addImagePreview} alt="Preview" className="w-16 h-16 rounded-xl object-cover shadow-sm border border-slate-200 shrink-0" />
@@ -373,6 +476,7 @@ export default function AdminRegistrationDash({ setView }) {
                               </div>
                           </div>
                       </div>
+                      <p className="sm:col-span-2 text-[10px] text-slate-400 -mt-2">Base price defaults to ৳1000. You can change it from the dashboard later.</p>
                       
                       <div className="sm:col-span-2 pt-4 border-t border-slate-100 flex justify-end gap-3">
                           <button type="button" onClick={() => setShowAddModal(false)} className="px-5 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100">Cancel</button>
@@ -436,9 +540,13 @@ export default function AdminRegistrationDash({ setView }) {
                               </select>
                           </div>
                       </div>
-                      <div className="space-y-1 sm:col-span-2">
+                      <div className="space-y-1">
                           <label className="text-xs font-bold text-slate-500 uppercase">Payment TXID / Number</label>
                           <input type="text" value={editForm.paymentTxid} onChange={e => setEditForm({...editForm, paymentTxid: e.target.value})} className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-400 outline-none font-mono" required />
+                      </div>
+                      <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-500 uppercase">Base Price (৳)</label>
+                          <input type="number" min="0" value={editForm.basePrice} onChange={e => setEditForm({...editForm, basePrice: e.target.value})} className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-400 outline-none font-mono" placeholder="1000" />
                       </div>
                       
                       <div className="sm:col-span-2 pt-4 border-t border-slate-100 flex justify-end gap-3">
@@ -460,9 +568,11 @@ export default function AdminRegistrationDash({ setView }) {
             <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">Approve players, assign serials, and send SMS.</p>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-            {/* NEW: Manual Add Button */}
             <button onClick={() => setShowAddModal(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold text-white bg-emerald-500 px-4 py-2.5 rounded-xl hover:bg-emerald-600 transition shadow-md">
                 <UserPlus className="w-4 h-4" /> Add Player
+            </button>
+            <button onClick={handleExportRoster} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold text-slate-700 bg-slate-100 px-4 py-2.5 rounded-xl hover:bg-slate-200 transition shrink-0">
+                <Download className="w-4 h-4" /> Export Roster
             </button>
             <button onClick={() => setIsAuthenticated(false)} className="text-xs sm:text-sm font-bold text-red-500 bg-red-50 px-4 py-2.5 rounded-xl hover:bg-red-100 transition shrink-0">
                 Lock 
@@ -573,9 +683,22 @@ export default function AdminRegistrationDash({ setView }) {
                   
                   <td className="p-4">
                       <p className="text-sm font-bold text-slate-700">{reg.role}</p>
-                      <p className="text-[10px] font-extrabold text-blue-600 bg-blue-50 px-2 py-0.5 rounded inline-block mt-1 uppercase tracking-widest">
-                          Batch {reg.batch}
-                      </p>
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                          <span className="text-[10px] font-extrabold text-blue-600 bg-blue-50 px-2 py-0.5 rounded uppercase tracking-widest">
+                              Batch {reg.batch}
+                          </span>
+                          <button 
+                              onClick={() => handleSetBasePrice(reg)} 
+                              className={`text-[10px] font-extrabold px-2 py-0.5 rounded uppercase tracking-widest transition border ${
+                                  reg.basePrice 
+                                      ? 'text-purple-600 bg-purple-50 border-purple-100 hover:bg-purple-100' 
+                                      : 'text-slate-400 bg-slate-50 border-slate-200 hover:bg-slate-100 border-dashed'
+                              }`}
+                              title="Click to set base price"
+                          >
+                              ৳{reg.basePrice || 1000}{!reg.basePrice && ' (default)'}
+                          </button>
+                      </div>
                   </td>
 
                   <td className="p-4">
@@ -614,6 +737,19 @@ export default function AdminRegistrationDash({ setView }) {
                   <td className="p-4">
                       <div className="flex items-center justify-end gap-2">
                           
+                          <button 
+                              onClick={() => handleSmartCrop(reg)} 
+                              disabled={croppingId === reg.id}
+                              className="p-1.5 bg-purple-50 text-purple-500 hover:bg-purple-500 hover:text-white rounded-lg transition disabled:opacity-50 disabled:cursor-wait" 
+                              title="Auto-crop to 500×500 face portrait"
+                          >
+                              {croppingId === reg.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                  <Sparkles className="w-4 h-4" />
+                              )}
+                          </button>
+
                           <button onClick={() => openEditModal(reg)} className="p-1.5 bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white rounded-lg transition" title="Edit Player">
                               <Edit className="w-4 h-4" />
                           </button>

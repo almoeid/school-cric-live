@@ -1,49 +1,63 @@
 import React, { useState, useEffect } from 'react';
 import { doc, onSnapshot, runTransaction } from 'firebase/firestore';
 import { db, APP_ID } from '../../config/firebase';
-import { Gavel, Clock, Trophy, Shield, Zap } from 'lucide-react';
+import { Gavel, Clock, Trophy, Wallet, Users, XCircle, CheckCircle2 } from 'lucide-react';
 
-export default function LiveAuction({ currentTeamId }) {
+const TEAMS_INFO = {
+  't1': { name: 'Retro Rockets', logo: '/teamlogo/RetroRockets.png' },
+  't2': { name: 'Storm Challengers', logo: '/teamlogo/StormChallengers.png' },
+  't3': { name: 'Evergreen Thirteen', logo: '/teamlogo/EvergreenThirteen.png' },
+  't4': { name: 'Dark Horses', logo: '/teamlogo/DarkHorses.png' },
+  't5': { name: 'Fourteen Phoenix', logo: '/teamlogo/FourteenPhoenix.png' },
+  't6': { name: 'Prime Riders', logo: '/teamlogo/PrimeRiders.png' },
+  't7': { name: 'Duronto Ekadosh', logo: '/teamlogo/DurontoEkadosh.png' },
+  't8': { name: 'Invictus Sixteen', logo: '/teamlogo/InvictusSixteen.png' },
+  't9': { name: 'Cric Masters', logo: '/teamlogo/CricMasters.png' }
+};
+
+const getIncrement = (currentBid) => {
+    if (currentBid < 10000) return 500;
+    return Math.floor(currentBid / 10000) * 1000;
+};
+
+export default function LiveAuction({ currentTeamId, currentTeamName }) {
   const [auctionState, setAuctionState] = useState(null);
-  const [player, setPlayer] = useState(null);
+  const [teamWallet, setTeamWallet] = useState({ purse: 150000, players: [] });
   const [timeLeft, setTimeLeft] = useState(0);
   const [isBidding, setIsSubmitting] = useState(false);
 
-  // 1. REAL-TIME FIREBASE SYNC
+  const myTeam = TEAMS_INFO[currentTeamId];
+
   useEffect(() => {
-    // Listen to the central auction state
     const auctionRef = doc(db, 'artifacts', APP_ID, 'auction', 'current');
+    const walletRef = doc(db, 'artifacts', APP_ID, 'auction', 'wallets');
     
-    const unsubscribe = onSnapshot(auctionRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setAuctionState(data);
-        setPlayer(data.playerData); // Admin will push current player data here
+    const unsubAuction = onSnapshot(auctionRef, (docSnap) => {
+      if (docSnap.exists()) setAuctionState(docSnap.data());
+    });
+
+    const unsubWallet = onSnapshot(walletRef, (docSnap) => {
+      if (docSnap.exists() && docSnap.data()[currentTeamId]) {
+        setTeamWallet(docSnap.data()[currentTeamId]);
       }
     });
 
-    return () => unsubscribe();
-  }, []);
+    return () => { unsubAuction(); unsubWallet(); };
+  }, [currentTeamId]);
 
-  // 2. PERFECT SYNCED TIMER
   useEffect(() => {
     if (!auctionState || auctionState.status !== 'active') {
       setTimeLeft(0);
       return;
     }
-
     const interval = setInterval(() => {
       const now = Date.now();
       const remaining = Math.max(0, Math.floor((auctionState.endTime - now) / 1000));
       setTimeLeft(remaining);
-      
-      // If time hits 0 locally, wait for Admin to officially mark as 'sold'
     }, 100);
-
     return () => clearInterval(interval);
   }, [auctionState]);
 
-  // 3. SECURE BIDDING TRANSACTION
   const handleBid = async () => {
     if (!auctionState || auctionState.status !== 'active' || isBidding) return;
     setIsSubmitting(true);
@@ -57,155 +71,221 @@ export default function LiveAuction({ currentTeamId }) {
         
         const data = sfDoc.data();
         
-        // Safety checks
         if (data.status !== 'active') throw "Auction paused or ended.";
         if (Date.now() > data.endTime) throw "Time is up!";
         if (data.highestBidder === currentTeamId) throw "You already hold the highest bid!";
+        if (data.bannedTeamId === currentTeamId) throw "You are banned from bidding on this player!";
 
-        // Calculate dynamic increment
-        let increment = data.currentBid < 20000 ? 1000 : Math.floor(data.currentBid / 10000) * 1000;
-        const newBid = data.currentBid + increment;
+        let newBid;
+        if (data.highestBidder === null) {
+            newBid = data.currentBid; 
+        } else {
+            newBid = data.currentBid + getIncrement(data.currentBid); 
+        }
 
-        // Calculate new time (If <= 5 seconds remaining, extend to 10 seconds)
+        if (teamWallet.purse < newBid) throw "Insufficient purse!";
+
         let newEndTime = data.endTime;
         if (data.endTime - Date.now() <= 5000) {
           newEndTime = Date.now() + 10000; 
         }
 
-        // Apply the bid
         transaction.update(auctionRef, {
           currentBid: newBid,
           highestBidder: currentTeamId,
+          highestBidderName: currentTeamName,
           endTime: newEndTime
         });
       });
     } catch (error) {
       console.error("Bid failed:", error);
-      // Optional: Add a toast notification here
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (!auctionState || !player) {
+  if (!auctionState || !auctionState.playerData) {
     return (
-      <div className="min-h-screen bg-[#0a0606] flex items-center justify-center">
-        <h2 className="text-[#d4af37] font-bold animate-pulse tracking-widest uppercase">Waiting for Auctioneer...</h2>
+      <div className="min-h-[80vh] bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-12 md:p-16 flex flex-col items-center text-center animate-fadeIn w-full max-w-lg">
+            <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-6"></div>
+            <h2 className="text-2xl font-extrabold text-slate-800 uppercase tracking-tight">Waiting for Auctioneer</h2>
+            <p className="text-slate-500 font-medium mt-2">The next player will appear here shortly.</p>
+        </div>
       </div>
     );
   }
 
-  // Calculate progress bar width (max 30s)
+  const player = auctionState.playerData;
   const progressPercentage = Math.min(100, (timeLeft / 30) * 100);
-  const isWarningTime = timeLeft <= 5;
+  const isWarningTime = timeLeft <= 5 && auctionState.status === 'active';
 
-  return (
-    <div className="min-h-screen bg-[#0a0606] text-white p-4 font-sans flex flex-col items-center pt-10">
+  const nextBidAmount = auctionState.highestBidder === null 
+      ? auctionState.currentBid 
+      : auctionState.currentBid + getIncrement(auctionState.currentBid);
       
-      {/* HEADER */}
-      <div className="text-center mb-8">
-        <h1 className="text-4xl md:text-5xl font-black italic tracking-wider text-white drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">
-          LIVE AUCTION
-        </h1>
-        <p className="text-[#d4af37] font-bold tracking-[0.3em] uppercase text-xs mt-2">ZBSM Elite Court</p>
-      </div>
+  const canAfford = teamWallet.purse >= nextBidAmount;
+  const squadFull = teamWallet.players.length >= 15;
+  const isMyBid = auctionState.highestBidder === currentTeamId;
+  const isBanned = auctionState.bannedTeamId === currentTeamId; 
 
-      {/* MAIN CARD */}
-      <div className="w-full max-w-3xl bg-[#120d0c] border border-[#3a2a18] rounded-2xl p-6 md:p-10 shadow-[0_0_50px_rgba(0,0,0,0.8)] relative overflow-hidden">
-        
-        {/* SOLD OVERLAY */}
-        {auctionState.status === 'sold' && (
-          <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center">
-            <Gavel className="w-20 h-20 text-[#d4af37] mb-4 drop-shadow-[0_0_20px_rgba(212,175,55,0.8)]" />
-            <h2 className="text-5xl font-black text-white uppercase tracking-widest mb-2">SOLD</h2>
-            <p className="text-2xl text-[#d4af37] font-bold">To: {auctionState.highestBidderName}</p>
-            <p className="text-xl text-white mt-2 font-mono">Final Bid: {auctionState.currentBid.toLocaleString()}</p>
-          </div>
-        )}
+  let timerDisplay = `${timeLeft}S`;
+  if (auctionState.status === 'waiting') timerDisplay = 'WAITING...';
+  if (auctionState.status === 'paused') timerDisplay = 'PAUSED';
 
-        {/* PLAYER INFO HEADER */}
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-10 pb-8 border-b border-[#3a2a18]">
-          <img 
-            src={player.imageUrl || '/api/placeholder/150/150'} 
-            alt={player.name} 
-            className="w-32 h-32 md:w-40 md:h-40 rounded-xl object-cover border-2 border-[#d4af37] shadow-[0_0_20px_rgba(212,175,55,0.2)]"
-          />
-          <div className="text-center sm:text-left flex-1 mt-2">
-            <p className="text-slate-400 uppercase tracking-widest text-xs font-bold mb-1">Now Auctioning</p>
-            <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight text-white mb-3">
-              {player.name}
-            </h2>
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-              <span className="px-3 py-1 rounded border border-[#d4af37]/50 text-[#d4af37] text-xs font-bold uppercase tracking-wider bg-[#d4af37]/10">
-                {player.role}
-              </span>
-              <span className="px-3 py-1 rounded border border-slate-700 text-slate-300 text-xs font-bold uppercase tracking-wider bg-slate-800/50">
-                Batch {player.batch}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* CURRENT BID SECTION */}
-        <div className="text-center mb-10">
-          <p className="text-[#d4af37] uppercase tracking-[0.2em] text-sm font-bold mb-4">Current Bid</p>
-          <div className="flex items-center justify-center gap-4">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-600 shadow-[0_0_15px_rgba(212,175,55,0.5)] flex items-center justify-center">
-               <span className="text-black font-extrabold text-lg">৳</span>
-            </div>
-            <span className="text-5xl md:text-7xl font-black font-mono tracking-widest text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
-              {auctionState.currentBid.toLocaleString()}
-            </span>
-          </div>
-          <p className="text-slate-500 font-medium mt-3 text-sm">
-            Highest Bidder: <span className="text-white font-bold">{auctionState.highestBidderName || 'None'}</span>
-          </p>
-          <p className="text-slate-600 text-xs mt-1">Base Price: {player.basePrice.toLocaleString()}</p>
-        </div>
-
-        {/* STATS GRID */}
-        <div className="grid grid-cols-3 gap-3 md:gap-6 mb-10">
-          <StatBox label="Matches" value={player.matches || 0} />
-          <StatBox label="Batting Avg" value={player.avg || 0} />
-          <StatBox label="Wickets" value={player.wickets || 0} />
-        </div>
-
-        {/* PROGRESS BAR TIMER */}
-        <div className="mb-8">
-          <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-            <div 
-              className={`h-full transition-all duration-200 ease-linear ${isWarningTime ? 'bg-red-500 shadow-[0_0_10px_red]' : 'bg-[#d4af37]'}`}
-              style={{ width: `${progressPercentage}%` }}
-            ></div>
-          </div>
-          <p className={`text-center mt-3 text-sm font-bold tracking-widest ${isWarningTime ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
-            {timeLeft}S REMAINING
-          </p>
-        </div>
-
-        {/* ACTION BUTTON */}
-        <button 
-          onClick={handleBid}
-          disabled={auctionState.status !== 'active' || isBidding || auctionState.highestBidder === currentTeamId}
-          className={`w-full py-5 rounded-xl text-xl font-black uppercase tracking-widest transition-all duration-200 shadow-xl
-            ${auctionState.highestBidder === currentTeamId 
-              ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed' 
-              : 'bg-gradient-to-r from-[#d4af37] to-[#aa8c2c] text-black hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] active:scale-95'
-            }`}
-        >
-          {auctionState.highestBidder === currentTeamId ? 'You Hold Highest Bid' : 'Place Bid'}
-        </button>
-
-      </div>
-    </div>
-  );
-}
-
-function StatBox({ label, value }) {
   return (
-    <div className="border border-[#3a2a18] rounded-xl p-4 flex flex-col items-center justify-center bg-[#1a1311]">
-      <span className="text-[9px] md:text-xs text-slate-400 font-bold uppercase tracking-widest mb-2 text-center">{label}</span>
-      <span className="text-xl md:text-3xl font-black text-white">{value}</span>
+    <div className="min-h-screen bg-slate-50 font-sans pb-20 pt-6">
+      
+      <div className="max-w-4xl mx-auto px-4 animate-fadeIn">
+        
+        <div className="bg-white border border-slate-200 shadow-sm rounded-2xl mb-6 px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start">
+                <span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span></span>
+                <h1 className="text-lg font-black text-slate-800 tracking-tight uppercase">ZBSM ELITE CUP Auction</h1>
+            </div>
+            
+            <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 rounded-full py-1.5 px-2 pr-5 shadow-inner w-full sm:w-auto justify-center sm:justify-start">
+                <img src={myTeam.logo} alt="Logo" className="w-8 h-8 object-contain drop-shadow-sm bg-white rounded-full p-1 border border-slate-200 shrink-0" />
+                <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">{myTeam.name}</span>
+                    <div className="flex items-center gap-3 mt-1">
+                        <span className="text-xs font-black font-mono text-emerald-600 flex items-center gap-1"><Wallet className="w-3 h-3"/> ৳{teamWallet.purse.toLocaleString()}</span>
+                        <span className="text-xs font-black text-blue-600 flex items-center gap-1"><Users className="w-3 h-3"/> {teamWallet.players.length}/15</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div className="w-full bg-gradient-to-br from-slate-900 via-[#0a0f1c] to-slate-900 rounded-3xl p-6 md:p-10 shadow-2xl border border-slate-800 relative overflow-hidden mb-8">
+          
+          <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-blue-500/5 blur-[100px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/3"></div>
+
+          {auctionState.status === 'sold' && (
+            <div className="absolute inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex flex-col items-center justify-center animate-fadeIn">
+              <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-50 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-500/20 via-transparent to-transparent"></div>
+              <div className="bg-gradient-to-b from-amber-300 to-amber-500 p-6 rounded-full mb-6 shadow-[0_0_50px_rgba(245,158,11,0.5)] transform scale-110 animate-bounce">
+                  <CheckCircle2 className="w-16 h-16 text-slate-900" />
+              </div>
+              <h2 className="text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-200 to-amber-500 uppercase tracking-tight mb-2 drop-shadow-lg scale-110 transition-transform">SOLD!</h2>
+              <p className="text-2xl md:text-3xl text-slate-200 font-medium z-10">To <span className="text-amber-400 font-bold uppercase">{auctionState.highestBidderName}</span></p>
+              <div className="mt-6 bg-slate-800/80 px-10 py-5 rounded-3xl border border-slate-700 shadow-2xl z-10">
+                  <p className="text-slate-400 text-sm font-bold uppercase tracking-widest text-center mb-1">Winning Bid</p>
+                  <p className="text-4xl text-white font-mono font-black">৳{auctionState.currentBid.toLocaleString()}</p>
+              </div>
+            </div>
+          )}
+
+          {auctionState.status === 'unsold' && (
+            <div className="absolute inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex flex-col items-center justify-center animate-fadeIn">
+              <div className="bg-slate-800 p-6 rounded-full mb-6 border border-slate-700 shadow-xl">
+                  <XCircle className="w-16 h-16 text-slate-500" />
+              </div>
+              <h2 className="text-6xl font-black text-slate-400 uppercase tracking-widest mb-4 opacity-80">UNSOLD</h2>
+              <p className="text-lg text-slate-500 font-medium">Player returns to the queue.</p>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 md:gap-8 mb-10 relative z-10">
+            <div className="relative group shrink-0">
+                <img src={player.imageUrl || '/api/placeholder/150/150'} alt={player.name} className="relative w-32 h-32 md:w-40 md:h-40 rounded-2xl object-cover object-top border-2 border-slate-700 shadow-xl bg-slate-800" />
+                <div className="absolute -top-3 -right-3 bg-blue-600 text-white text-[10px] font-black px-2 py-1 rounded-lg border border-blue-400 shadow-md uppercase">
+                    {player.id || 'N/A'}
+                </div>
+            </div>
+            
+            <div className="text-center sm:text-left flex-1 mt-2">
+              <span className="inline-block px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-bold uppercase tracking-widest mb-3">Now Auctioning</span>
+              {/* 🚨 ADDED UPPERCASE HERE 🚨 */}
+              <h2 className="text-3xl md:text-5xl font-black tracking-tight text-white mb-4 leading-tight uppercase">{player.name}</h2>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                <span className="px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300 text-xs font-bold uppercase tracking-wider bg-slate-800/80">{player.role}</span>
+                <span className="px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300 text-xs font-bold uppercase tracking-wider bg-slate-800/80">Batch {player.batch}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-slate-800/40 rounded-3xl p-6 md:p-8 border border-slate-700/50 relative z-10 mb-8 flex flex-col items-center">
+            <p className="text-slate-400 uppercase tracking-widest text-xs font-bold mb-3">Current Bid</p>
+            <div className="flex items-center justify-center gap-3 md:gap-4 mb-2">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                 <span className="text-emerald-400 font-black text-xl md:text-2xl">৳</span>
+              </div>
+              <span className="text-5xl md:text-7xl font-black font-mono tracking-tight text-white drop-shadow-md">
+                {auctionState.currentBid.toLocaleString()}
+              </span>
+            </div>
+            
+            <div className="flex flex-col items-center gap-1 mt-4">
+                <div className="flex items-center gap-2 bg-slate-900 px-4 py-2 rounded-full border border-slate-700 shadow-inner">
+                    <Trophy className="w-4 h-4 text-amber-500" />
+                    <p className="text-slate-400 text-sm font-medium">Leader: <span className="text-white font-bold uppercase">{auctionState.highestBidderName || 'None'}</span></p>
+                </div>
+                <p className="text-slate-500 text-xs font-semibold mt-2">Base Price: ৳{(player.basePrice || 1000).toLocaleString()}</p>
+            </div>
+          </div>
+
+          <div className="mb-8 relative z-10">
+            <div className="flex justify-between items-end mb-2 px-1">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Time Remaining</span>
+                <span className={`text-sm font-black tracking-widest ${isWarningTime ? 'text-red-400 animate-pulse' : 'text-slate-300'}`}>{timerDisplay}</span>
+            </div>
+            <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700 shadow-inner">
+              <div className={`h-full transition-all duration-200 ease-linear rounded-full ${isWarningTime ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.6)]' : 'bg-blue-500'}`} style={{ width: `${progressPercentage}%` }}></div>
+            </div>
+          </div>
+
+          <div className="relative z-10">
+            {isBanned ? (
+                <button disabled className="w-full py-5 rounded-2xl text-lg font-black uppercase tracking-widest bg-red-500/10 text-red-500 border border-red-500/50 cursor-not-allowed">Banned From Bidding</button>
+            ) : auctionState.status === 'waiting' ? (
+                <button disabled className="w-full py-5 rounded-2xl text-lg font-black uppercase tracking-widest bg-blue-500/20 text-blue-400 border border-blue-500/30 cursor-not-allowed animate-pulse">Bidding Starting Soon...</button>
+            ) : auctionState.status === 'paused' ? (
+                <button disabled className="w-full py-5 rounded-2xl text-lg font-black uppercase tracking-widest bg-amber-500/20 text-amber-400 border border-amber-500/30 cursor-not-allowed">Auction Paused</button>
+            ) : !canAfford && !isMyBid ? (
+                <button disabled className="w-full py-5 rounded-2xl text-lg font-black uppercase tracking-widest bg-red-500/20 text-red-400 border border-red-500/30 cursor-not-allowed">Insufficient Purse (Need ৳{nextBidAmount})</button>
+            ) : squadFull && !isMyBid ? (
+                <button disabled className="w-full py-5 rounded-2xl text-lg font-black uppercase tracking-widest bg-amber-500/20 text-amber-400 border border-amber-500/30 cursor-not-allowed">Squad Full (15/15)</button>
+            ) : isMyBid ? (
+                <button disabled className="w-full py-5 rounded-2xl text-lg font-black uppercase tracking-widest bg-blue-500/20 text-blue-400 border border-blue-500/30 cursor-not-allowed">You Hold Highest Bid</button>
+            ) : (
+                <button 
+                  onClick={handleBid}
+                  disabled={auctionState.status !== 'active' || isBidding}
+                  className="w-full py-5 rounded-2xl text-lg font-black uppercase tracking-widest transition-all duration-200 shadow-xl bg-emerald-500 text-white hover:bg-emerald-400 hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(16,185,129,0.3)] active:scale-95"
+                >
+                  {auctionState.highestBidder === null ? 'Accept Base Price' : `Place Bid ৳${nextBidAmount.toLocaleString()}`}
+                </button>
+            )}
+          </div>
+        </div>
+
+        <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight mb-4 flex items-center gap-2">
+            <Users className="w-5 h-5 text-blue-500"/> Your Squad ({teamWallet.players.length}/15)
+        </h3>
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+            {Array.from({ length: 15 }).map((_, index) => {
+                const p = teamWallet.players[index];
+                if (p) {
+                    return (
+                        <div key={index} className="bg-white border border-slate-200 rounded-xl p-3 flex flex-col items-center text-center shadow-sm relative overflow-hidden group">
+                            <span className="absolute top-1 left-1.5 text-[8px] font-black text-slate-300">#{index + 1}</span>
+                            <img src={p.imageUrl || '/api/placeholder/40/40'} alt={p.name} className="w-10 h-10 rounded-full object-cover mb-2 border border-slate-100 shadow-sm" />
+                            {/* 🚨 ADDED UPPERCASE HERE 🚨 */}
+                            <p className="text-xs font-bold text-slate-800 truncate w-full uppercase">{p.name}</p>
+                            <p className="text-[10px] font-mono font-black text-emerald-600 mt-0.5">৳{p.price.toLocaleString()}</p>
+                        </div>
+                    );
+                }
+                return (
+                    <div key={index} className="bg-slate-50 border border-slate-100 border-dashed rounded-xl p-3 flex flex-col items-center justify-center text-center min-h-[100px]">
+                        <span className="text-xs font-bold text-slate-300">#{index + 1}</span>
+                        <span className="text-[10px] uppercase font-bold text-slate-300 mt-1">Empty Slot</span>
+                    </div>
+                );
+            })}
+        </div>
+
+      </div>
     </div>
   );
 }

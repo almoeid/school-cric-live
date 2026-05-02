@@ -22,6 +22,10 @@ const RegisterPlayer = React.lazy(() => import('./views/viewer/RegisterPlayer'))
 const AdminRegistrationDash = React.lazy(() => import('./views/admin/AdminRegistrationDash'));
 const Storefront = React.lazy(() => import('./views/viewer/Storefront'));
 const AdminStoreDash = React.lazy(() => import('./views/admin/AdminStoreDash'));
+// NEW: Import Team Login Gateway for the Auction
+const TeamLoginGateway = React.lazy(() => import('./views/teams/TeamLoginGateway'));
+const AdminAuctionDash = React.lazy(() => import('./views/admin/AdminAuctionDash'));
+const BroadcastScreen = React.lazy(() => import('./views/public/BroadcastScreen'));
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -88,9 +92,12 @@ export default function App() {
       if (path === '/gallery') { setView('gallery'); return; }
       if (path === '/login') { setView('login'); return; }
       if (path === '/register') { setView('register'); return; }
-      if (path === '/admin-registrations') { setView('admin-registrations'); return; } // <-- FIXED HERE
+      if (path === '/admin-registrations') { setView('admin-registrations'); return; } 
       if (path === '/store') { setView('store'); return; }
       if (path === '/admin-store') { setView('admin-store'); return; }
+      if (path === '/auction') { setView('auction'); return; } // <-- NEW AUCTION ROUTE
+      if (path === '/admin-auction') { setView('admin-auction'); return; } // <--- ADD THIS
+      if (path === '/stream') { setView('stream'); return; } // <--- ADD THIS
 
       if (matches.length === 0 && tournaments.length === 0) return;
 
@@ -236,6 +243,19 @@ export default function App() {
             {/* ADMIN REGISTRATION DESK */}
             {view === 'admin-registrations' && (
                 <AdminRegistrationDash setView={setView} />
+            )}
+
+            {/* AUCTION VIEW */}
+            {view === 'auction' && (
+                <TeamLoginGateway setView={setView} />
+            )}
+            {/* NEW: ADMIN AUCTION COMMAND CENTER */}
+            {view === 'admin-auction' && (
+                <AdminAuctionDash setView={setView} />
+            )}
+            {/* NEW: BROADCAST SCREEN */}
+            {view === 'stream' && (
+                <BroadcastScreen />
             )}
 
         </Suspense>
