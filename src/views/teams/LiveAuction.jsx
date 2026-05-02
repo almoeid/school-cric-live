@@ -26,12 +26,10 @@ export default function LiveAuction({ currentTeamId, currentTeamName }) {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isBidding, setIsSubmitting] = useState(false);
   
-  // 🚨 NEW: Time Offset State 🚨
   const [timeOffset, setTimeOffset] = useState(0);
 
   const myTeam = TEAMS_INFO[currentTeamId];
 
-  // 1. CLOCK SYNC ENGINE (Calculates the drift of the local device)
   useEffect(() => {
     fetch('https://worldtimeapi.org/api/timezone/Etc/UTC')
       .then(response => response.json())
@@ -60,7 +58,6 @@ export default function LiveAuction({ currentTeamId, currentTeamName }) {
     return () => { unsubAuction(); unsubWallet(); };
   }, [currentTeamId]);
 
-  // 🚨 PERFECT SYNCED TIMER (Uses Offset!) 🚨
   useEffect(() => {
     if (!auctionState || auctionState.status !== 'active') {
       setTimeLeft(0);
@@ -86,8 +83,6 @@ export default function LiveAuction({ currentTeamId, currentTeamName }) {
         if (!sfDoc.exists()) throw "Auction document does not exist!";
         
         const data = sfDoc.data();
-        
-        // 🚨 GET TRUE TIME FOR BID VALIDATION 🚨
         const trueNow = Date.now() + timeOffset;
         
         if (data.status !== 'active') throw "Auction paused or ended.";
@@ -104,10 +99,10 @@ export default function LiveAuction({ currentTeamId, currentTeamName }) {
 
         if (teamWallet.purse < newBid) throw "Insufficient purse!";
 
-        let newEndTime = data.endTime;
-        if (data.endTime - trueNow <= 5000) {
-          newEndTime = trueNow + 10000; 
-        }
+        const maxAllowedTime = 30000 + (data.extraTimeAdded || 0); 
+        const currentRemaining = data.endTime - trueNow;
+        const newRemaining = Math.min(currentRemaining + 10000, maxAllowedTime); 
+        const newEndTime = trueNow + newRemaining;
 
         transaction.update(auctionRef, {
           currentBid: newBid,
@@ -120,6 +115,33 @@ export default function LiveAuction({ currentTeamId, currentTeamName }) {
       console.error("Bid failed:", error);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // 🚨 FIXED: Write to BOTH history and pending arrays so button locks permanently 🚨
+  const handleTimeRequest = async () => {
+    if (!auctionState || auctionState.status !== 'active' || isBidding) return;
+    setIsSubmitting(true);
+    const auctionRef = doc(db, 'artifacts', APP_ID, 'auction', 'current');
+    try {
+        await runTransaction(db, async (transaction) => {
+            const sfDoc = await transaction.get(auctionRef);
+            if (!sfDoc.exists()) return;
+            
+            const currentReqs = sfDoc.data().timeRequests || [];
+            const pendingReqs = sfDoc.data().pendingTimeRequests || [];
+            
+            if (!currentReqs.includes(currentTeamId)) {
+                transaction.update(auctionRef, { 
+                    timeRequests: [...currentReqs, currentTeamId], // History (Locks button forever)
+                    pendingTimeRequests: [...pendingReqs, currentTeamId] // Alert (Clears when Admin approves)
+                });
+            }
+        });
+    } catch (error) {
+        console.error("Request failed", error);
+    } finally {
+        setIsSubmitting(false);
     }
   };
 
@@ -136,7 +158,8 @@ export default function LiveAuction({ currentTeamId, currentTeamName }) {
   }
 
   const player = auctionState.playerData;
-  const progressPercentage = Math.min(100, (timeLeft / 30) * 100);
+  const maxAllowedSeconds = 30 + ((auctionState.extraTimeAdded || 0) / 1000);
+  const progressPercentage = Math.min(100, (timeLeft / maxAllowedSeconds) * 100);
   const isWarningTime = timeLeft <= 5 && auctionState.status === 'active';
 
   const nextBidAmount = auctionState.highestBidder === null 
@@ -147,6 +170,7 @@ export default function LiveAuction({ currentTeamId, currentTeamName }) {
   const squadFull = teamWallet.players.length >= 15;
   const isMyBid = auctionState.highestBidder === currentTeamId;
   const isBanned = auctionState.bannedTeamId === currentTeamId; 
+  const hasRequestedTime = (auctionState.timeRequests || []).includes(currentTeamId); // 🚨 Button checks permanent history
 
   let timerDisplay = `${timeLeft}S`;
   if (auctionState.status === 'waiting') timerDisplay = 'WAITING...';
@@ -252,7 +276,7 @@ export default function LiveAuction({ currentTeamId, currentTeamName }) {
             </div>
           </div>
 
-          <div className="relative z-10">
+          <div className="relative z-10 flex flex-col gap-3">
             {isBanned ? (
                 <button disabled className="w-full py-5 rounded-2xl text-lg font-black uppercase tracking-widest bg-red-500/10 text-red-500 border border-red-500/50 cursor-not-allowed">Banned From Bidding</button>
             ) : auctionState.status === 'waiting' ? (
@@ -273,6 +297,17 @@ export default function LiveAuction({ currentTeamId, currentTeamName }) {
                 >
                   {auctionState.highestBidder === null ? 'Accept Base Price' : `Place Bid ৳${nextBidAmount.toLocaleString()}`}
                 </button>
+            )}
+
+            {/* TIME REQUEST BUTTON */}
+            {auctionState.status === 'active' && !isBanned && (
+                hasRequestedTime ? (
+                    <button disabled className="w-full py-3 rounded-xl text-sm font-bold uppercase tracking-widest bg-amber-500/10 text-amber-500/50 border border-amber-500/20 cursor-not-allowed">Extra Time Requested</button>
+                ) : (
+                    <button onClick={handleTimeRequest} disabled={isBidding} className="w-full py-3 rounded-xl text-sm font-bold uppercase tracking-widest bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition-colors shadow-sm active:scale-95">
+                        Request +40s Extra Time
+                    </button>
+                )
             )}
           </div>
         </div>

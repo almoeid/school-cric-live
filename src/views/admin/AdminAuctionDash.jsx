@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { doc, onSnapshot, updateDoc, setDoc, runTransaction, getDoc } from 'firebase/firestore';
-import { Play, Pause, Gavel, Users, Shield, XCircle, CheckCircle, Loader, AlertCircle, RotateCcw, Banknote, UploadCloud, Edit2, Check, X, History, RefreshCw } from 'lucide-react';
+import { Play, Pause, Gavel, Users, Shield, XCircle, CheckCircle, Loader, AlertCircle, RotateCcw, Banknote, UploadCloud, Edit2, Check, X, History, RefreshCw, Clock } from 'lucide-react';
 import { db, APP_ID } from '../../config/firebase';
 
 const TEAMS_INFO = [
@@ -20,13 +20,11 @@ export default function AdminAuctionDash() {
   const [passwordInput, setPasswordInput] = useState('');
   const [authError, setAuthError] = useState(false);
 
-  // Core State
   const [auctionState, setAuctionState] = useState(null);
   const [teamWallets, setTeamWallets] = useState({});
   const [roster, setRoster] = useState([]);
   const [timeLeft, setTimeLeft] = useState(0);
   
-  // Modals, Forms & Popups
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSellModal, setShowSellModal] = useState(false);
   const [manualSellTeam, setManualSellTeam] = useState('t1');
@@ -38,7 +36,6 @@ export default function AdminAuctionDash() {
   const [editingPurseTeam, setEditingPurseTeam] = useState(null);
   const [tempPurseValue, setTempPurseValue] = useState('');
   
-  // 🚨 OVERLAY CONTROLS 🚨
   const [overlayTeamSelect, setOverlayTeamSelect] = useState('t1');
 
   const pushOverlayToStream = async (e) => {
@@ -57,10 +54,8 @@ export default function AdminAuctionDash() {
       });
   };
 
-  // 🚨 FORCE SYNC COMMAND 🚨
   const handleForceSync = async () => {
       if (auctionState?.playerData) {
-          // Re-pushing a timestamp forces all connected screens to refresh their data instantly
           await updateDoc(doc(db, 'artifacts', APP_ID, 'auction', 'current'), {
               lastSyncPing: Date.now() 
           });
@@ -73,7 +68,6 @@ export default function AdminAuctionDash() {
   const [lastSoldPopup, setLastSoldPopup] = useState(null);
   const fileInputRef = useRef(null);
 
-  // 1. REAL-TIME SYNC
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -102,7 +96,6 @@ export default function AdminAuctionDash() {
     return () => { unsubAuction(); unsubTeams(); unsubRoster(); };
   }, [isAuthenticated]);
 
-  // 2. AUTO-SELL TIMER LOGIC
   useEffect(() => {
     if (!auctionState || auctionState.status !== 'active') {
       setTimeLeft(0);
@@ -173,6 +166,7 @@ export default function AdminAuctionDash() {
       reader.readAsText(file);
   };
 
+  // 🚨 FIXED: Ensure fresh time tracking states for new player 🚨
   const pushToScreen = async (player) => {
       if (!player) return;
       await setDoc(doc(db, 'artifacts', APP_ID, 'auction', 'current'), {
@@ -183,7 +177,10 @@ export default function AdminAuctionDash() {
           highestBidderName: null,
           endTime: 0,
           bannedTeamId: null, 
-          refundOwedToTeamId: null 
+          refundOwedToTeamId: null,
+          extraTimeAdded: 0, 
+          timeRequests: [], // Permanent history clears for new player
+          pendingTimeRequests: [] // Temporary alert clears for new player
       });
   };
 
@@ -336,12 +333,39 @@ export default function AdminAuctionDash() {
                   highestBidderName: null,
                   endTime: 0,
                   bannedTeamId: teamId, 
-                  refundOwedToTeamId: teamId 
+                  refundOwedToTeamId: teamId,
+                  extraTimeAdded: 0, 
+                  timeRequests: [],
+                  pendingTimeRequests: []
               });
           });
           alert(`${player.name} has been revoked and sent back to auction!`);
       } catch (error) {
           alert(`Revoke failed: ${error}`);
+      }
+  };
+
+  // 🚨 FIXED: ONLY CLEAR PENDING REQUESTS SO BUTTON STAYS LOCKED 🚨
+  const handleApproveTime = async () => {
+      if (!auctionState || auctionState.status !== 'active') return;
+      setIsProcessing(true);
+      try {
+          await runTransaction(db, async (transaction) => {
+              const currentRef = doc(db, 'artifacts', APP_ID, 'auction', 'current');
+              const docSnap = await transaction.get(currentRef);
+              if (!docSnap.exists()) return;
+              const data = docSnap.data();
+              
+              transaction.update(currentRef, {
+                  endTime: data.endTime + 40000,
+                  extraTimeAdded: (data.extraTimeAdded || 0) + 40000,
+                  pendingTimeRequests: [] // Clear ONLY the alert list!
+              });
+          });
+      } catch(err) {
+          console.error(err);
+      } finally {
+          setIsProcessing(false);
       }
   };
 
@@ -480,7 +504,6 @@ export default function AdminAuctionDash() {
               <h1 className="text-3xl font-black text-slate-800 uppercase tracking-tight">Auctioneer Command</h1>
           </div>
           
-          {/* 🚨 ADDED FORCE SYNC BUTTON HERE 🚨 */}
           <div className="flex items-center gap-3">
               <input type="file" accept=".json" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
               <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition">
@@ -558,9 +581,23 @@ export default function AdminAuctionDash() {
                           <XCircle className="w-4 h-4" /> Mark Unsold
                       </button>
                   </div>
+
+                  {/* 🚨 ADMIN APPROVAL PANEL CHECKS PENDING REQUESTS 🚨 */}
+                  {auctionState?.pendingTimeRequests?.length > 0 && (
+                      <div className="mt-4 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/50 rounded-2xl p-4 flex items-center justify-between animate-pulse shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                          <div className="flex flex-col">
+                              <span className="text-amber-600 text-xs font-black uppercase tracking-widest flex items-center gap-1"><Clock className="w-3 h-3"/> Time Extension Requested!</span>
+                              <div className="flex gap-1 mt-1">
+                                  {auctionState.pendingTimeRequests.map(tId => <span key={tId} className="bg-amber-500 text-white px-2 py-0.5 rounded-md text-[10px] font-bold uppercase">{TEAMS_INFO.find(t=>t.id===tId)?.name}</span>)}
+                              </div>
+                          </div>
+                          <button onClick={handleApproveTime} disabled={isProcessing} className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-white font-black uppercase tracking-widest text-xs rounded-xl shadow-lg transition active:scale-95">
+                              Approve +40s
+                          </button>
+                      </div>
+                  )}
               </div>
 
-              {/* 🚨 STREAM OVERLAY CONTROL (Updated with Hide Button) 🚨 */}
               <div className="bg-gradient-to-r from-blue-900 to-indigo-900 rounded-3xl p-6 shadow-sm border border-blue-800">
                   <h3 className="text-sm font-bold text-blue-200 uppercase tracking-wider mb-4 border-b border-blue-800/50 pb-3 flex items-center justify-between">
                       <span>Stream Overlay Control</span>
