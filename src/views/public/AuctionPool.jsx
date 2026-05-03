@@ -55,7 +55,7 @@ export default function AuctionPool() {
       }
   };
 
-const handleDownloadImage = async () => {
+  const handleDownloadImage = async () => {
       if (selectedSquad.length === 0) {
           alert("Please select at least 1 player to download your squad.");
           return;
@@ -63,8 +63,7 @@ const handleDownloadImage = async () => {
       setIsDownloading(true);
       
       try {
-          // 🚨 THE FIX: Force the browser to wait for all fonts to be ready! 🚨
-          await document.fonts.ready;
+          await document.fonts.ready; // Ensure fonts are fully loaded for mobile compatibility
           
           const element = printRef.current;
           const canvas = await html2canvas(element, { 
@@ -85,6 +84,7 @@ const handleDownloadImage = async () => {
           setIsDownloading(false);
       }
   };
+
   const roles = ['All Roles', ...new Set(playersData.map(p => p.role).filter(Boolean))];
   const batches = ['All Batches', ...new Set(playersData.map(p => p.batch).filter(Boolean))].sort();
 
@@ -102,7 +102,7 @@ const handleDownloadImage = async () => {
       <div className="max-w-7xl mx-auto animate-fadeIn">
         
         {/* PREMIUM HEADER */}
-        <div className="relative rounded-[2rem] p-10 md:p-14 mb-10 overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#020617] shadow-2xl">
+        <div className="relative rounded-[2rem] p-10 md:p-14 mb-8 overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#020617] shadow-2xl">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.25),transparent_40%)]" />
           <Shield className="absolute -right-10 -bottom-10 w-64 h-64 text-white/5 -rotate-12 pointer-events-none" />
           
@@ -119,8 +119,8 @@ const handleDownloadImage = async () => {
           </div>
         </div>
 
-        {/* STICKY FILTERS & SQUAD BUILDER TOGGLE */}
-        <div className="sticky top-4 z-30 backdrop-blur-xl bg-white/60 p-4 rounded-3xl shadow-sm border border-white mb-10 flex flex-col xl:flex-row gap-4">
+        {/* 🚨 FIXED: NON-STICKY FILTERS & SQUAD BUILDER TOGGLE 🚨 */}
+        <div className="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-slate-200 mb-10 flex flex-col xl:flex-row gap-4 relative z-20">
             
             {/* SQUAD BUILDER TOGGLE BUTTON */}
             <button 
@@ -128,7 +128,7 @@ const handleDownloadImage = async () => {
                     setIsBuilderMode(!isBuilderMode);
                     if (isBuilderMode) setSelectedSquad([]);
                 }}
-                className={`flex-shrink-0 px-6 py-3.5 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all shadow-sm ${
+                className={`flex-shrink-0 px-6 py-3.5 rounded-2xl font-black font-sans uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all shadow-sm ${
                     isBuilderMode 
                         ? 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100' 
                         : 'bg-emerald-500 text-white hover:bg-emerald-400 hover:-translate-y-0.5 hover:shadow-lg'
@@ -138,6 +138,7 @@ const handleDownloadImage = async () => {
                 {isBuilderMode ? 'Exit Squad Builder' : 'Build Your Dream 15'}
             </button>
 
+            {/* 🚨 FIXED: ADDED font-sans TO ALL INPUTS FOR MOBILE COMPATIBILITY 🚨 */}
             {/* Search */}
             <div className="relative group flex-1">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors group-focus-within:text-blue-600" />
@@ -146,7 +147,7 @@ const handleDownloadImage = async () => {
                     placeholder="Search player name or ID..." 
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-white/80 backdrop-blur-md border border-slate-200 text-slate-800 px-12 py-3.5 rounded-2xl shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold placeholder-slate-400"
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-12 py-3.5 rounded-2xl shadow-sm hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-sans font-bold placeholder-slate-400"
                 />
             </div>
 
@@ -156,7 +157,7 @@ const handleDownloadImage = async () => {
                 <select 
                     value={roleFilter}
                     onChange={(e) => setRoleFilter(e.target.value)}
-                    className="w-full bg-white/80 backdrop-blur-md border border-slate-200 text-slate-800 px-12 py-3.5 rounded-2xl shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold uppercase text-[11px] tracking-wider appearance-none cursor-pointer"
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-12 py-3.5 rounded-2xl shadow-sm hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-sans font-bold uppercase text-[11px] tracking-wider appearance-none cursor-pointer"
                 >
                     {roles.map(role => (
                         <option key={role} value={role}>{role}</option>
@@ -170,7 +171,7 @@ const handleDownloadImage = async () => {
                 <select 
                     value={batchFilter}
                     onChange={(e) => setBatchFilter(e.target.value)}
-                    className="w-full bg-white/80 backdrop-blur-md border border-slate-200 text-slate-800 px-12 py-3.5 rounded-2xl shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold uppercase text-[11px] tracking-wider appearance-none cursor-pointer"
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-12 py-3.5 rounded-2xl shadow-sm hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-sans font-bold uppercase text-[11px] tracking-wider appearance-none cursor-pointer"
                 >
                     {batches.map(batch => (
                         <option key={batch} value={batch}>{batch}</option>
@@ -181,10 +182,10 @@ const handleDownloadImage = async () => {
 
         {/* PLAYER GRID */}
         {filteredPlayers.length === 0 ? (
-            <div className="text-center py-20 bg-white/50 backdrop-blur border border-slate-200 rounded-[2rem] shadow-sm">
+            <div className="text-center py-20 bg-white border border-slate-200 rounded-[2rem] shadow-sm">
                 <Search className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-slate-500 uppercase tracking-widest">No players found</h3>
-                <p className="text-slate-400 mt-2 font-medium">Try clearing your filters or search term.</p>
+                <h3 className="text-xl font-bold font-sans text-slate-500 uppercase tracking-widest">No players found</h3>
+                <p className="text-slate-400 font-sans mt-2 font-medium">Try clearing your filters or search term.</p>
             </div>
         ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
@@ -226,30 +227,30 @@ const handleDownloadImage = async () => {
                                 loading="lazy"
                             />
                             
-                            <div className="absolute top-4 left-4 z-20 bg-red-500/90 backdrop-blur text-white text-[10px] font-bold px-3 py-1 rounded-lg shadow-lg">
+                            <div className="absolute top-4 left-4 z-20 bg-red-500/90 backdrop-blur text-white text-[10px] font-sans font-bold px-3 py-1 rounded-lg shadow-lg">
                                 {player.id}
                             </div>
                         </div>
 
                         <div className="p-5 sm:p-6 flex flex-col flex-1 relative z-20 bg-transparent">
                             <div className="flex-1">
-                                <h2 className="text-lg xl:text-xl font-black text-slate-800 uppercase tracking-tight mb-1 line-clamp-2 min-h-[56px]" title={player.name}>
+                                <h2 className="text-lg xl:text-xl font-black font-sans text-slate-800 uppercase tracking-tight mb-1 line-clamp-2 min-h-[56px]" title={player.name}>
                                     {player.name}
                                 </h2>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4">
+                                <p className="text-[10px] font-bold font-sans text-slate-400 uppercase tracking-wider mb-4">
                                     {player.role} • Batch {player.batch}
                                 </p>
                             </div>
 
                             <div className="mt-auto pt-4 border-t border-slate-100 flex flex-wrap items-end justify-between gap-3">
                                 <div className="min-w-0">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Base Price</p>
-                                    <p className={`text-2xl font-extrabold tracking-tight leading-none truncate group-hover:scale-105 origin-left transition-transform ${isBuilderMode && willExceedBudget ? 'text-red-500' : 'text-blue-600'}`}>
+                                    <p className="text-[10px] font-bold font-sans text-slate-400 uppercase mb-0.5">Base Price</p>
+                                    <p className={`text-2xl font-extrabold font-sans tracking-tight leading-none truncate group-hover:scale-105 origin-left transition-transform ${isBuilderMode && willExceedBudget ? 'text-red-500' : 'text-blue-600'}`}>
                                         ৳{player.basePrice.toLocaleString()}
                                     </p>
                                 </div>
                                 
-                                <span className={`text-[10px] font-bold px-3 py-1.5 rounded-full shrink-0 shadow-sm ${
+                                <span className={`text-[10px] font-bold font-sans px-3 py-1.5 rounded-full shrink-0 shadow-sm ${
                                     player.status === 'sold' 
                                         ? 'bg-amber-100 text-amber-700 border border-amber-200' 
                                         : 'bg-emerald-100 text-emerald-600 border border-emerald-200'
@@ -266,8 +267,8 @@ const handleDownloadImage = async () => {
                         <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center mb-5 shadow-sm group-hover:scale-110 transition-transform">
                             <UserPlus className="w-8 h-8" />
                         </div>
-                        <h3 className="text-xl font-black text-slate-700 uppercase tracking-tight mb-2">More Players Adding Soon</h3>
-                        <p className="text-sm font-bold text-slate-400">The market is still expanding. Stay tuned for new franchise targets!</p>
+                        <h3 className="text-xl font-black font-sans text-slate-700 uppercase tracking-tight mb-2">More Players Adding Soon</h3>
+                        <p className="text-sm font-bold font-sans text-slate-400">The market is still expanding. Stay tuned for new franchise targets!</p>
                     </div>
                 )}
             </div>
@@ -285,11 +286,11 @@ const handleDownloadImage = async () => {
                       </div>
                       <div>
                           <div className="flex items-center gap-3 mb-1">
-                              <p className="text-white font-black text-xl tracking-tight leading-none">Squad Builder</p>
-                              <span className="bg-slate-800 text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-widest">{selectedSquad.length}/15 Players</span>
+                              <p className="text-white font-black font-sans text-xl tracking-tight leading-none">Squad Builder</p>
+                              <span className="bg-slate-800 text-slate-300 font-sans text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-widest">{selectedSquad.length}/15 Players</span>
                           </div>
                           
-                          <div className="flex items-center gap-2 text-sm font-bold">
+                          <div className="flex items-center gap-2 text-sm font-bold font-sans">
                               <Wallet className="w-4 h-4 text-emerald-400" />
                               <p className="text-slate-400">
                                   Spent: <span className="text-emerald-400 font-mono tracking-wider">৳{totalSpent.toLocaleString()}</span> 
@@ -305,7 +306,7 @@ const handleDownloadImage = async () => {
                           <img key={p.id} src={p.imageUrl} className="w-10 h-10 rounded-full object-cover border-2 border-slate-900 shadow-md" alt={p.name} title={p.name}/>
                       ))}
                       {Array.from({ length: Math.max(0, 15 - selectedSquad.length) }).map((_, i) => (
-                          <div key={`empty-${i}`} className="w-10 h-10 rounded-full border-2 border-dashed border-slate-600 bg-slate-800/50 flex items-center justify-center text-slate-600 text-[10px] font-bold">
+                          <div key={`empty-${i}`} className="w-10 h-10 rounded-full border-2 border-dashed border-slate-600 bg-slate-800/50 flex items-center justify-center text-slate-600 font-sans text-[10px] font-bold">
                               +
                           </div>
                       ))}
@@ -314,14 +315,14 @@ const handleDownloadImage = async () => {
                   <div className="flex items-center gap-3 w-full md:w-auto">
                       <button 
                           onClick={() => setSelectedSquad([])}
-                          className="px-6 py-3 rounded-xl font-bold text-slate-400 hover:bg-slate-800 transition-colors uppercase text-xs tracking-wider"
+                          className="px-6 py-3 rounded-xl font-bold font-sans text-slate-400 hover:bg-slate-800 transition-colors uppercase text-xs tracking-wider"
                       >
                           Clear
                       </button>
                       <button 
                           onClick={handleDownloadImage}
                           disabled={isDownloading || selectedSquad.length === 0}
-                          className="flex-1 md:flex-none px-8 py-3 rounded-xl font-black bg-emerald-500 text-white hover:bg-emerald-400 transition-colors uppercase text-xs tracking-widest shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex-1 md:flex-none px-8 py-3 rounded-xl font-black font-sans bg-emerald-500 text-white hover:bg-emerald-400 transition-colors uppercase text-xs tracking-widest shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                           {isDownloading ? 'Generating...' : <><Download className="w-4 h-4"/> Save Squad</>}
                       </button>
@@ -330,10 +331,10 @@ const handleDownloadImage = async () => {
           </div>
       )}
 
-      {/* BACK TO TOP BUTTON */}
+      {/* 🚨 FIXED: HIGHER Z-INDEX SO BUTTON STAYS ON TOP OF EVERYTHING 🚨 */}
       <button
         onClick={scrollToTop}
-        className={`fixed bottom-6 right-6 z-50 p-4 rounded-full bg-blue-600 text-white shadow-xl hover:bg-blue-700 hover:shadow-2xl transition-all duration-300 flex items-center justify-center ${
+        className={`fixed bottom-6 right-6 z-[70] p-4 rounded-full bg-blue-600 text-white shadow-xl hover:bg-blue-700 hover:shadow-2xl transition-all duration-300 flex items-center justify-center ${
             showScrollTop && !isBuilderMode ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0 pointer-events-none'
         }`}
         aria-label="Back to top"
@@ -341,23 +342,20 @@ const handleDownloadImage = async () => {
         <ArrowUp className="w-6 h-6" />
       </button>
 
-      {/* 🚨 FIXED HIDDEN POSTER GENERATOR 🚨 */}
+      {/* HIDDEN POSTER GENERATOR */}
       <div className="absolute left-[-9999px] top-[-9999px]">
-          <div ref={printRef} className="w-[1080px] min-h-[1080px] bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#020617] p-16 flex flex-col">
+          <div ref={printRef} className="w-[1080px] min-h-[1080px] bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#020617] p-16 flex flex-col font-sans">
               
-              {/* Poster Header (Fixed Flex & Whitespace Wrapping) */}
               <div className="flex items-center justify-between border-b-2 border-slate-700 pb-10 mb-12">
                   <div className="flex items-center gap-6 min-w-0">
                       <img src="/elitecuplogo.png" className="w-32 h-32 object-contain drop-shadow-2xl shrink-0" alt="Logo" />
                       <div className="min-w-0">
                           <p className="text-emerald-400 font-bold uppercase tracking-[0.3em] text-sm mb-2">Official Draft Selection</p>
-                          {/* whitespace-nowrap prevents line breaks! */}
                           <h1 className="text-5xl font-black text-white uppercase tracking-tight leading-none mb-2 whitespace-nowrap">My Dream 15</h1>
                           <h2 className="text-3xl font-extrabold text-blue-400 uppercase tracking-tight whitespace-nowrap">ZBSM Elite Cup 2026</h2>
                       </div>
                   </div>
                   
-                  {/* Stats Block (shrink-0 ensures it never squishes) */}
                   <div className="flex items-center gap-8 text-right shrink-0">
                       <div>
                           <p className="text-slate-400 font-bold uppercase tracking-widest text-sm mb-2">Total Spent</p>
@@ -371,13 +369,12 @@ const handleDownloadImage = async () => {
                           <p className="text-slate-400 font-bold uppercase tracking-widest text-sm mb-2">Squad Size</p>
                           <p className="text-5xl font-black text-white font-mono leading-none whitespace-nowrap">
                               {selectedSquad.length}
-                              <span className="text-2xl text-slate-500">/15</span>
+                              <span className="text-2xl text-slate-500 font-sans">/15</span>
                           </p>
                       </div>
                   </div>
               </div>
 
-              {/* Poster Grid */}
               <div className="grid grid-cols-5 gap-6">
                   {selectedSquad.map((player, index) => (
                       <div key={index} className="bg-slate-800/80 rounded-3xl overflow-hidden border border-slate-600 flex flex-col">
@@ -402,7 +399,6 @@ const handleDownloadImage = async () => {
                   ))}
               </div>
 
-              {/* Poster Footer */}
               <div className="mt-auto pt-12 flex justify-between items-end">
                   <p className="text-slate-500 font-bold text-sm tracking-widest uppercase">ZBSMCric.Live</p>
                   <p className="text-slate-500 font-bold text-sm tracking-widest uppercase">#ZBSMEliteCup2026</p>
