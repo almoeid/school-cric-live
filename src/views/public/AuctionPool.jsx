@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Search, Filter, Shield, UserPlus, Layers } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Filter, Shield, UserPlus, Layers, ArrowUp } from 'lucide-react';
 // Import your local JSON file here!
 import playersData from '../../data/players.json'; 
 
@@ -7,6 +7,27 @@ export default function AuctionPool() {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('All Roles');
   const [batchFilter, setBatchFilter] = useState('All Batches');
+  
+  // State for the Back to Top button
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Handle scroll events to show/hide the button
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 400) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const roles = ['All Roles', ...new Set(playersData.map(p => p.role).filter(Boolean))];
   const batches = ['All Batches', ...new Set(playersData.map(p => p.batch).filter(Boolean))].sort();
@@ -21,13 +42,12 @@ export default function AuctionPool() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 font-sans pb-20 pt-10 px-4 sm:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 font-sans pb-20 pt-10 px-4 sm:px-8 relative">
       
       <div className="max-w-7xl mx-auto animate-fadeIn">
         
-        {/* 1. 🔥 PREMIUM HEADER (Gradient, Glow, Depth) */}
-        <div className="relative rounded-[2rem] p-10 md:p-14 mb-10 overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#020617] shadow-2xl">
-          {/* Glow effect */}
+        {/* PREMIUM HEADER */}
+        <div className="relative rounded-[2rem] p-10 md:p-14 mb-8 overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#020617] shadow-2xl">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.25),transparent_40%)]" />
           <Shield className="absolute -right-10 -bottom-10 w-64 h-64 text-white/5 -rotate-12 pointer-events-none" />
           
@@ -44,28 +64,28 @@ export default function AuctionPool() {
           </div>
         </div>
 
-        {/* 2. 🚀 STICKY FILTERS (Pro UX Move with Glassmorphism) */}
-        <div className="sticky top-4 z-30 backdrop-blur-xl bg-white/60 p-4 rounded-3xl shadow-sm border border-white mb-10 flex flex-col md:flex-row gap-4">
+        {/* 🚨 FIXED: FILTERS (Un-stickied, better contrast with bg-slate-50 inputs) 🚨 */}
+        <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-200 mb-10 flex flex-col md:flex-row gap-4 relative z-20">
             
             {/* Search */}
             <div className="relative group flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors group-focus-within:text-blue-600" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 transition-colors group-focus-within:text-blue-600" />
                 <input 
                     type="text" 
                     placeholder="Search player name or ID..." 
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-white/80 backdrop-blur-md border border-slate-200 text-slate-800 px-12 py-3.5 rounded-2xl shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold placeholder-slate-400"
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-12 py-3.5 rounded-2xl hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold placeholder-slate-400"
                 />
             </div>
 
             {/* Role Filter */}
             <div className="relative group w-full md:w-56 shrink-0">
-                <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors group-focus-within:text-blue-600" />
+                <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 transition-colors group-focus-within:text-blue-600" />
                 <select 
                     value={roleFilter}
                     onChange={(e) => setRoleFilter(e.target.value)}
-                    className="w-full bg-white/80 backdrop-blur-md border border-slate-200 text-slate-800 px-12 py-3.5 rounded-2xl shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold uppercase text-[11px] tracking-wider appearance-none cursor-pointer"
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-12 py-3.5 rounded-2xl hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold uppercase text-[11px] tracking-wider appearance-none cursor-pointer"
                 >
                     {roles.map(role => (
                         <option key={role} value={role}>{role}</option>
@@ -75,11 +95,11 @@ export default function AuctionPool() {
 
             {/* Batch Filter */}
             <div className="relative group w-full md:w-56 shrink-0">
-                <Layers className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors group-focus-within:text-blue-600" />
+                <Layers className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 transition-colors group-focus-within:text-blue-600" />
                 <select 
                     value={batchFilter}
                     onChange={(e) => setBatchFilter(e.target.value)}
-                    className="w-full bg-white/80 backdrop-blur-md border border-slate-200 text-slate-800 px-12 py-3.5 rounded-2xl shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold uppercase text-[11px] tracking-wider appearance-none cursor-pointer"
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-12 py-3.5 rounded-2xl hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold uppercase text-[11px] tracking-wider appearance-none cursor-pointer"
                 >
                     {batches.map(batch => (
                         <option key={batch} value={batch}>{batch}</option>
@@ -90,7 +110,7 @@ export default function AuctionPool() {
 
         {/* PLAYER GRID */}
         {filteredPlayers.length === 0 ? (
-            <div className="text-center py-20 bg-white/50 backdrop-blur border border-slate-200 rounded-[2rem] shadow-sm">
+            <div className="text-center py-20 bg-white border border-slate-200 rounded-[2rem] shadow-sm">
                 <Search className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                 <h3 className="text-xl font-bold text-slate-500 uppercase tracking-widest">No players found</h3>
                 <p className="text-slate-400 mt-2 font-medium">Try clearing your filters or search term.</p>
@@ -98,17 +118,13 @@ export default function AuctionPool() {
         ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
                 {filteredPlayers.map((player) => (
-                    // 3. 🧠 PLAYER CARDS (Depth, Hover State, Hierarchy)
                     <div 
                         key={player.id} 
                         className="group bg-white/90 backdrop-blur-md border border-slate-200 rounded-[2rem] overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:border-blue-200 flex flex-col relative"
                     >
-                        {/* 4. ✨ MICRO INTERACTION (Hover glow inside card) */}
                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-gradient-to-br from-blue-500/5 to-transparent pointer-events-none z-0" />
 
-                        {/* Image Header */}
                         <div className="relative h-[280px] sm:h-[300px] w-full bg-slate-100 overflow-hidden shrink-0">
-                            {/* Cinematic Overlay Gradient */}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-70 z-10" />
                             
                             <img 
@@ -118,16 +134,12 @@ export default function AuctionPool() {
                                 loading="lazy"
                             />
                             
-                            {/* Upgraded ID Tag */}
                             <div className="absolute top-4 left-4 z-20 bg-red-500/90 backdrop-blur text-white text-[10px] font-bold px-3 py-1 rounded-lg shadow-lg">
                                 {player.id}
                             </div>
                         </div>
 
-                        {/* Content Area (Using flex-1 to push price to bottom consistently) */}
                         <div className="p-5 sm:p-6 flex flex-col flex-1 relative z-20 bg-transparent">
-                            
-                            {/* Player Info (Locked min-height prevents uneven cards) */}
                             <div className="flex-1">
                                 <h2 className="text-lg xl:text-xl font-black text-slate-800 uppercase tracking-tight mb-1 line-clamp-2 min-h-[56px]" title={player.name}>
                                     {player.name}
@@ -137,7 +149,6 @@ export default function AuctionPool() {
                                 </p>
                             </div>
 
-                            {/* 🎯 FIXED ALIGNMENT: Price & Status Box */}
                             <div className="mt-auto pt-4 border-t border-slate-100 flex flex-wrap items-end justify-between gap-3">
                                 <div className="min-w-0">
                                     <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Base Price</p>
@@ -146,7 +157,6 @@ export default function AuctionPool() {
                                     </p>
                                 </div>
                                 
-                                {/* Premium Status Badge */}
                                 <span className={`text-[10px] font-bold px-3 py-1.5 rounded-full shrink-0 shadow-sm ${
                                     player.status === 'sold' 
                                         ? 'bg-amber-100 text-amber-700 border border-amber-200' 
@@ -159,7 +169,6 @@ export default function AuctionPool() {
                     </div>
                 ))}
 
-                {/* "More Players Coming Soon" Card */}
                 <div className="group bg-white/40 backdrop-blur-md border-2 border-dashed border-slate-300 rounded-[2rem] flex flex-col items-center justify-center p-8 text-center min-h-[400px] hover:bg-white hover:border-blue-300 transition-all duration-300">
                     <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center mb-5 shadow-sm group-hover:scale-110 transition-transform">
                         <UserPlus className="w-8 h-8" />
@@ -172,6 +181,18 @@ export default function AuctionPool() {
         )}
 
       </div>
+
+      {/* 🚨 NEW: BACK TO TOP BUTTON 🚨 */}
+      <button
+        onClick={scrollToTop}
+        className={`fixed bottom-6 right-6 z-50 p-4 rounded-full bg-blue-600 text-white shadow-xl hover:bg-blue-700 hover:shadow-2xl transition-all duration-300 flex items-center justify-center ${
+            showScrollTop ? 'translate-y-0 opacity-100' : 'translate-y-16 opacity-0 pointer-events-none'
+        }`}
+        aria-label="Back to top"
+      >
+        <ArrowUp className="w-6 h-6" />
+      </button>
+
     </div>
   );
 }
