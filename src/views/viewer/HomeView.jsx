@@ -40,7 +40,7 @@ return (
                       The Biggest Event of 2026
                   </span>
                   <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-                      ZBSM Elite Cup
+                      ZBSM Elite Cup 2026
                   </h2>
                   <p className="text-slate-400 text-sm mt-2 max-w-md">
                       Experience the thrill of the ultimate cricket showdown. Track live scores, stats, and support your teams.
