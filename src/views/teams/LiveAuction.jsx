@@ -192,6 +192,9 @@ export default function LiveAuction({ currentTeamId, currentTeamName }) {
     setIsSubmitting(true);
 
     const auctionRef = doc(db, 'artifacts', APP_ID, 'auction', 'current');
+    
+    // 🚨 Store the current bid we expect to be bidding on to prevent race conditions
+    const expectedCurrentBid = auctionState.currentBid;
 
     try {
       await runTransaction(db, async (transaction) => {
@@ -205,6 +208,9 @@ export default function LiveAuction({ currentTeamId, currentTeamName }) {
         if (trueNow > data.endTime) throw "Time is up!";
         if (data.highestBidder === currentTeamId) throw "You already hold the highest bid!";
         if (data.bannedTeamId === currentTeamId) throw "You are banned from bidding on this player!";
+        
+        // 🚨 Reject if the bid amount has changed since the user clicked the button
+        if (data.currentBid !== expectedCurrentBid) throw "Bid already updated by another team!";
 
         let newBid;
         if (data.highestBidder === null) {
@@ -217,8 +223,10 @@ export default function LiveAuction({ currentTeamId, currentTeamName }) {
 
         const maxAllowedTime = 30000 + (data.extraTimeAdded || 0);
         const currentRemaining = data.endTime - trueNow;
-        // 🚨 Each bid extends the timer by 5 seconds (capped at the configured max).
-        const newRemaining = Math.min(currentRemaining + 5000, maxAllowedTime);
+        
+        // 🚨 Extended time logic: if <= 5 seconds left, add 10 seconds. Else add 5 seconds.
+        const timeToAdd = currentRemaining <= 5000 ? 10000 : 5000;
+        const newRemaining = Math.min(currentRemaining + timeToAdd, maxAllowedTime);
         const newEndTime = trueNow + newRemaining;
 
         transaction.update(auctionRef, {
