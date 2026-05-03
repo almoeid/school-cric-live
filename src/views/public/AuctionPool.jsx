@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Filter, Shield, UserPlus, Layers, ArrowUp, Check, X, Download, Users } from 'lucide-react';
+import { Search, Filter, Shield, UserPlus, Layers, ArrowUp, Check, X, Download, Users, Wallet } from 'lucide-react';
 import html2canvas from 'html2canvas';
 // Import your local JSON file here!
 import playersData from '../../data/players.json'; 
+
+const MAX_BUDGET = 35000;
 
 export default function AuctionPool() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,6 +17,9 @@ export default function AuctionPool() {
   const [selectedSquad, setSelectedSquad] = useState([]);
   const [isDownloading, setIsDownloading] = useState(false);
   const printRef = useRef(null); 
+
+  // Calculate total spent
+  const totalSpent = selectedSquad.reduce((sum, player) => sum + player.basePrice, 0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,6 +36,7 @@ export default function AuctionPool() {
       if (!isBuilderMode) return;
       
       const isAlreadySelected = selectedSquad.some(p => p.id === player.id);
+      
       if (isAlreadySelected) {
           setSelectedSquad(prev => prev.filter(p => p.id !== player.id));
       } else {
@@ -38,6 +44,13 @@ export default function AuctionPool() {
               alert("Squad is full! You can only select a maximum of 15 players.");
               return;
           }
+          
+          if (totalSpent + player.basePrice > MAX_BUDGET) {
+              const remaining = MAX_BUDGET - totalSpent;
+              alert(`Budget exceeded! This player costs ৳${player.basePrice.toLocaleString()}, but you only have ৳${remaining.toLocaleString()} left in your purse.`);
+              return;
+          }
+
           setSelectedSquad(prev => [...prev, player]);
       }
   };
@@ -82,7 +95,7 @@ export default function AuctionPool() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 font-sans pb-32 pt-10 px-4 sm:px-8 relative">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 font-sans pb-40 pt-10 px-4 sm:px-8 relative">
       
       <div className="max-w-7xl mx-auto animate-fadeIn">
         
@@ -175,6 +188,7 @@ export default function AuctionPool() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
                 {filteredPlayers.map((player) => {
                     const isSelected = selectedSquad.some(p => p.id === player.id);
+                    const willExceedBudget = !isSelected && (totalSpent + player.basePrice > MAX_BUDGET);
                     
                     return (
                     <div 
@@ -185,6 +199,8 @@ export default function AuctionPool() {
                         } ${
                             isSelected 
                             ? 'border-emerald-500 shadow-[0_10px_30px_rgba(16,185,129,0.3)] scale-[1.02] ring-4 ring-emerald-500/20' 
+                            : isBuilderMode && willExceedBudget
+                            ? 'border-slate-200 opacity-60 grayscale hover:opacity-100 transition-opacity'
                             : 'border-slate-200 hover:shadow-2xl hover:-translate-y-2 hover:border-blue-200'
                         }`}
                     >
@@ -226,7 +242,7 @@ export default function AuctionPool() {
                             <div className="mt-auto pt-4 border-t border-slate-100 flex flex-wrap items-end justify-between gap-3">
                                 <div className="min-w-0">
                                     <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Base Price</p>
-                                    <p className="text-2xl font-extrabold text-blue-600 tracking-tight leading-none truncate group-hover:scale-105 origin-left transition-transform">
+                                    <p className={`text-2xl font-extrabold tracking-tight leading-none truncate group-hover:scale-105 origin-left transition-transform ${isBuilderMode && willExceedBudget ? 'text-red-500' : 'text-blue-600'}`}>
                                         ৳{player.basePrice.toLocaleString()}
                                     </p>
                                 </div>
@@ -266,13 +282,23 @@ export default function AuctionPool() {
                           <Users className="w-6 h-6" />
                       </div>
                       <div>
-                          <p className="text-white font-black text-xl tracking-tight leading-none mb-1">Squad Builder Active</p>
-                          <p className="text-slate-400 text-sm font-bold">{selectedSquad.length} / 15 Players Selected</p>
+                          <div className="flex items-center gap-3 mb-1">
+                              <p className="text-white font-black text-xl tracking-tight leading-none">Squad Builder</p>
+                              <span className="bg-slate-800 text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-widest">{selectedSquad.length}/15 Players</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-sm font-bold">
+                              <Wallet className="w-4 h-4 text-emerald-400" />
+                              <p className="text-slate-400">
+                                  Spent: <span className="text-emerald-400 font-mono tracking-wider">৳{totalSpent.toLocaleString()}</span> 
+                                  <span className="text-slate-600 mx-1">/</span> 
+                                  <span className="text-slate-500 font-mono">৳35k Limit</span>
+                              </p>
+                          </div>
                       </div>
                   </div>
 
-                  {/* Avatar Previews */}
-                  <div className="flex -space-x-3">
+                  <div className="hidden lg:flex -space-x-3">
                       {selectedSquad.map(p => (
                           <img key={p.id} src={p.imageUrl} className="w-10 h-10 rounded-full object-cover border-2 border-slate-900 shadow-md" alt={p.name} title={p.name}/>
                       ))}
@@ -313,23 +339,39 @@ export default function AuctionPool() {
         <ArrowUp className="w-6 h-6" />
       </button>
 
-      {/* 🚨 HIDDEN POSTER GENERATOR 🚨 */}
+      {/* 🚨 FIXED HIDDEN POSTER GENERATOR 🚨 */}
       <div className="absolute left-[-9999px] top-[-9999px]">
           <div ref={printRef} className="w-[1080px] min-h-[1080px] bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#020617] p-16 flex flex-col">
               
-              {/* Poster Header */}
+              {/* Poster Header (Fixed Flex & Whitespace Wrapping) */}
               <div className="flex items-center justify-between border-b-2 border-slate-700 pb-10 mb-12">
-                  <div className="flex items-center gap-6">
-                      <img src="/elitecuplogo.png" className="w-32 h-32 object-contain drop-shadow-2xl" alt="Logo" />
-                      <div>
+                  <div className="flex items-center gap-6 min-w-0">
+                      <img src="/elitecuplogo.png" className="w-32 h-32 object-contain drop-shadow-2xl shrink-0" alt="Logo" />
+                      <div className="min-w-0">
                           <p className="text-emerald-400 font-bold uppercase tracking-[0.3em] text-sm mb-2">Official Draft Selection</p>
-                          <h1 className="text-6xl font-black text-white uppercase tracking-tight leading-none mb-2">My Dream 15</h1>
-                          <h2 className="text-4xl font-extrabold text-blue-400 uppercase tracking-tight">ZBSM Elite Cup 2026</h2>
+                          {/* whitespace-nowrap prevents line breaks! */}
+                          <h1 className="text-5xl font-black text-white uppercase tracking-tight leading-none mb-2 whitespace-nowrap">My Dream 15</h1>
+                          <h2 className="text-3xl font-extrabold text-blue-400 uppercase tracking-tight whitespace-nowrap">ZBSM Elite Cup 2026</h2>
                       </div>
                   </div>
-                  <div className="text-right">
-                      <p className="text-slate-400 font-bold uppercase tracking-widest text-sm mb-2">Squad Size</p>
-                      <p className="text-6xl font-black text-white font-mono">{selectedSquad.length}<span className="text-3xl text-slate-500">/15</span></p>
+                  
+                  {/* Stats Block (shrink-0 ensures it never squishes) */}
+                  <div className="flex items-center gap-8 text-right shrink-0">
+                      <div>
+                          <p className="text-slate-400 font-bold uppercase tracking-widest text-sm mb-2">Total Spent</p>
+                          <p className="text-4xl font-black text-emerald-400 font-mono tracking-tighter whitespace-nowrap">
+                              ৳{totalSpent.toLocaleString()}
+                              <span className="text-xl text-slate-500 font-sans tracking-normal ml-1">/35k</span>
+                          </p>
+                      </div>
+                      <div className="w-px bg-slate-700 h-16"></div>
+                      <div>
+                          <p className="text-slate-400 font-bold uppercase tracking-widest text-sm mb-2">Squad Size</p>
+                          <p className="text-5xl font-black text-white font-mono leading-none whitespace-nowrap">
+                              {selectedSquad.length}
+                              <span className="text-2xl text-slate-500">/15</span>
+                          </p>
+                      </div>
                   </div>
               </div>
 
@@ -341,10 +383,8 @@ export default function AuctionPool() {
                           <div className="p-4 flex-1 flex flex-col bg-slate-900/50">
                               
                               <h3 className="text-white font-black uppercase text-[13px] leading-normal mb-1 line-clamp-2 pb-1">{player.name}</h3>
-                              
                               <p className="text-slate-400 font-bold text-[9px] uppercase tracking-wider mb-auto pb-2 leading-relaxed overflow-visible">{player.role}</p>
                               
-                              {/* 🚨 FIXED: The text is now physically nudged up using -mt-1 to perfectly center it within the box 🚨 */}
                               <div className="bg-slate-950 h-10 w-full rounded-xl border border-slate-800 flex flex-col items-center justify-center">
                                   <span className="text-emerald-400 font-mono font-black text-[14px] leading-none text-center -mt-1">৳{player.basePrice.toLocaleString()}</span>
                               </div>
