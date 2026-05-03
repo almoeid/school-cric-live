@@ -38,6 +38,16 @@ const storeProducts = [
     price: 419,
     image: '/ET.jpg',
     paymentNumber: '01793216517'
+  },
+      {
+    id: 'InvictusSixteen',
+    name: 'Invictus Sixteen',
+    type: 'Player Edition Match Jersey for Fan',
+    fabric: 'Thai Mesh (Premium)',
+    customization: 'Name & Number Included',
+    price: 419,
+    image: '/IS.jpg',
+    paymentNumber: '01793216517'
   }
   
 ];
