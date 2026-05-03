@@ -55,7 +55,7 @@ export default function AuctionPool() {
       }
   };
 
-  const handleDownloadImage = async () => {
+const handleDownloadImage = async () => {
       if (selectedSquad.length === 0) {
           alert("Please select at least 1 player to download your squad.");
           return;
@@ -63,6 +63,9 @@ export default function AuctionPool() {
       setIsDownloading(true);
       
       try {
+          // 🚨 THE FIX: Force the browser to wait for all fonts to be ready! 🚨
+          await document.fonts.ready;
+          
           const element = printRef.current;
           const canvas = await html2canvas(element, { 
               useCORS: true, 
@@ -82,7 +85,6 @@ export default function AuctionPool() {
           setIsDownloading(false);
       }
   };
-
   const roles = ['All Roles', ...new Set(playersData.map(p => p.role).filter(Boolean))];
   const batches = ['All Batches', ...new Set(playersData.map(p => p.batch).filter(Boolean))].sort();
 
