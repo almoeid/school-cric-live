@@ -384,10 +384,11 @@ export default function LiveAuction({ currentTeamId, currentTeamName }) {
             </div>
           </div>
 
-          <div className="mb-6 sm:mb-8 relative z-10">
-            <div className="flex justify-between items-end mb-2 px-1">
-                <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest">Time Remaining</span>
-                <span className={`text-xs sm:text-sm font-black tracking-widest ${isWarningTime ? 'text-red-400 animate-pulse' : 'text-slate-300'}`}>{timerDisplay}</span>
+<div className="mb-6 sm:mb-8 relative z-10">
+            {/* ADDED: gap-2 to prevent touching, truncate on left label, and shrink-0 whitespace-nowrap on the right timer */}
+            <div className="flex justify-between items-end mb-2 px-1 gap-2">
+                <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider sm:tracking-widest truncate">Time Remaining</span>
+                <span className={`text-[10px] sm:text-sm font-black tracking-wider sm:tracking-widest shrink-0 whitespace-nowrap ${isWarningTime ? 'text-red-400 animate-pulse' : 'text-slate-300'}`}>{timerDisplay}</span>
             </div>
             <div className="w-full h-2 sm:h-2.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700 shadow-inner">
               <div className={`h-full transition-all duration-200 ease-linear rounded-full ${isWarningTime ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.6)]' : 'bg-blue-500'}`} style={{ width: `${progressPercentage}%` }}></div>
