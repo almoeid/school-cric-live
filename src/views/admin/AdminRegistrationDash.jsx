@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Users, UserCheck, Clock, CheckCircle, XCircle, 
   Search, ShieldCheck, Lock, Smartphone, Filter, Trash2, Edit, MessageSquare, X,
-  UserPlus, Image as ImageIcon, Send, Loader2, Download, Sparkles
+  UserPlus, Image as ImageIcon, Send, Loader2, Download, Sparkles,
+  Link as LinkIcon, DollarSign, ListOrdered, ChevronDown, ArrowUp, ArrowDown, Plus
 } from 'lucide-react';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -41,6 +42,12 @@ export default function AdminRegistrationDash({ setView }) {
   // --- SMART CROP STATE ---
   const [croppingId, setCroppingId] = useState(null);
 
+  // --- EXPORT DROPDOWN + CUSTOM EXPORT STATE ---
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef(null);
+  const [showCustomExportModal, setShowCustomExportModal] = useState(false);
+  const [customSelectedIds, setCustomSelectedIds] = useState([]); // ordered list of player IDs
+
   // Dropdown Options
   const roles = ["Batsman", "Bowler", "Allrounder", "Batting Allrounder", "Bowling Allrounder"];
   const years = Array.from({ length: 2026 - 1990 + 1 }, (_, i) => 2026 - i);
@@ -68,6 +75,18 @@ export default function AdminRegistrationDash({ setView }) {
     return () => unsubscribe();
   }, [isAuthenticated]);
 
+  // --- Click-outside handler for export dropdown ---
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const handleClickOutside = (e) => {
+        if (exportMenuRef.current && !exportMenuRef.current.contains(e.target)) {
+            setShowExportMenu(false);
+        }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showExportMenu]);
+
   // --- PASSWORD HANDLER ---
   const handleLogin = (e) => {
     e.preventDefault();
@@ -91,8 +110,9 @@ export default function AdminRegistrationDash({ setView }) {
       alert(`SMS Copied to Clipboard!\n\n"${message}"`);
   };
 
-  // --- EXPORT ROSTER ---
+  // --- EXPORT ROSTER (DEFAULT SERIAL ORDER) ---
   const handleExportRoster = () => {
+      setShowExportMenu(false);
       const approvedPlayers = registrations
           .filter(r => r.status === 'approved' && r.serialNumber)
           .sort((a, b) => a.serialNumber - b.serialNumber)
@@ -123,6 +143,82 @@ export default function AdminRegistrationDash({ setView }) {
       URL.revokeObjectURL(url);
   };
 
+  // --- OPEN CUSTOM SERIAL EXPORT MODAL ---
+  const openCustomExportModal = () => {
+      setCustomSelectedIds([]);
+      setShowCustomExportModal(true);
+      setShowExportMenu(false);
+  };
+
+  // --- CUSTOM EXPORT: ADD / REMOVE / REORDER ---
+  const handleAddToCustom = (id) => {
+      setCustomSelectedIds(prev => prev.includes(id) ? prev : [...prev, id]);
+  };
+
+  const handleRemoveFromCustom = (id) => {
+      setCustomSelectedIds(prev => prev.filter(pid => pid !== id));
+  };
+
+  const handleMoveCustomUp = (idx) => {
+      if (idx <= 0) return;
+      setCustomSelectedIds(prev => {
+          const next = [...prev];
+          [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+          return next;
+      });
+  };
+
+  const handleMoveCustomDown = (idx) => {
+      setCustomSelectedIds(prev => {
+          if (idx >= prev.length - 1) return prev;
+          const next = [...prev];
+          [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]];
+          return next;
+      });
+  };
+
+  // --- EXPORT WITH CUSTOM SERIAL ORDER ---
+  const handleCustomExport = () => {
+      const approvedMap = new Map(
+          registrations.filter(r => r.status === 'approved').map(r => [r.id, r])
+      );
+
+      const customRoster = customSelectedIds
+          .map((pid, idx) => {
+              const r = approvedMap.get(pid);
+              if (!r) return null;
+              return {
+                  id: `ZBSM-${String(r.serialNumber).padStart(2, '0')}`,
+                  name: r.name,
+                  role: r.role,
+                  batch: String(r.batch),
+                  basePrice: r.basePrice || 1000,
+                  imageUrl: r.imageUrl,
+                  status: 'pending'
+              };
+          })
+          .filter(Boolean);
+
+      if (customRoster.length === 0) {
+          alert('Please select at least one player for the custom export.');
+          return;
+      }
+
+      const dataStr = JSON.stringify(customRoster, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'players_custom.json';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setShowCustomExportModal(false);
+      setCustomSelectedIds([]);
+  };
+
   // --- BASE PRICE HANDLER (inline quick edit) ---
   const handleSetBasePrice = async (reg) => {
       const current = reg.basePrice || 1000;
@@ -141,6 +237,56 @@ export default function AdminRegistrationDash({ setView }) {
       } catch (error) {
           console.error('Failed to update base price:', error);
           alert('Failed to update base price.');
+      }
+  };
+
+  // --- CHANGE PICTURE URL HANDLER ---
+  const handleChangeImageUrl = async (reg) => {
+      const current = reg.imageUrl || '';
+      const input = window.prompt(`Paste a new picture URL for ${reg.name}:`, current);
+      if (input === null) return; // user cancelled
+
+      const trimmed = input.trim();
+      if (!trimmed) {
+          alert('Please enter a valid URL.');
+          return;
+      }
+
+      // Soft validation — must look like a URL
+      if (!/^https?:\/\//i.test(trimmed)) {
+          alert('URL must start with http:// or https://');
+          return;
+      }
+
+      try {
+          const regRef = doc(db, 'artifacts', APP_ID, 'private', 'data', 'registrations', reg.id);
+          await updateDoc(regRef, { 
+              imageUrl: trimmed,
+              imageUpdatedAt: Date.now()
+          });
+      } catch (error) {
+          console.error('Failed to update image URL:', error);
+          alert('Failed to update picture URL.');
+      }
+  };
+
+  // --- TOGGLE UNPAID STATUS ---
+  const handleToggleUnpaid = async (reg) => {
+      const newUnpaid = !reg.unpaid;
+      const action = newUnpaid 
+          ? `Mark ${reg.name} as UNPAID? A red indicator will appear on their row.`
+          : `Mark ${reg.name} as PAID? The unpaid indicator will be removed.`;
+      if (!window.confirm(action)) return;
+
+      try {
+          const regRef = doc(db, 'artifacts', APP_ID, 'private', 'data', 'registrations', reg.id);
+          await updateDoc(regRef, { 
+              unpaid: newUnpaid,
+              unpaidUpdatedAt: Date.now()
+          });
+      } catch (error) {
+          console.error('Failed to toggle paid status:', error);
+          alert('Failed to update payment status.');
       }
   };
 
@@ -395,7 +541,19 @@ export default function AdminRegistrationDash({ setView }) {
     approved: baseFiltered.filter(r => r.status === 'approved').length,
   };
 
-  const filteredRegistrations = baseFiltered.filter(reg => filter === 'all' || reg.status === filter);
+  const filteredRegistrations = baseFiltered.filter(reg => {
+      if (filter === 'all') return true;
+      if (filter === 'unpaid') return reg.status === 'approved' && reg.unpaid;
+      return reg.status === filter;
+  });
+
+  // --- DERIVED LISTS FOR CUSTOM EXPORT MODAL ---
+  const approvedForExport = registrations.filter(r => r.status === 'approved');
+  const customSelectedSet = new Set(customSelectedIds);
+  const availableForCustom = approvedForExport.filter(r => !customSelectedSet.has(r.id));
+  const selectedForCustom = customSelectedIds
+      .map(id => approvedForExport.find(r => r.id === id))
+      .filter(Boolean);
 
   if (loading) return <div className="p-10 text-center font-bold text-slate-500 animate-pulse">Loading Secured Dashboard...</div>;
 
@@ -557,7 +715,147 @@ export default function AdminRegistrationDash({ setView }) {
               </div>
           </div>
       )}
-      {/* --- END MODAL --- */}
+      {/* --- END EDIT MODAL --- */}
+
+      {/* --- CUSTOM SERIAL EXPORT MODAL --- */}
+      {showCustomExportModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fadeIn">
+              <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl relative flex flex-col">
+                  <div className="bg-white/95 backdrop-blur-sm border-b border-slate-100 p-5 flex items-center justify-between z-10 rounded-t-3xl shrink-0">
+                      <div>
+                          <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                              <ListOrdered className="w-5 h-5 text-purple-500" /> Custom Serial Export
+                          </h2>
+                          <p className="text-xs text-slate-500 mt-1 font-medium">Click players to add them in your preferred order. Their original ZBSM IDs are preserved — only the JSON array order changes.</p>
+                      </div>
+                      <button onClick={() => setShowCustomExportModal(false)} className="p-2 hover:bg-red-50 hover:text-red-500 rounded-full transition-colors shrink-0">
+                          <X className="w-5 h-5" />
+                      </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 flex-1 overflow-hidden">
+                      {/* AVAILABLE PLAYERS (LEFT) */}
+                      <div className="border-r border-slate-100 flex flex-col overflow-hidden">
+                          <div className="p-4 bg-slate-50 border-b border-slate-100 shrink-0">
+                              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-600 flex items-center gap-2">
+                                  <Users className="w-4 h-4" /> Available Players
+                                  <span className="ml-auto bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">{availableForCustom.length}</span>
+                              </h3>
+                          </div>
+                          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                              {availableForCustom.length === 0 ? (
+                                  <p className="text-center text-slate-400 text-sm font-medium py-8">All approved players selected.</p>
+                              ) : (
+                                  availableForCustom.map(r => (
+                                      <button
+                                          key={r.id}
+                                          type="button"
+                                          onClick={() => handleAddToCustom(r.id)}
+                                          className="w-full flex items-center gap-3 p-2 rounded-xl border border-slate-100 hover:border-emerald-300 hover:bg-emerald-50 transition text-left group"
+                                      >
+                                          <img src={r.imageUrl || '/api/placeholder/40/40'} alt={r.name} className="w-10 h-10 rounded-lg object-cover object-top bg-slate-200 border border-slate-200 shrink-0" />
+                                          <div className="min-w-0 flex-1">
+                                              <p className="font-bold text-sm text-slate-800 truncate">{r.name}</p>
+                                              <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider truncate">
+                                                  #{r.serialNumber} • {r.role}
+                                              </p>
+                                          </div>
+                                          <span className="shrink-0 p-1.5 rounded-lg bg-slate-100 text-slate-400 group-hover:bg-emerald-500 group-hover:text-white transition">
+                                              <Plus className="w-4 h-4" />
+                                          </span>
+                                      </button>
+                                  ))
+                              )}
+                          </div>
+                      </div>
+
+                      {/* SELECTED ORDER (RIGHT) */}
+                      <div className="flex flex-col overflow-hidden">
+                          <div className="p-4 bg-purple-50 border-b border-purple-100 shrink-0">
+                              <h3 className="text-xs font-extrabold uppercase tracking-wider text-purple-700 flex items-center gap-2">
+                                  <ListOrdered className="w-4 h-4" /> Selected Order
+                                  <span className="ml-auto bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full">{selectedForCustom.length}</span>
+                              </h3>
+                          </div>
+                          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                              {selectedForCustom.length === 0 ? (
+                                  <p className="text-center text-slate-400 text-sm font-medium py-8">Click players on the left to add them in your preferred serial order.</p>
+                              ) : (
+                                  selectedForCustom.map((r, idx) => (
+                                      <div
+                                          key={r.id}
+                                          className="flex items-center gap-2 p-2 rounded-xl border border-purple-100 bg-purple-50/50"
+                                      >
+                                          <span className="font-mono font-extrabold text-slate-400 text-sm shrink-0 w-6 text-right">
+                                              {idx + 1}.
+                                          </span>
+                                          <span className="font-mono font-extrabold text-purple-700 bg-white border border-purple-200 px-2 py-1 rounded text-xs shrink-0 w-16 text-center">
+                                              ZBSM-{String(r.serialNumber).padStart(2, '0')}
+                                          </span>
+                                          <img src={r.imageUrl || '/api/placeholder/40/40'} alt={r.name} className="w-10 h-10 rounded-lg object-cover object-top bg-slate-200 border border-slate-200 shrink-0" />
+                                          <div className="min-w-0 flex-1">
+                                              <p className="font-bold text-sm text-slate-800 truncate">{r.name}</p>
+                                              <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider truncate">
+                                                  {r.role}
+                                              </p>
+                                          </div>
+                                          <div className="flex items-center gap-1 shrink-0">
+                                              <button
+                                                  type="button"
+                                                  onClick={() => handleMoveCustomUp(idx)}
+                                                  disabled={idx === 0}
+                                                  className="p-1.5 rounded-lg bg-white text-slate-500 hover:bg-purple-500 hover:text-white border border-slate-200 transition disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-slate-500"
+                                                  title="Move up"
+                                              >
+                                                  <ArrowUp className="w-3.5 h-3.5" />
+                                              </button>
+                                              <button
+                                                  type="button"
+                                                  onClick={() => handleMoveCustomDown(idx)}
+                                                  disabled={idx === selectedForCustom.length - 1}
+                                                  className="p-1.5 rounded-lg bg-white text-slate-500 hover:bg-purple-500 hover:text-white border border-slate-200 transition disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-slate-500"
+                                                  title="Move down"
+                                              >
+                                                  <ArrowDown className="w-3.5 h-3.5" />
+                                              </button>
+                                              <button
+                                                  type="button"
+                                                  onClick={() => handleRemoveFromCustom(r.id)}
+                                                  className="p-1.5 rounded-lg bg-white text-red-500 hover:bg-red-500 hover:text-white border border-red-100 transition"
+                                                  title="Remove from list"
+                                              >
+                                                  <X className="w-3.5 h-3.5" />
+                                              </button>
+                                          </div>
+                                      </div>
+                                  ))
+                              )}
+                          </div>
+                      </div>
+                  </div>
+
+                  <div className="border-t border-slate-100 p-4 flex justify-between items-center bg-slate-50 shrink-0">
+                      <p className="text-xs text-slate-500 font-medium">
+                          {selectedForCustom.length > 0 
+                              ? `Will export ${selectedForCustom.length} player${selectedForCustom.length === 1 ? '' : 's'} in your custom order — original ZBSM IDs preserved.`
+                              : 'Select at least one player to export.'}
+                      </p>
+                      <div className="flex gap-3">
+                          <button type="button" onClick={() => setShowCustomExportModal(false)} className="px-5 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100">Cancel</button>
+                          <button 
+                              type="button" 
+                              onClick={handleCustomExport} 
+                              disabled={selectedForCustom.length === 0}
+                              className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm bg-purple-500 text-white shadow-md hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                              <Download className="w-4 h-4" /> Export Custom JSON
+                          </button>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      )}
+      {/* --- END CUSTOM EXPORT MODAL --- */}
 
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 pt-4 gap-4">
@@ -571,9 +869,43 @@ export default function AdminRegistrationDash({ setView }) {
             <button onClick={() => setShowAddModal(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold text-white bg-emerald-500 px-4 py-2.5 rounded-xl hover:bg-emerald-600 transition shadow-md">
                 <UserPlus className="w-4 h-4" /> Add Player
             </button>
-            <button onClick={handleExportRoster} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold text-slate-700 bg-slate-100 px-4 py-2.5 rounded-xl hover:bg-slate-200 transition shrink-0">
-                <Download className="w-4 h-4" /> Export Roster
-            </button>
+
+            {/* --- EXPORT DROPDOWN --- */}
+            <div className="relative flex-1 sm:flex-none" ref={exportMenuRef}>
+                <button 
+                    onClick={() => setShowExportMenu(prev => !prev)} 
+                    className="w-full flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold text-slate-700 bg-slate-100 px-4 py-2.5 rounded-xl hover:bg-slate-200 transition shrink-0"
+                >
+                    <Download className="w-4 h-4" /> Export Roster
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showExportMenu ? 'rotate-180' : ''}`} />
+                </button>
+                {showExportMenu && (
+                    <div className="absolute right-0 mt-2 w-60 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-30 animate-fadeIn">
+                        <button 
+                            onClick={handleExportRoster} 
+                            className="w-full text-left px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-600 transition flex items-start gap-3"
+                        >
+                            <Download className="w-4 h-4 mt-0.5 shrink-0" />
+                            <div>
+                                <p className="font-bold">Default Serial</p>
+                                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Export by approval order (ZBSM-01, 02...)</p>
+                            </div>
+                        </button>
+                        <div className="border-t border-slate-100" />
+                        <button 
+                            onClick={openCustomExportModal} 
+                            className="w-full text-left px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-purple-50 hover:text-purple-600 transition flex items-start gap-3"
+                        >
+                            <ListOrdered className="w-4 h-4 mt-0.5 shrink-0" />
+                            <div>
+                                <p className="font-bold">Custom Serial...</p>
+                                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Pick players one-by-one in your own order</p>
+                            </div>
+                        </button>
+                    </div>
+                )}
+            </div>
+
             <button onClick={() => setIsAuthenticated(false)} className="text-xs sm:text-sm font-bold text-red-500 bg-red-50 px-4 py-2.5 rounded-xl hover:bg-red-100 transition shrink-0">
                 Lock 
             </button>
@@ -589,10 +921,14 @@ export default function AdminRegistrationDash({ setView }) {
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6 flex flex-col gap-4">
           <div className="flex flex-col lg:flex-row justify-between gap-4">
               <div className="flex overflow-x-auto bg-slate-100 p-1 rounded-xl w-full lg:w-fit custom-scrollbar">
-                  {['all', 'pending', 'approved', 'rejected'].map(f => (
+                  {['all', 'pending', 'approved', 'unpaid', 'rejected'].map(f => (
                       <button 
                           key={f} onClick={() => setFilter(f)}
-                          className={`px-4 py-2 lg:py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap flex-1 lg:flex-none ${filter === f ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                          className={`px-4 py-2 lg:py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap flex-1 lg:flex-none ${
+                              filter === f 
+                                  ? (f === 'unpaid' ? 'bg-white text-red-600 shadow-sm' : 'bg-white text-emerald-600 shadow-sm')
+                                  : 'text-slate-500 hover:text-slate-700'
+                          }`}
                       >
                           {f}
                       </button>
@@ -656,8 +992,13 @@ export default function AdminRegistrationDash({ setView }) {
               {filteredRegistrations.length === 0 && (
                   <tr><td colSpan="7" className="p-10 text-center text-slate-400 font-medium">No registrations match your filters.</td></tr>
               )}
-              {filteredRegistrations.map(reg => (
-                <tr key={reg.id} className="hover:bg-slate-50/50 transition">
+              {filteredRegistrations.map(reg => {
+                const isUnpaid = reg.status === 'approved' && reg.unpaid;
+                return (
+                <tr 
+                    key={reg.id} 
+                    className={`hover:bg-slate-50/50 transition ${isUnpaid ? 'bg-red-50/40 border-l-4 border-l-red-400' : ''}`}
+                >
                   
                   <td className="p-4">
                       {reg.serialNumber ? (
@@ -670,8 +1011,20 @@ export default function AdminRegistrationDash({ setView }) {
                   </td>
 
                   <td className="p-4 flex items-center gap-3">
-                      <a href={reg.imageUrl} target="_blank" rel="noreferrer" className="shrink-0 block">
-                        <img src={reg.imageUrl || '/api/placeholder/40/40'} alt={reg.name} className="w-12 h-12 rounded-xl object-cover object-top bg-slate-200 border border-slate-200 shadow-sm hover:scale-110 transition-transform" title="Click to view full image" />
+                      <a 
+                          href={reg.imageUrl} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          className={`shrink-0 block rounded-xl ${isUnpaid ? 'ring-2 ring-red-500 ring-offset-2 animate-pulse' : ''}`}
+                      >
+                        <img 
+                            src={reg.imageUrl || '/api/placeholder/40/40'} 
+                            alt={reg.name} 
+                            className={`w-12 h-12 rounded-xl object-cover object-top bg-slate-200 shadow-sm hover:scale-110 transition-transform ${
+                                isUnpaid ? 'border-2 border-red-500' : 'border border-slate-200'
+                            }`} 
+                            title={isUnpaid ? 'UNPAID — click to view full image' : 'Click to view full image'} 
+                        />
                       </a>
                       <div className="min-w-0">
                           <p className="font-bold text-slate-800 text-sm truncate">{reg.name}</p>
@@ -725,13 +1078,20 @@ export default function AdminRegistrationDash({ setView }) {
                   </td>
 
                   <td className="p-4 text-center">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest border ${
-                          reg.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-200 shadow-sm' :
-                          reg.status === 'rejected' ? 'bg-red-50 text-red-600 border-red-200' :
-                          'bg-amber-50 text-amber-600 border-amber-200 animate-pulse'
-                      }`}>
-                          {reg.status}
-                      </span>
+                      <div className="flex flex-col items-center gap-1">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest border ${
+                              reg.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-200 shadow-sm' :
+                              reg.status === 'rejected' ? 'bg-red-50 text-red-600 border-red-200' :
+                              'bg-amber-50 text-amber-600 border-amber-200 animate-pulse'
+                          }`}>
+                              {reg.status}
+                          </span>
+                          {isUnpaid && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-red-100 text-red-700 border border-red-300 shadow-sm animate-pulse">
+                                  <DollarSign className="w-2.5 h-2.5" /> Unpaid
+                              </span>
+                          )}
+                      </div>
                   </td>
 
                   <td className="p-4">
@@ -750,6 +1110,14 @@ export default function AdminRegistrationDash({ setView }) {
                               )}
                           </button>
 
+                          <button 
+                              onClick={() => handleChangeImageUrl(reg)} 
+                              className="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white rounded-lg transition" 
+                              title="Change picture URL"
+                          >
+                              <LinkIcon className="w-4 h-4" />
+                          </button>
+
                           <button onClick={() => openEditModal(reg)} className="p-1.5 bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white rounded-lg transition" title="Edit Player">
                               <Edit className="w-4 h-4" />
                           </button>
@@ -766,9 +1134,23 @@ export default function AdminRegistrationDash({ setView }) {
                           ) : (
                               <>
                                   {reg.status === 'approved' && (
-                                      <button onClick={() => handleCopySMS(reg)} className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-700 hover:text-white rounded-lg font-bold text-xs transition" title="Copy SMS Message">
-                                          <MessageSquare className="w-3.5 h-3.5" /> Copy SMS
-                                      </button>
+                                      <>
+                                          <button 
+                                              onClick={() => handleToggleUnpaid(reg)} 
+                                              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-bold text-xs transition ${
+                                                  reg.unpaid 
+                                                      ? 'bg-red-500 text-white hover:bg-red-600 shadow-md' 
+                                                      : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-100'
+                                              }`}
+                                              title={reg.unpaid ? 'Click to mark as PAID (remove indicator)' : 'Click to mark as UNPAID'}
+                                          >
+                                              <DollarSign className="w-3.5 h-3.5" /> 
+                                              {reg.unpaid ? 'Mark Paid' : 'Unpaid'}
+                                          </button>
+                                          <button onClick={() => handleCopySMS(reg)} className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-700 hover:text-white rounded-lg font-bold text-xs transition" title="Copy SMS Message">
+                                              <MessageSquare className="w-3.5 h-3.5" /> Copy SMS
+                                          </button>
+                                      </>
                                   )}
                                   <button onClick={() => handleDelete(reg)} className="p-1.5 bg-slate-50 text-slate-400 hover:bg-red-500 hover:text-white rounded-lg transition border border-transparent hover:border-red-600" title="Permanently Delete">
                                       <Trash2 className="w-4 h-4" />
@@ -778,7 +1160,7 @@ export default function AdminRegistrationDash({ setView }) {
                       </div>
                   </td>
                 </tr>
-              ))}
+              );})}
             </tbody>
           </table>
         </div>
