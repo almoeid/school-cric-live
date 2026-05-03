@@ -1105,5 +1105,14 @@
     "basePrice": 1000,
     "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777789835798_cropped_1777789835798.jpg?alt=media&token=24d07841-6af1-4b48-8c74-9512d900138c",
     "status": "pending"
+  },
+    {
+    "id": "ZBSM-127",
+    "name": "DON SHAKIL",
+    "role": "Batsman",
+    "batch": "2015",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_40FgZJRnTh5KyzSh2wz0_1777744527365.jpg?alt=media&token=eb0dcd4b-7a06-4ad4-8ecd-bc06c8f0ffac",
+    "status": "pending"
   }
 ]
