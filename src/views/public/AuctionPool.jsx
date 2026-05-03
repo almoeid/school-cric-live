@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Filter, Shield, UserPlus, Layers, ArrowUp } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Search, Filter, Shield, UserPlus, Layers, ArrowUp, Check, X, Download, Users } from 'lucide-react';
+import html2canvas from 'html2canvas';
 // Import your local JSON file here!
 import playersData from '../../data/players.json'; 
 
@@ -7,26 +8,66 @@ export default function AuctionPool() {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('All Roles');
   const [batchFilter, setBatchFilter] = useState('All Batches');
-  
-  // State for the Back to Top button
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Handle scroll events to show/hide the button
+  // SQUAD BUILDER STATES
+  const [isBuilderMode, setIsBuilderMode] = useState(false);
+  const [selectedSquad, setSelectedSquad] = useState([]);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const printRef = useRef(null); 
+
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 400) {
-        setShowScrollTop(true);
-      } else {
-        setShowScrollTop(false);
-      }
+      if (window.scrollY > 400) setShowScrollTop(true);
+      else setShowScrollTop(false);
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  const togglePlayerSelection = (player) => {
+      if (!isBuilderMode) return;
+      
+      const isAlreadySelected = selectedSquad.some(p => p.id === player.id);
+      if (isAlreadySelected) {
+          setSelectedSquad(prev => prev.filter(p => p.id !== player.id));
+      } else {
+          if (selectedSquad.length >= 15) {
+              alert("Squad is full! You can only select a maximum of 15 players.");
+              return;
+          }
+          setSelectedSquad(prev => [...prev, player]);
+      }
+  };
+
+  const handleDownloadImage = async () => {
+      if (selectedSquad.length === 0) {
+          alert("Please select at least 1 player to download your squad.");
+          return;
+      }
+      setIsDownloading(true);
+      
+      try {
+          const element = printRef.current;
+          const canvas = await html2canvas(element, { 
+              useCORS: true, 
+              backgroundColor: '#0f172a',
+              scale: 2 // High resolution
+          });
+          const dataUrl = canvas.toDataURL('image/png');
+          
+          const link = document.createElement('a');
+          link.download = 'My-Dream-15-Squad.png';
+          link.href = dataUrl;
+          link.click();
+      } catch (error) {
+          console.error("Error generating image", error);
+          alert("Failed to generate image. Please try again.");
+      } finally {
+          setIsDownloading(false);
+      }
   };
 
   const roles = ['All Roles', ...new Set(playersData.map(p => p.role).filter(Boolean))];
@@ -37,17 +78,16 @@ export default function AuctionPool() {
                           player.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === 'All Roles' || player.role === roleFilter;
     const matchesBatch = batchFilter === 'All Batches' || player.batch === batchFilter;
-    
     return matchesSearch && matchesRole && matchesBatch;
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 font-sans pb-20 pt-10 px-4 sm:px-8 relative">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 font-sans pb-32 pt-10 px-4 sm:px-8 relative">
       
       <div className="max-w-7xl mx-auto animate-fadeIn">
         
         {/* PREMIUM HEADER */}
-        <div className="relative rounded-[2rem] p-10 md:p-14 mb-8 overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#020617] shadow-2xl">
+        <div className="relative rounded-[2rem] p-10 md:p-14 mb-10 overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#020617] shadow-2xl">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.25),transparent_40%)]" />
           <Shield className="absolute -right-10 -bottom-10 w-64 h-64 text-white/5 -rotate-12 pointer-events-none" />
           
@@ -64,28 +104,44 @@ export default function AuctionPool() {
           </div>
         </div>
 
-        {/* 🚨 FIXED: FILTERS (Un-stickied, better contrast with bg-slate-50 inputs) 🚨 */}
-        <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-200 mb-10 flex flex-col md:flex-row gap-4 relative z-20">
+        {/* STICKY FILTERS & SQUAD BUILDER TOGGLE */}
+        <div className="sticky top-4 z-30 backdrop-blur-xl bg-white/60 p-4 rounded-3xl shadow-sm border border-white mb-10 flex flex-col xl:flex-row gap-4">
             
+            {/* SQUAD BUILDER TOGGLE BUTTON */}
+            <button 
+                onClick={() => {
+                    setIsBuilderMode(!isBuilderMode);
+                    if (isBuilderMode) setSelectedSquad([]);
+                }}
+                className={`flex-shrink-0 px-6 py-3.5 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all shadow-sm ${
+                    isBuilderMode 
+                        ? 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100' 
+                        : 'bg-emerald-500 text-white hover:bg-emerald-400 hover:-translate-y-0.5 hover:shadow-lg'
+                }`}
+            >
+                {isBuilderMode ? <X className="w-4 h-4" /> : <Users className="w-4 h-4" />}
+                {isBuilderMode ? 'Exit Squad Builder' : 'Build Your Dream 15'}
+            </button>
+
             {/* Search */}
             <div className="relative group flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 transition-colors group-focus-within:text-blue-600" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors group-focus-within:text-blue-600" />
                 <input 
                     type="text" 
                     placeholder="Search player name or ID..." 
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-12 py-3.5 rounded-2xl hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold placeholder-slate-400"
+                    className="w-full bg-white/80 backdrop-blur-md border border-slate-200 text-slate-800 px-12 py-3.5 rounded-2xl shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold placeholder-slate-400"
                 />
             </div>
 
             {/* Role Filter */}
             <div className="relative group w-full md:w-56 shrink-0">
-                <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 transition-colors group-focus-within:text-blue-600" />
+                <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors group-focus-within:text-blue-600" />
                 <select 
                     value={roleFilter}
                     onChange={(e) => setRoleFilter(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-12 py-3.5 rounded-2xl hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold uppercase text-[11px] tracking-wider appearance-none cursor-pointer"
+                    className="w-full bg-white/80 backdrop-blur-md border border-slate-200 text-slate-800 px-12 py-3.5 rounded-2xl shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold uppercase text-[11px] tracking-wider appearance-none cursor-pointer"
                 >
                     {roles.map(role => (
                         <option key={role} value={role}>{role}</option>
@@ -95,11 +151,11 @@ export default function AuctionPool() {
 
             {/* Batch Filter */}
             <div className="relative group w-full md:w-56 shrink-0">
-                <Layers className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 transition-colors group-focus-within:text-blue-600" />
+                <Layers className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors group-focus-within:text-blue-600" />
                 <select 
                     value={batchFilter}
                     onChange={(e) => setBatchFilter(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-12 py-3.5 rounded-2xl hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold uppercase text-[11px] tracking-wider appearance-none cursor-pointer"
+                    className="w-full bg-white/80 backdrop-blur-md border border-slate-200 text-slate-800 px-12 py-3.5 rounded-2xl shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold uppercase text-[11px] tracking-wider appearance-none cursor-pointer"
                 >
                     {batches.map(batch => (
                         <option key={batch} value={batch}>{batch}</option>
@@ -110,18 +166,36 @@ export default function AuctionPool() {
 
         {/* PLAYER GRID */}
         {filteredPlayers.length === 0 ? (
-            <div className="text-center py-20 bg-white border border-slate-200 rounded-[2rem] shadow-sm">
+            <div className="text-center py-20 bg-white/50 backdrop-blur border border-slate-200 rounded-[2rem] shadow-sm">
                 <Search className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                 <h3 className="text-xl font-bold text-slate-500 uppercase tracking-widest">No players found</h3>
                 <p className="text-slate-400 mt-2 font-medium">Try clearing your filters or search term.</p>
             </div>
         ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
-                {filteredPlayers.map((player) => (
+                {filteredPlayers.map((player) => {
+                    const isSelected = selectedSquad.some(p => p.id === player.id);
+                    
+                    return (
                     <div 
                         key={player.id} 
-                        className="group bg-white/90 backdrop-blur-md border border-slate-200 rounded-[2rem] overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:border-blue-200 flex flex-col relative"
+                        onClick={() => togglePlayerSelection(player)}
+                        className={`group bg-white/90 backdrop-blur-md border rounded-[2rem] overflow-hidden transition-all duration-300 flex flex-col relative ${
+                            isBuilderMode ? 'cursor-pointer hover:shadow-lg' : ''
+                        } ${
+                            isSelected 
+                            ? 'border-emerald-500 shadow-[0_10px_30px_rgba(16,185,129,0.3)] scale-[1.02] ring-4 ring-emerald-500/20' 
+                            : 'border-slate-200 hover:shadow-2xl hover:-translate-y-2 hover:border-blue-200'
+                        }`}
                     >
+                        {isSelected && (
+                            <div className="absolute inset-0 z-40 border-4 border-emerald-500 rounded-[2rem] pointer-events-none">
+                                <div className="absolute top-4 right-4 bg-emerald-500 text-white p-2 rounded-full shadow-lg">
+                                    <Check className="w-6 h-6" />
+                                </div>
+                            </div>
+                        )}
+
                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-gradient-to-br from-blue-500/5 to-transparent pointer-events-none z-0" />
 
                         <div className="relative h-[280px] sm:h-[300px] w-full bg-slate-100 overflow-hidden shrink-0">
@@ -167,31 +241,133 @@ export default function AuctionPool() {
                             </div>
                         </div>
                     </div>
-                ))}
+                )})}
 
-                <div className="group bg-white/40 backdrop-blur-md border-2 border-dashed border-slate-300 rounded-[2rem] flex flex-col items-center justify-center p-8 text-center min-h-[400px] hover:bg-white hover:border-blue-300 transition-all duration-300">
-                    <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center mb-5 shadow-sm group-hover:scale-110 transition-transform">
-                        <UserPlus className="w-8 h-8" />
+                {!isBuilderMode && (
+                    <div className="group bg-white/40 backdrop-blur-md border-2 border-dashed border-slate-300 rounded-[2rem] flex flex-col items-center justify-center p-8 text-center min-h-[400px] hover:bg-white hover:border-blue-300 transition-all duration-300">
+                        <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center mb-5 shadow-sm group-hover:scale-110 transition-transform">
+                            <UserPlus className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-xl font-black text-slate-700 uppercase tracking-tight mb-2">More Players Adding Soon</h3>
+                        <p className="text-sm font-bold text-slate-400">The market is still expanding. Stay tuned for new franchise targets!</p>
                     </div>
-                    <h3 className="text-xl font-black text-slate-700 uppercase tracking-tight mb-2">More Players Adding Soon</h3>
-                    <p className="text-sm font-bold text-slate-400">The market is still expanding. Stay tuned for new franchise targets!</p>
-                </div>
-
+                )}
             </div>
         )}
 
       </div>
 
-      {/* 🚨 NEW: BACK TO TOP BUTTON 🚨 */}
+      {/* FLOATING SQUAD BUILDER COMMAND BAR */}
+      {isBuilderMode && (
+          <div className="fixed bottom-0 left-0 right-0 z-[60] bg-slate-900/95 backdrop-blur-xl border-t border-slate-700 p-4 md:p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.3)] animate-slideUp">
+              <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center border border-emerald-500/30">
+                          <Users className="w-6 h-6" />
+                      </div>
+                      <div>
+                          <p className="text-white font-black text-xl tracking-tight leading-none mb-1">Squad Builder Active</p>
+                          <p className="text-slate-400 text-sm font-bold">{selectedSquad.length} / 15 Players Selected</p>
+                      </div>
+                  </div>
+
+                  {/* Avatar Previews */}
+                  <div className="flex -space-x-3">
+                      {selectedSquad.map(p => (
+                          <img key={p.id} src={p.imageUrl} className="w-10 h-10 rounded-full object-cover border-2 border-slate-900 shadow-md" alt={p.name} title={p.name}/>
+                      ))}
+                      {Array.from({ length: Math.max(0, 15 - selectedSquad.length) }).map((_, i) => (
+                          <div key={`empty-${i}`} className="w-10 h-10 rounded-full border-2 border-dashed border-slate-600 bg-slate-800/50 flex items-center justify-center text-slate-600 text-[10px] font-bold">
+                              +
+                          </div>
+                      ))}
+                  </div>
+
+                  <div className="flex items-center gap-3 w-full md:w-auto">
+                      <button 
+                          onClick={() => setSelectedSquad([])}
+                          className="px-6 py-3 rounded-xl font-bold text-slate-400 hover:bg-slate-800 transition-colors uppercase text-xs tracking-wider"
+                      >
+                          Clear
+                      </button>
+                      <button 
+                          onClick={handleDownloadImage}
+                          disabled={isDownloading || selectedSquad.length === 0}
+                          className="flex-1 md:flex-none px-8 py-3 rounded-xl font-black bg-emerald-500 text-white hover:bg-emerald-400 transition-colors uppercase text-xs tracking-widest shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                          {isDownloading ? 'Generating...' : <><Download className="w-4 h-4"/> Save Squad</>}
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {/* BACK TO TOP BUTTON */}
       <button
         onClick={scrollToTop}
         className={`fixed bottom-6 right-6 z-50 p-4 rounded-full bg-blue-600 text-white shadow-xl hover:bg-blue-700 hover:shadow-2xl transition-all duration-300 flex items-center justify-center ${
-            showScrollTop ? 'translate-y-0 opacity-100' : 'translate-y-16 opacity-0 pointer-events-none'
+            showScrollTop && !isBuilderMode ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0 pointer-events-none'
         }`}
         aria-label="Back to top"
       >
         <ArrowUp className="w-6 h-6" />
       </button>
+
+      {/* 🚨 HIDDEN POSTER GENERATOR 🚨 */}
+      <div className="absolute left-[-9999px] top-[-9999px]">
+          <div ref={printRef} className="w-[1080px] min-h-[1080px] bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#020617] p-16 flex flex-col">
+              
+              {/* Poster Header */}
+              <div className="flex items-center justify-between border-b-2 border-slate-700 pb-10 mb-12">
+                  <div className="flex items-center gap-6">
+                      <img src="/elitecuplogo.png" className="w-32 h-32 object-contain drop-shadow-2xl" alt="Logo" />
+                      <div>
+                          <p className="text-emerald-400 font-bold uppercase tracking-[0.3em] text-sm mb-2">Official Draft Selection</p>
+                          <h1 className="text-6xl font-black text-white uppercase tracking-tight leading-none mb-2">My Dream 15</h1>
+                          <h2 className="text-4xl font-extrabold text-blue-400 uppercase tracking-tight">ZBSM Elite Cup 2026</h2>
+                      </div>
+                  </div>
+                  <div className="text-right">
+                      <p className="text-slate-400 font-bold uppercase tracking-widest text-sm mb-2">Squad Size</p>
+                      <p className="text-6xl font-black text-white font-mono">{selectedSquad.length}<span className="text-3xl text-slate-500">/15</span></p>
+                  </div>
+              </div>
+
+              {/* Poster Grid */}
+              <div className="grid grid-cols-5 gap-6">
+                  {selectedSquad.map((player, index) => (
+                      <div key={index} className="bg-slate-800/80 rounded-3xl overflow-hidden border border-slate-600 flex flex-col">
+                          <img src={player.imageUrl || '/api/placeholder/200/200'} className="w-full h-48 object-cover object-top" alt="Pic" />
+                          <div className="p-4 flex-1 flex flex-col bg-slate-900/50">
+                              
+                              <h3 className="text-white font-black uppercase text-[13px] leading-normal mb-1 line-clamp-2 pb-1">{player.name}</h3>
+                              
+                              <p className="text-slate-400 font-bold text-[9px] uppercase tracking-wider mb-auto pb-2 leading-relaxed overflow-visible">{player.role}</p>
+                              
+                              {/* 🚨 FIXED: The text is now physically nudged up using -mt-1 to perfectly center it within the box 🚨 */}
+                              <div className="bg-slate-950 h-10 w-full rounded-xl border border-slate-800 flex flex-col items-center justify-center">
+                                  <span className="text-emerald-400 font-mono font-black text-[14px] leading-none text-center -mt-1">৳{player.basePrice.toLocaleString()}</span>
+                              </div>
+
+                          </div>
+                      </div>
+                  ))}
+                  {Array.from({ length: Math.max(0, 15 - selectedSquad.length) }).map((_, i) => (
+                      <div key={`empty-poster-${i}`} className="bg-slate-800/30 rounded-3xl border-2 border-dashed border-slate-700 flex flex-col items-center justify-center min-h-[250px] opacity-50">
+                          <UserPlus className="w-12 h-12 text-slate-600 mb-2" />
+                          <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Empty Slot</p>
+                      </div>
+                  ))}
+              </div>
+
+              {/* Poster Footer */}
+              <div className="mt-auto pt-12 flex justify-between items-end">
+                  <p className="text-slate-500 font-bold text-sm tracking-widest uppercase">ZBSMCric.Live</p>
+                  <p className="text-slate-500 font-bold text-sm tracking-widest uppercase">#ZBSMEliteCup2026</p>
+              </div>
+
+          </div>
+      </div>
 
     </div>
   );
