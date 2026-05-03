@@ -1,0 +1,1109 @@
+[
+  {
+    "id": "ZBSM-01",
+    "name": "S M AB SIRAT",
+    "role": "Batting Allrounder",
+    "batch": "2021",
+    "basePrice": 1500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_ZYJsbKyORZGWaLrImwGi_1777695083266.jpg?alt=media&token=93cde531-cdd2-42bc-b390-e4e6dcc4f63a",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-02",
+    "name": "MD. IMRAN KHAN",
+    "role": "Batting Allrounder",
+    "batch": "2016",
+    "basePrice": 4000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1775813682036_received_1169325944776586.jpeg?alt=media&token=518a4ecf-6c25-4678-a605-4d6876bea4b1",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-03",
+    "name": "Zobaed al habib",
+    "role": "Bowling Allrounder",
+    "batch": "2023",
+    "basePrice": 2500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_E12SjyzPRtbgbU54Op82_1777695061688.jpg?alt=media&token=9b767e18-872e-41da-9363-12be87f72734",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-04",
+    "name": "Name Noor A Zannat Protik",
+    "role": "Bowling Allrounder",
+    "batch": "Madrasa",
+    "basePrice": 2000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_8fheixAXHeGRHw9Abl9m_1777695520184.jpg?alt=media&token=b90e9d27-84df-4214-9e13-21ea0391941b",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-05",
+    "name": "TALAL MAHMUD BIJOY",
+    "role": "Allrounder",
+    "batch": "2014",
+    "basePrice": 4000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_0EjszinOPp3hXnwQEqtz_1777695385815.jpg?alt=media&token=0961bae3-aba9-4ec3-a49e-fa2d34467ac5",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-06",
+    "name": "Sadab Hosen",
+    "role": "Batting Allrounder",
+    "batch": "2026",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1776085306928_1000014442.jpg?alt=media&token=23ce49dd-9887-4c6a-9819-962faa4cdefa",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-07",
+    "name": "Partho Sarker",
+    "role": "Batsman",
+    "batch": "2026",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_r6lm9K2WvaWi2ryQBaok_1777695809700.jpg?alt=media&token=6b85675a-31a7-4559-a2e7-0eb1049d0ba7",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-08",
+    "name": "Abo Bokkor Siddik",
+    "role": "Allrounder",
+    "batch": "School Batch",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_dsezNdmtPn80MLHKnQry_1777695355972.jpg?alt=media&token=49ac2453-fb75-45da-a8c3-9abeca4590b0",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-09",
+    "name": "JH RABBY ",
+    "role": "Batsman",
+    "batch": "2022",
+    "basePrice": 3000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_Jdj6xfq21p1qwT6ydOoR_1777695486955.jpg?alt=media&token=95845e49-de69-4548-a78a-e8bc7ab510e2",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-10",
+    "name": "Sajjadull islam",
+    "role": "Bowling Allrounder",
+    "batch": "Madrasa",
+    "basePrice": 1500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_yoO7Mc4XCWlpsFmLETha_1777695599208.jpg?alt=media&token=b6a22c8c-9a51-411d-a700-cf1416fe7c01",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-11",
+    "name": "Muktadir Hosen",
+    "role": "Batsman",
+    "batch": "2026",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_sHqRIBL71Z6HmvNz5CNY_1777695836188.jpg?alt=media&token=3d445988-e9b7-4c07-9d97-992e83df59e6",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-12",
+    "name": "SOPNIL SARKAR",
+    "role": "Bowling Allrounder",
+    "batch": "2024",
+    "basePrice": 3500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/shopnil.jpg?alt=media&token=8f87d236-5b3a-4d10-aad1-7d5c5d41974b",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-13",
+    "name": "ABIR HOSSEN ",
+    "role": "Batsman",
+    "batch": "2023",
+    "basePrice": 4000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_dKi2vHKMel8zDPWY5jlt_1777695612962.jpg?alt=media&token=07355eee-2ee2-4032-be45-acb3198a675e",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-14",
+    "name": "ALMAS",
+    "role": "Batsman",
+    "batch": "Madrasa",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_kLSvivUb8mReusOhWVZ5_1777695859594.jpg?alt=media&token=ac2b6e16-600a-4ff3-9b59-5caa4904f653",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-15",
+    "name": "KONOK",
+    "role": "Bowling Allrounder",
+    "batch": "2021",
+    "basePrice": 3000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_19u8ybuXGNX5EJJYWSV0_1777695878617.jpg?alt=media&token=6070efc2-14ed-42bd-a057-04099d50a8a0",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-16",
+    "name": "Arafat Ahmed",
+    "role": "Bowling Allrounder",
+    "batch": "2026",
+    "basePrice": 3000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_QwRwvjlifQUSG0RWAMa1_1777695871073.jpg?alt=media&token=83806101-f188-4353-90d5-b26d211c9a1b",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-17",
+    "name": "Washenur Amin",
+    "role": "Batsman",
+    "batch": "2016",
+    "basePrice": 3000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_ru5g6brzDEWIkAL66FEv_1777742937282.jpg?alt=media&token=1a600473-8553-4c4d-9af2-90b92fd35421",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-18",
+    "name": "Razwan Rahman",
+    "role": "Bowler",
+    "batch": "2020",
+    "basePrice": 3000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1776665031007_IMG_20260416_204959.jpg?alt=media&token=6a392898-e670-44eb-bc4e-7e30639a7035",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-19",
+    "name": "Hasibur Rahman Rony",
+    "role": "Bowler",
+    "batch": "2025",
+    "basePrice": 3000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_EkuVlapGPJQFNFtXlDGf_1777742950029.jpg?alt=media&token=cd27e5e2-3cf0-414e-99aa-feb31fca992a",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-20",
+    "name": "Md. Elias Husen Hira",
+    "role": "Batsman",
+    "batch": "2013",
+    "basePrice": 3000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1776695584497_image-6.jpg?alt=media&token=211470f1-f69d-4438-9a77-1957287075c7",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-21",
+    "name": "Liton sarker",
+    "role": "Bowling Allrounder",
+    "batch": "2016",
+    "basePrice": 3500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1776759402837_inbound4953855903075518896.png?alt=media&token=38a31a33-f025-4a4f-8d4e-01efdef97ce4",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-22",
+    "name": "Md. Moshiur Rahman ",
+    "role": "Batsman",
+    "batch": "School Batch",
+    "basePrice": 1500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_rBSTMihuzFHDrLRSrNld_1777742970340.jpg?alt=media&token=672187ee-ba46-4803-8519-4a7c3648ab79",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-23",
+    "name": "RS SHOMPOD ",
+    "role": "Batsman",
+    "batch": "2026",
+    "basePrice": 1500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_tyUGnRMWYnYa7IjqJ3pe_1777743979961.jpg?alt=media&token=d78e620f-2f18-4271-ad76-8ef737e2f35b",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-24",
+    "name": "MOBAROK AKONDO ",
+    "role": "Batting Allrounder",
+    "batch": "2018",
+    "basePrice": 5000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1776877269778_1702046940947-01.jpeg?alt=media&token=0f2ff47f-0478-40c8-9b2b-2282acb6bc2e",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-25",
+    "name": "M salman",
+    "role": "Batsman",
+    "batch": "Madrasa",
+    "basePrice": 2500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1776929955306_inbound5449381929355815917.jpg?alt=media&token=66cfaa29-2b2c-4283-b989-cb031de79d7e",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-26",
+    "name": "Bijoy Rahman",
+    "role": "Allrounder",
+    "batch": "2021",
+    "basePrice": 2500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777020971427_inbound1666244083739771865.jpg?alt=media&token=e618a826-1c0c-413e-8add-279cf5ca132d",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-27",
+    "name": "ARAFIN SHAHED",
+    "role": "Batsman",
+    "batch": "2021",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777021269211_1000089672.jpg?alt=media&token=429e2d69-6d35-4f26-9bff-2f830910cb17",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-28",
+    "name": "Montakim Al Moeid",
+    "role": "Bowler",
+    "batch": "2021",
+    "basePrice": 1500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777021325827_Montakim%20Al%20Moeid.jpeg?alt=media&token=32867d57-d59c-4951-83f6-31af622c38ab",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-29",
+    "name": "Mazbah",
+    "role": "Batsman",
+    "batch": "2021",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777021365949_inbound5857568371530143305.jpg?alt=media&token=e3294cd6-266e-4b08-8359-9380b8ef858e",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-30",
+    "name": "AS NAEEM",
+    "role": "Batsman",
+    "batch": "2025",
+    "basePrice": 1500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777021898166_IMG_0961.jpeg?alt=media&token=57802548-e362-4242-a55c-518a3878625a",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-31",
+    "name": "Mursaleen Shoumit",
+    "role": "Bowling Allrounder",
+    "batch": "2021",
+    "basePrice": 1500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777021965256_IMG_2359.jpeg?alt=media&token=cf191201-e8ec-4da3-9a59-064d76b628df",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-32",
+    "name": "AULI MEHEDI DEEP",
+    "role": "Batsman",
+    "batch": "2013",
+    "basePrice": 3000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777022334765_87e376b5-6758-4522-92e3-9f1f8d09b38b.jpeg?alt=media&token=a60bc9bf-949b-443a-ba29-9cebd1f45bfe",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-33",
+    "name": "ASHIQUR JAMAN SIYAM ",
+    "role": "Batting Allrounder",
+    "batch": "2018",
+    "basePrice": 4000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777023056004_inbound4068971353101554090.jpg?alt=media&token=cfbeebe8-0e50-45a7-becc-e8e2476a135e",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-34",
+    "name": "TAHMID HASAN LABIB",
+    "role": "Bowler",
+    "batch": "School Batch",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_ozPvLBJjRRI2AU37TYXW_1777744114567.jpg?alt=media&token=61f3bfcf-4cc7-4179-b76e-2a1a1a44697c",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-35",
+    "name": "Mohammad Shanto",
+    "role": "Batsman",
+    "batch": "2021",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777024654869_inbound4637487327512794520.jpg?alt=media&token=38e2577f-6571-4400-aeb7-dc2675a70923",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-36",
+    "name": "MD Hafizur Rahaman",
+    "role": "Allrounder",
+    "batch": "Madrasa",
+    "basePrice": 1500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777040071731_1000183004.jpg?alt=media&token=3cd61f1b-0532-4253-a13d-fed598a660db",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-37",
+    "name": "Nayem Islam ",
+    "role": "Bowling Allrounder",
+    "batch": "2019",
+    "basePrice": 2500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_HZppWo65fOF5yQiBmtau_1777744138946.jpg?alt=media&token=e4a1c236-8023-4b0f-b6e0-af8189027c55",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-38",
+    "name": "Md. Mustafizur Rahman ",
+    "role": "Bowling Allrounder",
+    "batch": "2026",
+    "basePrice": 3000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777051871466_1707054388665.jpg?alt=media&token=08e0b366-030d-4a17-ad55-207138c30cfe",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-39",
+    "name": "Rabby Ahmed ",
+    "role": "Batsman",
+    "batch": "2023",
+    "basePrice": 3500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_KCoX5TZtpXFzGEcIpjE6_1777744180159.jpg?alt=media&token=b70069ed-0bc1-40a2-91aa-6da45e209f1c",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-40",
+    "name": "ONIL CHOWDHURY ",
+    "role": "Batting Allrounder",
+    "batch": "2019",
+    "basePrice": 5000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777212495215_inbound6361765129210546616.png?alt=media&token=ade760d6-e904-4032-b37b-e2cfd9612dee",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-41",
+    "name": "SHIHAB RAHMAN",
+    "role": "Bowling Allrounder",
+    "batch": "2019",
+    "basePrice": 3500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_s95hP82nQM1ajgSirwsp_1777744232064.jpg?alt=media&token=3f8d77d5-5771-432e-b854-e478bab8cd71",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-42",
+    "name": "BABU",
+    "role": "Allrounder",
+    "batch": "2021",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/Artboard%203.png?alt=media&token=94ec46e3-8d76-4682-8136-47a72d0ef85a",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-43",
+    "name": "Shuvo Rahman",
+    "role": "Batsman",
+    "batch": "2018",
+    "basePrice": 4000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777273641353_inbound5083268785604921527.jpg?alt=media&token=6d76b8b6-ae20-4c31-87f7-4fb8cda4e8e4",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-44",
+    "name": "Nazmul Haque",
+    "role": "Bowler",
+    "batch": "2013",
+    "basePrice": 4000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777301369919_inbound5660056611241836321.jpg?alt=media&token=617151c5-50ed-4266-9ffb-d2857a22d0d4",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-45",
+    "name": "SHAFAYAT RAHMAN",
+    "role": "Batsman",
+    "batch": "School Batch",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_tHVc0EkhCrAtWqo980GN_1777744293340.jpg?alt=media&token=daa2caa6-797b-4120-b938-52840b9a3b8a",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-46",
+    "name": "Toiran zafor ",
+    "role": "Batsman",
+    "batch": "2016",
+    "basePrice": 3000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777310077275_inbound5724189009209117104.jpg?alt=media&token=d4e25b6c-3bc2-4f6c-a690-46fd93bc1e10",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-47",
+    "name": "ABDULLAH AL ASHEM",
+    "role": "Batting Allrounder",
+    "batch": "2021",
+    "basePrice": 3000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_GaWPj70BsZzKSeT1gC5G_1777744323653.jpg?alt=media&token=ecd6fec4-f06c-4ba9-8696-7d38807b328b",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-48",
+    "name": "L A Shimanto ",
+    "role": "Batsman",
+    "batch": "2022",
+    "basePrice": 2000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_D2CZmadXz63nTCymuezM_1777744275828.jpg?alt=media&token=c1607a62-a1cb-456e-b3ab-73fa7a9be60d",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-49",
+    "name": "Rupok Ghosh",
+    "role": "Batsman",
+    "batch": "School Batch",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777345908438_IMG_0818.jpeg?alt=media&token=5442242d-e715-4a62-920a-a91b0511580d",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-50",
+    "name": "AL FAYROZ ",
+    "role": "Allrounder",
+    "batch": "School Batch",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777346581391_Messenger_creation_5F9A63DB-D947-4143-AAF4-EC986DE6512D.jpeg?alt=media&token=7c2605a9-a838-4588-98fb-37e54f01e422",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-51",
+    "name": "Md.Mahmudul Hasan ",
+    "role": "Bowling Allrounder",
+    "batch": "2019",
+    "basePrice": 3500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777353330742_IMG_20240101_133112.jpg?alt=media&token=e33d81a5-3e8c-4dc6-8cdc-72bb6946be7e",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-52",
+    "name": "Rakib",
+    "role": "Allrounder",
+    "batch": "School Batch",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777354483975_att.1bKl3RgRN3M_8_VG2XEdCWoLiIYXVYboeKeqHutnc-M.jpeg?alt=media&token=30f06e0a-9c5a-4432-9348-f4d77fe22932",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-53",
+    "name": "Ashikur Rahoman",
+    "role": "Bowler",
+    "batch": "2025",
+    "basePrice": 2000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_y3IPS9qQkS2L4SQihhkA_1777744360096.jpg?alt=media&token=a99ec04d-7152-4311-8efd-9bca31ba9ee4",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-54",
+    "name": "Rihad",
+    "role": "Allrounder",
+    "batch": "2021",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777368765791_inbound1280399482527570364.jpg?alt=media&token=07f2c672-f3c7-417e-b043-324fea094b3f",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-55",
+    "name": "Kowser Ahmed ",
+    "role": "Bowling Allrounder",
+    "batch": "2021",
+    "basePrice": 2500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777368929119_inbound5773828024557413938.jpg?alt=media&token=c54125b8-4530-4730-b188-58590cf19268",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-56",
+    "name": "Md. Mutarassid Masukul Hoque",
+    "role": "Batsman",
+    "batch": "2013",
+    "basePrice": 2500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777375750127_inbound6177452180901287899.jpg?alt=media&token=9523330c-82e5-40b0-9a63-99cf0253d9e3",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-57",
+    "name": "SOYON",
+    "role": "Allrounder",
+    "batch": "School Batch",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_dzjORCsKiMqTqrNMlsSK_1777744435060.jpg?alt=media&token=42c56fa4-7ef0-450b-8bb1-8a70e09f610e",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-58",
+    "name": "Md Fayshal Mahmud ",
+    "role": "Allrounder",
+    "batch": "2021",
+    "basePrice": 2500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/bappyas.jpg?alt=media&token=de0886a8-c09b-4289-88d4-b90e33e1c571",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-59",
+    "name": "MARJAN",
+    "role": "Batsman",
+    "batch": "School Batch",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777384257094_inbound2874371594439577669.png?alt=media&token=b1c0d374-a440-4e31-be87-02147d621005",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-60",
+    "name": "Arafat Rahman",
+    "role": "Bowler",
+    "batch": "School Batch",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777385847984_inbound8050176903229153371.jpg?alt=media&token=cbc8825f-c0d1-4fb6-8f4b-7452fdd834cf",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-61",
+    "name": "Afif Hasan",
+    "role": "Batsman",
+    "batch": "2021",
+    "basePrice": 2000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777386724412_inbound1373311439767872342.png?alt=media&token=58a14728-17b6-4484-87af-ac358c6c2f0a",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-62",
+    "name": "Sofiul Hasan Lazon",
+    "role": "Allrounder",
+    "batch": "2021",
+    "basePrice": 3000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777386355743_1000183188.jpg?alt=media&token=51b74381-45dc-414b-a12a-67cf42f8b55a",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-63",
+    "name": "NUR NUMAN",
+    "role": "Batsman",
+    "batch": "School Batch",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_nbyPZ2hb2h5QNtBCR0Po_1777744488991.jpg?alt=media&token=4befbe40-dc9a-4f7b-8cc2-e7d9fb90af17",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-64",
+    "name": "SHUNIL KUMAR",
+    "role": "Batsman",
+    "batch": "2018",
+    "basePrice": 3500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777402313949_inbound6164459569503654937.jpg?alt=media&token=cb88675e-9617-4ce2-83d3-ead80d4357cd",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-65",
+    "name": "ABDULLAH AL MARUF",
+    "role": "Batting Allrounder",
+    "batch": "2019",
+    "basePrice": 3000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777441921486_IMG-20260414-WA0004.jpg?alt=media&token=58147c96-117d-4dbc-94df-df9d1ab84049",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-66",
+    "name": "MASUM",
+    "role": "Batsman",
+    "batch": "2026",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777468237099_inbound5424010889405034447.jpg?alt=media&token=ec3e19d9-fe33-42ee-ad3b-118cf3b5701e",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-67",
+    "name": "ABRAR ISLAM",
+    "role": "Batsman",
+    "batch": "School Batch",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777472401867_IMG-20260429-WA0000.jpg?alt=media&token=80bbd822-6c77-4e53-9cde-ea5aa5449281",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-68",
+    "name": "Rahim",
+    "role": "Batsman",
+    "batch": "2022",
+    "basePrice": 1500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_f1tta5fxmSgXjxuZmxwf_1777744604519.jpg?alt=media&token=ad2fbb0c-92bc-4880-84fa-8e2518f2778a",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-69",
+    "name": "MD APON MIA",
+    "role": "Allrounder",
+    "batch": "2023",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777492206072_IMG_7337.jpeg?alt=media&token=288f5fca-804f-4598-ae4c-eb82b56ea08f",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-70",
+    "name": "Shopno Thohid",
+    "role": "Bowling Allrounder",
+    "batch": "2025",
+    "basePrice": 2500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777491833809_IMG_3080.png?alt=media&token=8ff64014-b925-431a-bf31-aa8b66795a99",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-71",
+    "name": "Rahim Ahmed",
+    "role": "Batting Allrounder",
+    "batch": "2026",
+    "basePrice": 4500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_DF0HxHhwuK7G6eXVW4Pv_1777744707135.jpg?alt=media&token=c22c09d7-4c78-4481-b650-a7babafc3291",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-72",
+    "name": "Rakib Sarker",
+    "role": "Allrounder",
+    "batch": "2024",
+    "basePrice": 2500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777493620929_1000012838.jpg?alt=media&token=dd25011f-ad33-42d3-aac9-c350c0402104",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-73",
+    "name": "RATUL",
+    "role": "Batsman",
+    "batch": "School Batch",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777528346160_1000183361.jpg?alt=media&token=f12cbfb0-5fda-420e-9477-03d32f333a11",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-74",
+    "name": "Arfan Rahman Akash ",
+    "role": "Batting Allrounder",
+    "batch": "2026",
+    "basePrice": 2000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_OHm9E0sjDrVj9EQo4YdD_1777744752225.jpg?alt=media&token=656b2ca8-8806-456e-8858-85ff9a8e2071",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-75",
+    "name": "Tushar Ahmed ",
+    "role": "Batsman",
+    "batch": "2020",
+    "basePrice": 1500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777532198787_inbound1350281118906217606.jpg?alt=media&token=4b348112-113a-4fef-aece-12dc0de227cf",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-76",
+    "name": "MD. SHIHAB AHMED ",
+    "role": "Batting Allrounder",
+    "batch": "2026",
+    "basePrice": 3000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777532489069_33702.jpg?alt=media&token=95183419-2081-451d-9b37-24f428eb147b",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-77",
+    "name": "MD SIAM",
+    "role": "Allrounder",
+    "batch": "Madrasa",
+    "basePrice": 4500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777537072500_inbound2175305554259448600.jpg?alt=media&token=9b5b39b3-0438-4903-9de8-c5e2a695d6c7",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-78",
+    "name": "Niloy Ahmed",
+    "role": "Batsman",
+    "batch": "2026",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_makBhPxlZ7EazUxIk2mO_1777744832258.jpg?alt=media&token=dea819fb-aaa4-4be2-a9db-35390ef1c4ef",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-79",
+    "name": "RANA",
+    "role": "Batting Allrounder",
+    "batch": "2024",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_rX4KVTZijz3GYAkoF6ku_1777744875169.jpg?alt=media&token=0c181f1e-c6e0-404c-80fb-31e04929fd0b",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-80",
+    "name": "Rudro roy",
+    "role": "Bowling Allrounder",
+    "batch": "School Batch",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777537885332_inbound5048875025404731228.png?alt=media&token=fd889cfd-a67b-4591-ba91-5db3b74f8075",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-81",
+    "name": "Md.Sifat Islam ",
+    "role": "Batting Allrounder",
+    "batch": "2019",
+    "basePrice": 3000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777543681829_166296.jpg?alt=media&token=07578ce1-75f8-4fe8-9e17-1f493d592f6b",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-82",
+    "name": "Shafayat Hosen",
+    "role": "Batsman",
+    "batch": "School Batch",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777552593874_inbound5815522960868703091.jpg?alt=media&token=10cfef06-a5ed-4032-9dec-1d590a0d8d36",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-83",
+    "name": "FOYES ",
+    "role": "Allrounder",
+    "batch": "School Batch",
+    "basePrice": 2000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777540161405_inbound1880787863048544345.jpg?alt=media&token=0d95975d-7256-4c3c-a2e8-676cba2be891",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-84",
+    "name": "ABUL HASAN RAJU",
+    "role": "Batsman",
+    "batch": "2016",
+    "basePrice": 4000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777554363622_inbound3288635336321746585.jpg?alt=media&token=90109102-d1d3-459d-b14f-54044612b1e6",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-85",
+    "name": "SHAHARIAR RAKIB",
+    "role": "Allrounder",
+    "batch": "2022",
+    "basePrice": 4500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777558014651_33524.jpg?alt=media&token=299a28ba-86a5-4502-94d8-bc4047b73dbf",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-86",
+    "name": "Mahabubur Rahman ",
+    "role": "Batsman",
+    "batch": "2014",
+    "basePrice": 2500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777558204168_1746168161905.jpg?alt=media&token=bd69558e-6569-4aba-9dfa-4821bcf08fb6",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-87",
+    "name": "MD ASHIKUR RAHMAN ",
+    "role": "Batsman",
+    "batch": "2025",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777559454539_inbound9194260874014669774.jpg?alt=media&token=05413325-9773-48fd-8f2a-c0c61da7f174",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-88",
+    "name": "MUNNA",
+    "role": "Batting Allrounder",
+    "batch": "2024",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777560207594_1000066508.jpg?alt=media&token=8d090ef1-eaeb-4e4e-89b1-0f334414c6a5",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-89",
+    "name": "Md Mustafizur Rahman ",
+    "role": "Bowling Allrounder",
+    "batch": "2018",
+    "basePrice": 1500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777560977093_inbound5522878235343044160.jpg?alt=media&token=4f880a5e-9b4c-452d-8b72-555b345fec02",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-90",
+    "name": "Midul Islam",
+    "role": "Batsman",
+    "batch": "School Batch",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777557594456_inbound8997662072169530798.jpg?alt=media&token=f6b107d8-b631-4bb0-8637-ab6d7bc1c75e",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-91",
+    "name": "Soyaib Hosen",
+    "role": "Bowling Allrounder",
+    "batch": "2026",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_Ec2tlPd5s7ZHZSKov70Q_1777745200354.jpg?alt=media&token=95421abf-abc4-431b-a9e8-6e806a6d0da0",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-92",
+    "name": "Rahi Islam",
+    "role": "Batsman",
+    "batch": "2026",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777562792998_inbound2732954342792875134.jpg?alt=media&token=801092a8-dc92-4459-a7de-2eaab881b84c",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-93",
+    "name": "Al Amin",
+    "role": "Batsman",
+    "batch": "2026",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777563631064_inbound2583218907585358917.jpg?alt=media&token=2b647102-5913-4ddd-bf19-3c9dc6730503",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-94",
+    "name": "Marufur Sohan ",
+    "role": "Bowler",
+    "batch": "2022",
+    "basePrice": 1500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_nKpKCNWMdqOZx16ELQUL_1777745296883.jpg?alt=media&token=05179706-e259-4fb0-841e-a96b1f507662",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-95",
+    "name": "Md.Riad",
+    "role": "Allrounder",
+    "batch": "Madrasa",
+    "basePrice": 1500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777566354544_1000183400.jpg?alt=media&token=d8ff22a5-0d8e-4973-b554-392d15dac59e",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-96",
+    "name": "ONTOR",
+    "role": "Batsman",
+    "batch": "2016",
+    "basePrice": 2500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777567187642_1000183398.jpg?alt=media&token=f7daa54e-6195-4a28-888f-9e23ab44bf08",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-97",
+    "name": "Sagor",
+    "role": "Batsman",
+    "batch": "2014",
+    "basePrice": 2500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_w1GFA4s63dOlNYDLf7M6_1777745346888.jpg?alt=media&token=906176a9-e8b7-4104-9f49-427c81bbf452",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-98",
+    "name": "MAHARAB HOSSEN TAREK ",
+    "role": "Bowler",
+    "batch": "2023",
+    "basePrice": 2500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_siPjeNmbijkInybDsYYt_1777744689164.jpg?alt=media&token=bb7c5273-ec89-4ee5-878c-0d3dc82e11e9",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-99",
+    "name": "M.Sofeullah",
+    "role": "Batsman",
+    "batch": "2019",
+    "basePrice": 2000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777569973238_166297.jpg?alt=media&token=3167b230-0543-4e6b-a5e3-8fc37541b581",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-100",
+    "name": "Rohan",
+    "role": "Bowling Allrounder",
+    "batch": "School Batch",
+    "basePrice": 2000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777574516356_1000183411.jpg?alt=media&token=93557637-5749-4e2f-b933-96c2ee069241",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-101",
+    "name": "JAHID",
+    "role": "Batsman",
+    "batch": "2026",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777626858190_1000183420.jpg?alt=media&token=b9973c2e-7cbc-47af-b658-eed589d82722",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-102",
+    "name": "Mahin Ahmed",
+    "role": "Batsman",
+    "batch": "2024",
+    "basePrice": 1500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777631740560_1000183421.jpg?alt=media&token=d42856c9-9371-4434-bb19-85b40cad448e",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-103",
+    "name": "Nayem",
+    "role": "Batsman",
+    "batch": "School Batch",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777632507337_1000183422.jpg?alt=media&token=b47e036d-c32c-43bc-a3b2-8bbd3f2273cd",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-104",
+    "name": "Ashiqur Rahman Asif",
+    "role": "Batting Allrounder",
+    "batch": "2023",
+    "basePrice": 1500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_SoPeH1BJKzHzRcBqKl4Q_1777745625827.jpg?alt=media&token=6211edbc-5776-40c3-8ae6-c009b0c297a1",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-105",
+    "name": "Rupok",
+    "role": "Batsman",
+    "batch": "2026",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777644767433_1000183424.jpg?alt=media&token=38086ee7-a813-4dc4-97b3-39de2f77402a",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-106",
+    "name": "Labid",
+    "role": "Allrounder",
+    "batch": "School Batch",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777648233872_1000183425.jpg?alt=media&token=7fd3c222-f0c5-4762-a9f2-10c60388481a",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-107",
+    "name": "Sohan",
+    "role": "Allrounder",
+    "batch": "School Batch",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777648320951_1000183428.jpg?alt=media&token=b542475a-4981-4e4a-b415-fbaf9eedc965",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-108",
+    "name": "Rakib",
+    "role": "Allrounder",
+    "batch": "School Batch",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777648411451_1000183429.jpg?alt=media&token=021695b1-ab71-4cb6-a272-8325354a570a",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-109",
+    "name": "Mosarof Hossain Zihad",
+    "role": "Batting Allrounder",
+    "batch": "2019",
+    "basePrice": 3000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2Fcropped_TLXVYLaLrg2jiKJGNPZq_1777745688406.jpg?alt=media&token=8a499f6f-f9c3-404d-b0c6-d0d23106c388",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-110",
+    "name": "Md Shihab  Ahmed",
+    "role": "Bowling Allrounder",
+    "batch": "2022",
+    "basePrice": 2500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777653869482_1000183432.heic?alt=media&token=c59dc630-b248-4e5a-872e-22b1d7b9c6a1",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-111",
+    "name": "Hasib",
+    "role": "Allrounder",
+    "batch": "School Batch",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777718472637_1000183447.jpg?alt=media&token=d8566731-39f7-4d4e-99f8-12fec55900d6",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-112",
+    "name": "Abdullah Al Akil",
+    "role": "Batsman",
+    "batch": "2021",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777568027741_inbound9122988675219327151.jpg?alt=media&token=3760f765-936e-42f9-9f4e-9239b51eb63a",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-113",
+    "name": "Ibrahim",
+    "role": "Batsman",
+    "batch": "2009",
+    "basePrice": 2500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777563314528_inbound2423788874379048716.jpg?alt=media&token=ea5ef333-2e5d-465c-8989-069f93e2ee0f",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-114",
+    "name": "Kaushik",
+    "role": "Bowler",
+    "batch": "2009",
+    "basePrice": 2500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777562880652_inbound8543140769923018425.jpg?alt=media&token=acc023df-dc61-4f0a-9d86-8cc7826e60cd",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-115",
+    "name": "Mohammad  Shohan",
+    "role": "Bowler",
+    "batch": "2009",
+    "basePrice": 3000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777557973656_inbound8849726013954162626.jpg?alt=media&token=ce340658-ae72-45d7-b476-3639c1e9bc55",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-116",
+    "name": "Shaddam Hossen",
+    "role": "Batsman",
+    "batch": "2009",
+    "basePrice": 2500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777530484135_inbound5860042080784746822.jpg?alt=media&token=ca9b16ba-1a24-4585-8bca-afc29d3f13b7",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-117",
+    "name": "Shamim Ahmed",
+    "role": "Batsman",
+    "batch": "2009",
+    "basePrice": 3000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777511990973_inbound735660697116110351.jpg?alt=media&token=4e70537f-0a7b-4d28-9f8a-551f20cd48a7",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-118",
+    "name": "MD. Al-AMIN (BABU)",
+    "role": "Batsman",
+    "batch": "2009",
+    "basePrice": 3000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777511884826_inbound8896061834526608028.jpg?alt=media&token=cf71cbae-127c-4a76-aee9-e38dc73d0e0d",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-119",
+    "name": "Raihanul haque mollah",
+    "role": "Batsman",
+    "batch": "2009",
+    "basePrice": 2500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777482565096_inbound2890464418000062705.jpg?alt=media&token=024357d5-0b8f-4534-bcbd-495700a5c661",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-120",
+    "name": "Sadi Mohammad Galib",
+    "role": "Bowling Allrounder",
+    "batch": "2009",
+    "basePrice": 2500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777481157136_inbound4303418230379209726.jpg?alt=media&token=38dab16e-fa46-4ff7-9e6f-2bef04906ae2",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-121",
+    "name": "ATIQUR RAHMAN",
+    "role": "Batsman",
+    "batch": "2009",
+    "basePrice": 2500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777480434561_inbound5884709271408342303.jpg?alt=media&token=f5c0a14c-c1ce-4154-b588-1dbcdeee236b",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-122",
+    "name": "Ajay",
+    "role": "Allrounder",
+    "batch": "2021",
+    "basePrice": 2500,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777568591784_1000183402.jpg?alt=media&token=df412973-60f6-4d0f-9fbf-ca122be3c5d8",
+    "status": "pending"
+  },
+  {
+    "id": "ZBSM-123",
+    "name": "Mahir islam",
+    "role": "Batsman",
+    "batch": "School Batch",
+    "basePrice": 1000,
+    "imageUrl": "https://firebasestorage.googleapis.com/v0/b/zbsm-crick.firebasestorage.app/o/zbsm-crick-live-v1%2Fplayer_registrations%2F1777789835798_cropped_1777789835798.jpg?alt=media&token=24d07841-6af1-4b48-8c74-9512d900138c",
+    "status": "pending"
+  }
+]

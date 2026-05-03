@@ -26,6 +26,7 @@ const AdminStoreDash = React.lazy(() => import('./views/admin/AdminStoreDash'));
 const TeamLoginGateway = React.lazy(() => import('./views/teams/TeamLoginGateway'));
 const AdminAuctionDash = React.lazy(() => import('./views/admin/AdminAuctionDash'));
 const BroadcastScreen = React.lazy(() => import('./views/public/BroadcastScreen'));
+const AuctionPool = React.lazy(() => import('./views/public/AuctionPool'));
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -98,6 +99,8 @@ export default function App() {
       if (path === '/auction') { setView('auction'); return; } // <-- NEW AUCTION ROUTE
       if (path === '/admin-auction') { setView('admin-auction'); return; } // <--- ADD THIS
       if (path === '/stream') { setView('stream'); return; } // <--- ADD THIS
+      if (path === '/pool') { setView('pool'); return; }
+    
 
       if (matches.length === 0 && tournaments.length === 0) return;
 
@@ -257,6 +260,11 @@ export default function App() {
             {view === 'stream' && (
                 <BroadcastScreen />
             )}
+            {view === 'pool' && (
+            <>
+               <AuctionPool />
+            </>
+        )}
 
         </Suspense>
       </div>
