@@ -392,13 +392,6 @@ export default function LiveAuction({ currentTeamId, currentTeamName }) {
             <div className="w-full h-2 sm:h-2.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700 shadow-inner">
               <div className={`h-full transition-all duration-200 ease-linear rounded-full ${isWarningTime ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.6)]' : 'bg-blue-500'}`} style={{ width: `${progressPercentage}%` }}></div>
             </div>
-            {/* Visible only when this device's clock differs from server by >1s.
-                Confirms to the user (and to debugging) that their local clock has been corrected. */}
-            {isTimeSynced && Math.abs(timeOffset) > 1000 && (
-              <p className="mt-2 text-center text-[10px] font-mono text-amber-400/70 tracking-wider">
-                ⏱ device clock corrected by {timeOffset > 0 ? '+' : ''}{Math.round(timeOffset / 1000)}s
-              </p>
-            )}
           </div>
 
           <div className="relative z-10 flex flex-col gap-2.5 sm:gap-3">

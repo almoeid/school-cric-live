@@ -3,6 +3,24 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
 
+// --- 🚨 CACHE BUSTER: FORCE CLEAR OLD SERVICE WORKERS FOR ALL USERS 🚨 ---
+// This runs before anything else. If it finds an old Service Worker, 
+// it deletes it and forces the browser to pull fresh files from Vercel.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (let registration of registrations) {
+      registration.unregister().then((successful) => {
+        if (successful) {
+          console.log("💥 Rogue Service Worker destroyed! Reloading for fresh files...");
+          // Force a hard reload from the server, bypassing local cache
+          window.location.reload(); 
+        }
+      });
+    }
+  });
+}
+// --------------------------------------------------------------------------
+
 // --- DEBUGGING LOGS (Check Console) ---
 console.log("🚀 Starting App...");
 console.log("Environment Check:", {
